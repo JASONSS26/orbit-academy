@@ -2,6 +2,11 @@
    parts = ordered groups; tasks = the individual interactive exercises (each optionally
    with a check-question + demo-specific remediation feedback). Order matters. */
 const WORKSHEET = {
+  intro: [
+    'Welcome to Orbit Academy. This first module builds a <b>gut feel for how orbits work</b> — no math required. You’ll fly objects around Earth in a live 3-D simulator and watch what happens.',
+    'The big idea: an orbit is just <b>falling sideways so fast you keep missing the ground</b>. How fast you’re going, and in which direction, decides the whole shape of the path — a circle, a stretched-out ellipse, a crash, or an escape.',
+    'Work through the tasks in order, doing each one in the simulator before answering its check question. Take your time — the goal is understanding, not speed. Your progress saves automatically.',
+  ],
   parts: [
     { title: 'PART A · Get oriented', tasks: ['a1','a2'] },
     { title: 'PART B · What makes an orbit? (inject at 600 km)', tasks: ['b1','b2','b3','b4'] },

@@ -33,7 +33,7 @@ let pass=0,fail=0; const P=(n,ok,x)=>{console.log((ok?'  ✓ ':'  ✗ FAIL ')+n+
   P('cannot self-assign role at register',JSON.parse((await req('POST','/api/register',{name:'E',email:'e@j.org',password:'orbits123',role:'instructor'})).body).user.role==='student');
   P('student denied roster (priv-esc)',(await req('GET','/api/roster',null,stu.cookie)).status===403);
   P('forged session rejected',(await req('GET','/api/me',null,'sid=deadbeefdeadbeef')).status===401);
-  P('prereq bypass blocked /complete',(await req('POST','/api/complete',{tutorial:'t3b',score:100},stu.cookie)).status===403);
+  P('prereq bypass blocked /complete',(await req('POST','/api/complete',{tutorial:'t4',score:100},stu.cookie)).status===403);
   P('prereq bypass blocked /task',(await req('POST','/api/task',{tutorial:'t2',task:'x',done:true,totalTasks:1},stu.cookie)).status===403);
   P('score clamped to <=100',JSON.parse((await req('POST','/api/complete',{tutorial:'t1',score:99999},stu.cookie)).body).progress.t1.score<=100);
   P('weak password rejected',(await req('POST','/api/register',{name:'W',email:'w@j.org',password:'short'})).status===400);

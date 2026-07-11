@@ -4,6 +4,19 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v1.2 — audit result: **PASS** (re-run)
+Modules 3 and 4 added **no new server attack surface**: both are static client-side files
+(`tut3a.html`, `tut4.html`, and their worksheets/data), rendered in the browser and using only
+the existing, already-audited `/api/task` and `/api/complete` endpoints (prerequisite gating and
+score clamping enforced server-side). The course re-order (Maneuvers → Module 4; xGEO → 5;
+Observability → 6) is a `COURSE`-array change only — the gating logic (`unlocked()`) is unchanged
+and still walks the prereq chain. Reviewed: new worksheet data is static text rendered through the
+existing `esc()`-based renderer (no new HTML injected from user input); Three.js remains the same
+SRI-pinned CDN build; no new endpoints, secrets, or external calls. Updated the stale `/complete`
+prereq-bypass test (it referenced the removed `t3b` id) to target `t4`; re-ran the full suite —
+**28 functional + 22 security checks + DoS guard, all passing** (`bash test/run.sh`).
+Cleared to ship v1.2.
+
 ## v1.1 — audit result: **PASS** (re-run)
 Module 2 added **no new server attack surface**: it's all client-side rendering plus the
 existing, already-audited `/api/task` endpoint (which enforces prerequisites and score clamping

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Tutorial 4: Maneuvers &amp; Perturbations</title>
+<style>
+  :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--red:#ff5a52;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000407;color:var(--fg);
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
+  #app{display:grid;grid-template-columns:330px minmax(0,1fr) 290px;height:100vh;gap:8px;padding:8px}
+  .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
+  h2{margin:0 0 6px;font-size:19px;color:#fff}
+  .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
+  .lab{display:flex;justify-content:space-between;font-size:14px}
+  .lab b{color:var(--cyan)}
+  .q{color:var(--dim);font-size:12px;margin-bottom:2px}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:20px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+    padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
+  button:hover{background:#1f4a7a;border-color:var(--cyan)}
+  button.go{background:#1e5c33;border-color:#39d353}
+  button.go:hover{background:#237a41}
+  .burnrow{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .burnrow button{margin-top:0}
+  .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.7);padding:4px 9px;border-radius:6px;border:1px solid #234}
+  #banner{position:absolute;top:8px;right:10px;z-index:3;font-size:13px;padding:5px 11px;border-radius:6px;font-weight:bold;display:none;max-width:60%}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.7);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:14px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  .kv span:last-child{color:#fff;font-weight:bold}
+  .big{font-size:15px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
+  .scen{font-size:12.5px;text-align:left;line-height:1.4;padding:9px}
+  .warp{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .warp button{width:34px;font-size:16px;padding:4px}
+  .dv{color:var(--grn);font-weight:bold}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- CONTROLS -->
+  <div id="left" class="col panel">
+    <h2>④ Maneuvers &amp; Perturbations</h2>
+    <button onclick="(function(){var w=window.open('worksheet4.html','worksheet_t4');w&&w.focus();})()"
+      style="background:#1f4a7a">📋 Back to worksheet</button>
+
+    <div class="sec">
+      <div class="big" style="color:var(--cyan)">Scenarios</div>
+      <button class="scen" onclick="scenario('drag')">🌫 <b>Drag decay</b> — put a satellite in a low circular orbit and watch the air drag spiral it in until it burns up.</button>
+      <button class="scen" onclick="scenario('gto')">🚀 <b>GTO transfer</b> — start in LEO, burn to a Geo-Transfer Orbit, then find the “goldilocks” burn at apogee to circularize at GEO.</button>
+      <button class="scen" onclick="scenario('keep')">🛰 <b>Station-keeping</b> — a decaying orbit; try radial vs. tangential thrust to hold altitude and see which works.</button>
+      <button class="scen" onclick="scenario('radial')">🤔 <b>Radial-burn paradox</b> — from a high orbit, push straight “up” (radially out) and watch it crash into Earth.</button>
+      <button class="scen" onclick="scenario('escape')">💫 <b>Escape &amp; unbound</b> — burn past escape velocity. The orbit opens into a hyperbola and the object flies away forever.</button>
+      <button class="scen" onclick="scenario('infall')">⬇ <b>Radial infall</b> — start far out, kill the sideways speed with a retrograde burn, and fall straight down.</button>
+      <button class="scen" onclick="scenario('sunsync')">☀ <b>Sun-synchronous</b> — Earth’s bulge swivels the orbit plane so it keeps the same Sun angle (circular &amp; elliptical shown).</button>
+    </div>
+
+    <div class="sec">
+      <div class="q">starting circular altitude</div>
+      <div class="lab">altitude <b><span id="altV">400</span> km</b></div>
+      <input id="alt" type="range" min="150" max="42000" step="10" value="400">
+      <button class="go" id="launch">▶ place satellite in circular orbit</button>
+    </div>
+
+    <div class="sec">
+      <div class="big" style="color:var(--accent)">🔥 Apply a burn (Δv)</div>
+      <div class="q">Δv per burn — “delta-v”, a change in speed. Fuel is finite, so every m/s counts.</div>
+      <div class="lab">burn size <b><span id="dvV">100</span> m/s</b></div>
+      <input id="dv" type="range" min="1" max="8000" step="1" value="100">
+      <div class="burnrow">
+        <button onclick="burn('pro')">⬆ prograde (speed up)</button>
+        <button onclick="burn('retro')">⬇ retrograde (slow down)</button>
+        <button onclick="burn('out')">⇱ radial out</button>
+        <button onclick="burn('in')">⇲ radial in</button>
+      </div>
+      <div class="note">Prograde/retrograde push along the direction of travel (tangential). Radial pushes toward/away from Earth.</div>
+    </div>
+
+    <div class="sec">
+      <div class="q">satellite area-to-mass (drag / radiation sensitivity)</div>
+      <div class="lab"><span id="bcLabel">compact satellite</span> <b><span id="bcV">0.02</span></b></div>
+      <input id="bc" type="range" min="0.005" max="2" step="0.005" value="0.02">
+      <div class="note">Higher = lighter &amp; larger area (a “HAMR” object like a foil fragment). It feels far more drag and radiation pressure.</div>
+    </div>
+
+    <div class="sec warp">
+      <span style="font-size:12px;color:var(--dim)">time&nbsp;warp</span>
+      <button onclick="warpDown()">−</button>
+      <span id="warpV" style="font-size:13px;color:#fff;min-width:70px;text-align:center">1×</span>
+      <button onclick="warpUp()">+</button>
+      <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸ pause</button>
+    </div>
+    <div class="sec" style="color:var(--dim);font-size:12px">
+      <b style="color:var(--fg)">Controls:</b> drag = pan · shift/right-drag = rotate · wheel = zoom · arrows = rotate ·
+      <b>,</b> / <b>.</b> = slow/speed time · space = pause · <b>R</b> = reset view
+    </div>
+  </div>
+
+  <!-- 3D VIEW -->
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <div class="stitle" id="stitle">🌍 Maneuvers &amp; Perturbations</div>
+    <div id="banner"></div>
+    <div id="hint"></div>
+  </div>
+
+  <!-- READOUTS -->
+  <div id="read" class="col panel">
+    <!-- Δv gas gauge (top of panel so it's always visible) -->
+    <div style="border:1px solid #24466e;border-radius:7px;padding:9px 10px;background:#0c1a2b">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span class="big" style="font-size:14px;color:var(--grn);margin:0">⛽ Δv budget</span>
+        <span style="font-size:12px;color:var(--dim)"><b id="rDv" style="color:#fff">0</b> / <span id="dvBudget">10,000</span> m/s used</span>
+      </div>
+      <div style="color:var(--dim);font-size:11px;margin:3px 0 5px">A satellite launches with a fixed “tank” of delta-v. Every burn draws it down — when it’s empty, the mission is over.</div>
+      <div style="position:relative;height:22px;background:#0a1a2b;border:1px solid #1d3350;border-radius:5px;overflow:hidden">
+        <div id="gaugeFill" style="position:absolute;left:0;top:0;bottom:0;width:100%;background:#39d353;transition:width .2s,background .2s"></div>
+        <div id="gaugeTxt" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#03210c;font-weight:bold;text-shadow:0 1px 1px rgba(255,255,255,.3)">FULL</div>
+      </div>
+      <div style="text-align:right;margin-top:3px"><button id="refuel" style="width:auto;font-size:11px;padding:3px 8px;margin:0">↺ refuel / reset budget</button></div>
+    </div>
+
+    <div class="big" style="margin-top:12px">Orbit right now</div>
+    <div class="kv"><span>altitude (now)</span><span id="rAlt">—</span></div>
+    <div class="kv"><span>speed</span><span id="rSpd">—</span></div>
+    <div class="kv"><span>escape speed (here)</span><span id="rEsc">—</span></div>
+    <div class="kv"><span>apogee altitude</span><span id="rApo">—</span></div>
+    <div class="kv"><span>perigee altitude</span><span id="rPeri">—</span></div>
+    <div class="kv"><span>period</span><span id="rPer">—</span></div>
+    <div class="kv"><span>eccentricity</span><span id="rEcc">—</span></div>
+    <div class="kv"><span>elapsed time</span><span id="rT">—</span></div>
+
+    <div class="sec" style="border-top:1px solid #1d3350;padding-top:8px">
+      <div class="big" style="font-size:13px;color:var(--cyan);margin-bottom:3px">📈 Altitude vs. time</div>
+      <div style="color:var(--dim);font-size:11px;margin-bottom:4px">Auto-scaled — small changes you can’t see on the globe show up clearly here. Red = apogee, green = perigee, cyan = now.</div>
+      <canvas id="plot" style="width:100%;height:150px;display:block;background:#00121f;border:1px solid #16304e;border-radius:6px"></canvas>
+      <div id="plotAxis" style="display:flex;justify-content:space-between;color:var(--dim);font-size:10px;margin-top:2px"><span id="plotY0">—</span><span id="plotX">—</span></div>
+    </div>
+
+    <div id="goal" class="note" style="background:#12233a;border:1px solid #24466e;border-radius:6px;padding:9px;color:#cfe3ff;display:none"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
+<script>
+"use strict";
+/* ============================================================================
+   TUTORIAL 4 — Maneuvers & Perturbations (3-D).
+   A textured 3-D Earth (matching Module 3) with a fuzzy atmosphere and stars.
+   Real RK4 integration of gravity + exponential atmospheric drag drives the
+   satellite; the student applies impulsive Δv burns (prograde/retrograde/
+   radial) and watches the orbit reshape, decay, transfer, escape, or fall in.
+   Scenarios: drag decay & re-entry, GTO→GEO transfer, station-keeping,
+   radial-burn paradox, escape→unbound (hyperbola/scattering), radial infall,
+   and sun-synchronous (circular + elliptical). Physics verified against
+   textbook Hohmann Δv, escape velocity, and realistic decay lifetimes.
+   Camera: drag=rotate, shift/right-drag=pan, wheel=zoom.  Time: , . space R.
+   ============================================================================ */
+const MU=398600.4418, Re=6371;
+const $=id=>document.getElementById(id);
+
+/* ---- exponential atmosphere: [alt km, density kg/m^3, scale height km] ---- */
+const ATM=[[0,1.225,7.2],[100,5.6e-7,5.9],[150,2.0e-9,25.5],[200,2.5e-10,37.5],[250,6.4e-11,44.8],
+[300,1.9e-11,50.3],[400,2.8e-12,58.5],[500,5.2e-13,63.8],[600,1.1e-13,71.8],[700,3.1e-14,88.7],[800,1.1e-14,124.6]];
+function rho(h){ if(h>=1000) return 0; if(h<=0) return ATM[0][1];
+  let i=0; for(;i<ATM.length-1;i++) if(h<ATM[i+1][0]) break;
+  const s=ATM[i]; return s[1]*Math.exp(-(h-s[0])/s[2]); }
+
+/* ---- physics state: motion in the x-y plane. [x,y,vx,vy] km, km/s ---- */
+let S=[Re+400,0,0,Math.sqrt(MU/(Re+400))];
+let BC=0.02, simT=0, dvSpent=0, running=false, paused=false, warp=60, mode='drag', impacted=false, escaped=false;
+let DV_BUDGET=10000;  // m/s in the "tank" — generous enough for a full LEO→GEO (3,860) plus margin;
+                      // a radial escape (~7,100) nearly drains it, keeping "Δv is precious" real
+let trail=[];               // array of [x,y] km
+let hist=[];                // {t,alt,apo,peri}
+const pcv=$('plot'), pctx=pcv.getContext('2d');
+
+function accel(s){
+  const r=Math.hypot(s[0],s[1]); const g=-MU/(r*r*r);
+  let ax=g*s[0], ay=g*s[1];
+  const h=r-Re, d=rho(h);
+  if(d>0){ const v=Math.hypot(s[2],s[3]); if(v>0){
+    const vms=v*1000, adr=0.5*d*BC*vms*vms/1000; ax-=adr*s[2]/v; ay-=adr*s[3]/v; } }
+  return [ax,ay];
+}
+function rk4(s,dt){ const a1=accel(s);
+  const b=[s[0]+s[2]*dt/2,s[1]+s[3]*dt/2,s[2]+a1[0]*dt/2,s[3]+a1[1]*dt/2],a2=accel(b);
+  const c=[s[0]+b[2]*dt/2,s[1]+b[3]*dt/2,s[2]+a2[0]*dt/2,s[3]+a2[1]*dt/2],a3=accel(c);
+  const e=[s[0]+c[2]*dt,s[1]+c[3]*dt,s[2]+a3[0]*dt,s[3]+a3[1]*dt],a4=accel(e);
+  return [s[0]+dt/6*(s[2]+2*b[2]+2*c[2]+e[2]), s[1]+dt/6*(s[3]+2*b[3]+2*c[3]+e[3]),
+          s[2]+dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), s[3]+dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1])]; }
+function elems(){
+  const r=Math.hypot(S[0],S[1]), v2=S[2]*S[2]+S[3]*S[3];
+  const eps=v2/2-MU/r, a=-MU/(2*eps);
+  const rdotv=S[0]*S[2]+S[1]*S[3];
+  const ex=((v2-MU/r)*S[0]-rdotv*S[2])/MU, ey=((v2-MU/r)*S[1]-rdotv*S[3])/MU;
+  const e=Math.hypot(ex,ey);
+  const apo=(a>0)?a*(1+e)-Re:NaN, peri=(a*(1-e))-Re;
+  const P=(a>0)?2*Math.PI*Math.sqrt(a*a*a/MU):NaN;
+  return {r,a,e,ex,ey,apo,peri,P,alt:r-Re,speed:Math.sqrt(v2),vesc:Math.sqrt(2*MU/r)};
+}
+
+/* ============================ 3-D SCENE ==================================== */
+const UNIT=Re;  // scene unit = 1 Earth radius
+const toU=km=>km/UNIT;
+const r3=new THREE.WebGLRenderer({canvas:$('c'),antialias:true}); r3.setPixelRatio(Math.min(devicePixelRatio,2)); r3.setClearColor(0x000407,1);
+const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(50,1,0.001,5000);
+// stars
+(function(){const g=new THREE.BufferGeometry(),N=1800,p=new Float32Array(N*3);
+  for(let k=0;k<N;k++){const rr=200+((k*97)%400),th=(k*2.399),ph=Math.acos(((k*53)%1000)/500-1);
+    p[k*3]=rr*Math.sin(ph)*Math.cos(th);p[k*3+1]=rr*Math.sin(ph)*Math.sin(th);p[k*3+2]=rr*Math.cos(ph);}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xbfd0ee,size:0.7})));})();
+const sunLight=new THREE.DirectionalLight(0xffffff,1.6); sunLight.position.set(6,3,6); scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0x516079,0.42));   // modest fill so the night side reads as dark
+// Earth (textured, like Module 3)
+const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1,metalness:0});
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,64,48),earthMat); scene.add(earth);
+new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',
+  t=>{earthMat.map=t;earthMat.color.set(0xffffff);earthMat.needsUpdate=true;},undefined,()=>{});
+// fuzzy atmosphere: inner haze shell + outer additive limb glow
+const haze=new THREE.Mesh(new THREE.SphereGeometry(1.03,48,32),
+  new THREE.MeshBasicMaterial({color:0x6db0ff,transparent:true,opacity:0.14,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+scene.add(haze);
+const glow=new THREE.Mesh(new THREE.SphereGeometry(1.09,48,32),
+  new THREE.MeshBasicMaterial({color:0x4a86d6,transparent:true,opacity:0.10,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+scene.add(glow);
+// equatorial plane hint
+{ const disk=new THREE.Mesh(new THREE.RingGeometry(1.001,1.002,96),new THREE.MeshBasicMaterial({color:0x2b6fb5,transparent:true,opacity:0.25,side:THREE.DoubleSide}));
+  disk.rotation.x=Math.PI/2; scene.add(disk); }
+
+// map physics (x,y) km → scene coords (orbit lies in horizontal plane y_scene=0)
+function sc(x,y){ return new THREE.Vector3(toU(x),0,-toU(y)); }
+
+const trailLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x5fd0ff,transparent:true,opacity:0.9}));
+scene.add(trailLine);
+const predLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x9fd8ff,transparent:true,opacity:0.35}));
+scene.add(predLine);
+const geoRing=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineDashedMaterial({color:0xffcf4d,transparent:true,opacity:0.4,dashSize:0.12,gapSize:0.12}));
+{ const pts=[]; for(let k=0;k<=128;k++){const t=k/128*6.283; pts.push(sc((Re+35786)*Math.cos(t),(Re+35786)*Math.sin(t)));}
+  geoRing.geometry.setFromPoints(pts); geoRing.computeLineDistances(); }
+scene.add(geoRing); geoRing.visible=false;
+const sat=new THREE.Mesh(new THREE.SphereGeometry(0.05,16,12),new THREE.MeshBasicMaterial({color:0xffffff})); scene.add(sat);
+const apoM=new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8),new THREE.MeshBasicMaterial({color:0xff5a52})); scene.add(apoM);
+const periM=new THREE.Mesh(new THREE.SphereGeometry(0.035,10,8),new THREE.MeshBasicMaterial({color:0x39d353})); scene.add(periM);
+
+/* sun-sync schematic objects.
+   ssGroup holds ONLY the two orbit rings (it precesses). The Sun, its glow, and the
+   arriving-sunlight arrow live directly in the scene so they are positioned in world
+   space — driven by the SAME nodeA as the group, so planes and Sun stay locked. */
+const ssGroup=new THREE.Group(); scene.add(ssGroup); ssGroup.visible=false;
+const ssCirc=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x5fd0ff}));
+const ssEll =new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffcf4d}));
+ssGroup.add(ssCirc,ssEll);
+const ssSun=new THREE.Mesh(new THREE.SphereGeometry(0.22,20,14),new THREE.MeshBasicMaterial({color:0xffe07a}));
+ssSun.visible=false; scene.add(ssSun);
+const ssSunGlow=new THREE.Mesh(new THREE.SphereGeometry(0.4,20,14),
+  new THREE.MeshBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.28,blending:THREE.AdditiveBlending,depthWrite:false}));
+ssSunGlow.visible=false; scene.add(ssSunGlow);
+// arriving-sunlight vector: a set of parallel arrows pointing from the Sun toward Earth
+const ssRay=new THREE.ArrowHelper(new THREE.Vector3(-1,0,0),new THREE.Vector3(4,0,0),3.2,0xffe07a,0.5,0.32);
+ssRay.visible=false; scene.add(ssRay);
+function ssSunRay(){
+  const p=ssSun.position; ssSunGlow.position.copy(p);
+  const dir=p.clone().negate().normalize();           // from Sun toward Earth (origin)
+  ssRay.position.copy(p.clone().addScaledVector(dir,0.4));
+  ssRay.setDirection(dir);
+  ssSun.visible=ssSunGlow.visible=ssRay.visible=true;
+}
+let ssYear=0;
+// build the two orbit ring geometries in the group's local frame (they get rotated to precess)
+(function(){ const inc=98*Math.PI/180;
+  function ring(a,e){ const p=[]; for(let k=0;k<=160;k++){const nu=k/160*6.283; const r=a*(1-e*e)/(1+e*Math.cos(nu));
+    // perifocal in x-y, then tilt by inclination about x-axis
+    const x=r*Math.cos(nu), y=r*Math.sin(nu);
+    p.push(new THREE.Vector3(toU(x), toU(y)*Math.sin(inc), -toU(y)*Math.cos(inc))); } return p; }
+  ssCirc.geometry.setFromPoints(ring(Re+700,0.0));
+  ssEll.geometry.setFromPoints(ring(Re+700,0.35));
+})();
+
+/* ---- camera + input — SAME scheme as Modules 1 & 2 ----
+   left-drag = PAN · right/Shift/Alt-drag = ROTATE · wheel/pinch = ZOOM · arrows = ROTATE · R = reset */
+const canvas=$('c');
+let camR=3.0, camTh=0.7, camPh=1.05; const camTarget=new THREE.Vector3(0,0,0);
+let drag=0, lx=0, ly=0;
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('mousedown',e=>{ drag=(e.button===2||e.button===1||e.shiftKey||e.altKey)?2:1; lx=e.clientX; ly=e.clientY; e.preventDefault(); });
+addEventListener('mouseup',()=>drag=0);
+addEventListener('mousemove',e=>{ if(!drag) return; const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+  if(drag===2){ // ROTATE
+    camTh-=dx*0.005; camPh=Math.max(0.05,Math.min(Math.PI-0.05,camPh-dy*0.005));
+  } else { // PAN — slide pivot along camera right/up
+    const right=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0);
+    const up=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
+    const k=camR*0.0016; camTarget.addScaledVector(right,-dx*k); camTarget.addScaledVector(up,dy*k); } });
+canvas.addEventListener('wheel',e=>{ e.preventDefault();
+  const wheelMouse=e.deltaMode!==0||(e.deltaX===0&&Math.abs(e.deltaY)>=50);
+  if(e.ctrlKey||wheelMouse){ camR=Math.max(1.15,Math.min(200,camR*(1+(e.ctrlKey?e.deltaY*0.01:Math.sign(e.deltaY)*0.1)))); }
+  else{ const right=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
+    const k=camR*0.0012; camTarget.addScaledVector(right,e.deltaX*k); camTarget.addScaledVector(up,e.deltaY*k); } },{passive:false});
+// touch: 1 finger pan, 2 finger pinch-zoom
+let pinchD=0;
+canvas.addEventListener('touchstart',e=>{ if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+  else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);} },{passive:false});
+canvas.addEventListener('touchmove',e=>{ e.preventDefault();
+  if(e.touches.length===1&&drag){ const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly; lx=e.touches[0].clientX; ly=e.touches[0].clientY;
+    const right=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
+    const k=camR*0.0016; camTarget.addScaledVector(right,-dx*k); camTarget.addScaledVector(up,dy*k); }
+  else if(e.touches.length===2){ const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    if(pinchD)camR=Math.max(1.15,Math.min(200,camR*(pinchD/d))); pinchD=d; } },{passive:false});
+canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
+const keys={};
+addEventListener('keyup',e=>{keys[e.key]=false;});
+function resetView(){ camR=Math.max(2.2, viewFit()); camTh=0.7; camPh=1.05; camTarget.set(0,0,0); }
+function viewFit(){ const el=elems(); const rr=isFinite(el.apo)?(el.apo+Re):Math.max(el.r, Re+2000); return toU(rr)*2.4; }
+
+/* ------------------------------ interactions ------------------------------ */
+function placeCircular(){
+  const alt=+$('alt').value, r=Re+alt;
+  S=[r,0,0,Math.sqrt(MU/r)]; simT=0; dvSpent=0; impacted=false; escaped=false; trail=[[S[0],S[1]]]; hist=[];
+  running=true; paused=false; $('pauseBtn').textContent='⏸ pause'; $('banner').style.display='none';
+  resetView(); updateReadouts();
+}
+$('launch').onclick=placeCircular;
+
+function burn(dir){
+  if(impacted || mode==='sunsync') return;
+  const remaining=DV_BUDGET-dvSpent;
+  if(remaining<=0){ banner('⛽ Out of Δv! The tank is empty — no more maneuvers possible. (Refuel to keep experimenting.)','#5c1e1e','#ff9b52'); return; }
+  let req=+$('dv').value;
+  if(req>remaining){ req=remaining;   // spend only what's left
+    banner('⛽ Only '+Math.round(remaining)+' m/s of Δv left — burn truncated to empty the tank.','#4a3a12','#ffcf4d'); }
+  const dv=req/1000; const v=Math.hypot(S[2],S[3]), r=Math.hypot(S[0],S[1]);
+  let ux,uy;
+  if(dir==='pro'){ ux=S[2]/v; uy=S[3]/v; }
+  else if(dir==='retro'){ ux=-S[2]/v; uy=-S[3]/v; }
+  else if(dir==='out'){ ux=S[0]/r; uy=S[1]/r; }
+  else { ux=-S[0]/r; uy=-S[1]/r; }
+  if(dir==='retro' && dv>=v){ S[2]=0; S[3]=0; dvSpent+=v*1000; }
+  else { S[2]+=dv*ux; S[3]+=dv*uy; dvSpent+=req; }
+  escaped=false; updateReadouts();
+}
+$('refuel').onclick=()=>{ dvSpent=0; updateReadouts(); $('banner').style.display='none'; };
+
+function scenario(m){ mode=m;
+  const g=$('goal'); g.style.display='block';
+  geoRing.visible=(m==='gto');
+  ssGroup.visible=(m==='sunsync');
+  [trailLine,predLine,sat,apoM,periM].forEach(o=>o.visible=(m!=='sunsync'));
+  if(m!=='sunsync'){ ssSun.visible=ssSunGlow.visible=ssRay.visible=false; sunLight.position.set(6,3,6); }
+  if(m==='drag'){ $('alt').value=300; BCset(0.02); $('stitle').textContent='🌫 Drag decay & re-entry';
+    g.innerHTML='<b>Goal:</b> place a low circular orbit (try 250–400 km) and watch drag spiral it in. Note how long it survives and the impact speed (~7.8 km/s ≈ 15,000 mph). Try a lighter, higher-area object (raise area-to-mass) and watch it decay faster.'; }
+  else if(m==='gto'){ $('alt').value=400; BCset(0.005); $('stitle').textContent='🚀 GTO → GEO transfer';
+    g.innerHTML='<b>The two-step macro-maneuver.</b> Any big orbit-raising follows the same recipe: <b>(1) get to the desired apogee</b> — a prograde burn low (~2,400 m/s) stretches your orbit until apogee reaches the dashed GEO ring (this ellipse is the <b>Geo-Transfer Orbit</b>). <b>(2) change speed to match the circular rate there</b> — coast to apogee, then a second prograde burn (~1,460 m/s) speeds you up to the local circular speed, rounding the orbit off at GEO. Too little → still elliptical; too much → overshoot.'; }
+  else if(m==='keep'){ $('alt').value=350; BCset(0.05); $('stitle').textContent='🛰 Station-keeping: radial vs tangential';
+    g.innerHTML='<b>Goal:</b> this 350 km orbit is decaying. Try to hold altitude with small burns. Compare a <b>radial</b> burn with a <b>tangential prograde</b> burn of the same Δv — which actually raises the orbit? Watch apogee/perigee and your Δv spent.'; }
+  else if(m==='radial'){ $('alt').value=1500; BCset(0.005); $('stitle').textContent='🤔 The radial-burn paradox';
+    g.innerHTML='<b>Goal:</b> circular orbit at 1,500 km. Set a burn of about <b>2,000 m/s</b> and press <b>⇱ radial out</b>. Pushing “up” doesn’t raise you — it drops the opposite side (perigee) below the surface, and half an orbit later the satellite <b>crashes</b>. A radial burn barely adds energy; it just makes the orbit eccentric.'; }
+  else if(m==='escape'){ $('alt').value=1500; BCset(0.005); $('stitle').textContent='💫 Escape → unbound (hyperbola)';
+    g.innerHTML='<b>Goal:</b> break free. At 1,500 km, circular speed ≈ 7.1 km/s and <b>escape speed ≈ 10.1 km/s</b> (from Earth’s surface it’s the famous 11.2 km/s). Escaping <b>prograde</b> needs only ~2,950 m/s; escaping <b>radially</b> needs the full ~7,100 m/s. When speed passes escape, eccentricity crosses <b>1.0</b> and the ellipse opens into an <b>unbound hyperbola</b> — the same geometry as an object <b>scattering</b> past a planet.'; }
+  else if(m==='infall'){ $('alt').value=20000; BCset(0.005); $('stitle').textContent='⬇ Radial infall';
+    g.innerHTML='<b>Goal:</b> start far out at 20,000 km. Set a big <b>retrograde</b> burn equal to your orbital speed (~3,900 m/s) to cancel the sideways motion. With no tangential speed, there’s nothing to “keep missing” Earth with — the object <b>falls radially straight in</b>, accelerating all the way to impact.'; }
+  else if(m==='sunsync'){ $('stitle').textContent='☀ Sun-synchronous (circular & elliptical)';
+    g.innerHTML='<b>Goal:</b> Earth’s equatorial <b>bulge (J2)</b> torques a tilted orbit, slowly <b>swiveling its plane</b>. Choose inclination ~98° and that swivel is <b>0.9856°/day = one turn per year</b>, so the plane keeps the same angle to the Sun. Two sun-sync orbits are shown — a <b>circular</b> one (cyan) and an <b>elliptical</b> one (gold); both planes precess together to track the Sun. This schematic runs on its own; the burn controls don’t apply.';
+    running=false; ssYear=0; resetView(); camR=6; return; }
+  placeCircular();
+}
+function BCset(v){ $('bc').value=v; BC=v; $('bcV').textContent=v; bcLabel(); }
+function bcLabel(){ const v=+$('bc').value;
+  $('bcLabel').textContent = v<0.03?'compact satellite' : v<0.2?'typical spacecraft' : v<0.8?'high-area / light' : 'HAMR debris (foil, bag)'; }
+$('bc').addEventListener('input',()=>{ BC=+$('bc').value; $('bcV').textContent=BC; bcLabel(); });
+$('alt').addEventListener('input',()=>$('altV').textContent=+$('alt').value);
+$('dv').addEventListener('input',()=>$('dvV').textContent=+$('dv').value);
+
+/* --------------------------------- time ----------------------------------- */
+const WARPS=[1,6,30,60,300,1800,7200,43200,172800];
+function warpUp(){ let i=WARPS.indexOf(warp); if(i<WARPS.length-1) warp=WARPS[++i]; showWarp(); }
+function warpDown(){ let i=WARPS.indexOf(warp); if(i>0) warp=WARPS[--i]; showWarp(); }
+function showWarp(){ $('warpV').textContent = warp<3600? warp+'×' : (warp/3600).toFixed(0)+'h/s'; }
+function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶ resume':'⏸ pause'; }
+addEventListener('keydown',e=>{ keys[e.key]=true;
+  if(e.key===','||e.key==='<') warpDown();
+  else if(e.key==='.'||e.key==='>') warpUp();
+  else if(e.key===' '){ togglePause(); e.preventDefault(); }
+  else if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey) resetView();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+});
+
+/* ------------------------------- readouts --------------------------------- */
+function fmtT(s){ if(s<3600) return (s/60).toFixed(1)+' min'; if(s<86400) return (s/3600).toFixed(1)+' hr'; return (s/86400).toFixed(1)+' days'; }
+function banner(txt,bg,fg){ const b=$('banner'); b.innerHTML=txt; b.style.display='block'; b.style.background=bg; b.style.color=fg||'#fff'; b.style.border='1px solid '+(fg||'#fff'); }
+function updateReadouts(){
+  const el=elems();
+  $('rAlt').textContent=Math.round(el.alt).toLocaleString()+' km';
+  $('rSpd').textContent=el.speed.toFixed(3)+' km/s';
+  $('rEsc').textContent=el.vesc.toFixed(3)+' km/s';
+  $('rApo').textContent=isFinite(el.apo)?Math.round(el.apo).toLocaleString()+' km':'— (unbound)';
+  $('rPeri').textContent=isFinite(el.peri)?Math.round(el.peri).toLocaleString()+' km':'—';
+  $('rPer').textContent=isFinite(el.P)?fmtT(el.P):'— (unbound)';
+  $('rEcc').textContent=(isFinite(el.e)?el.e.toFixed(4):'—')+((isFinite(el.e)&&el.e>=1)?'  (unbound)':'');
+  $('rT').textContent=fmtT(simT);
+  $('rSpd').style.color=(el.speed>=el.vesc)?'#c9a0ff':'#fff';
+  // Δv gas gauge
+  $('rDv').textContent=Math.round(dvSpent).toLocaleString();
+  $('dvBudget').textContent=DV_BUDGET.toLocaleString();
+  const frac=Math.max(0,Math.min(1,1-dvSpent/DV_BUDGET)), pct=Math.round(frac*100);
+  const col = frac>0.5?'#39d353' : frac>0.2?'#ffcf4d' : '#ff5a52';
+  $('gaugeFill').style.width=(frac*100)+'%'; $('gaugeFill').style.background=col;
+  $('gaugeTxt').textContent = frac<=0? 'EMPTY' : pct+'% fuel left';
+  // dark text over the bright fill when it covers the label, light text when low
+  $('gaugeTxt').style.color = frac>0.45?'#03210c':'#e6f0ff';
+  if(mode==='gto' && isFinite(el.e) && el.e<0.02 && Math.abs(el.apo-35786)<1500)
+    banner('✓ Circular GEO reached!','#1e5c33','#39d353');
+  else if(!impacted && isFinite(el.e) && el.e>=1 && !escaped){
+    escaped=true; banner('💫 Unbound! e = '+el.e.toFixed(2)+' ≥ 1 — open (hyperbolic) escape trajectory','#3a2a5c','#c9a0ff'); }
+}
+
+/* ----------------------------- orbit geometry ----------------------------- */
+function updateOrbitGeometry(){
+  // trail
+  if(trail.length>1) trailLine.geometry.setFromPoints(trail.map(p=>sc(p[0],p[1])));
+  const el=elems();
+  // predicted ellipse (only when bound)
+  if(isFinite(el.a) && el.a>0 && el.e<1){
+    predLine.visible=true;
+    const ph=el.e>1e-6?[el.ex/el.e,el.ey/el.e]:[1,0];
+    const hsign=Math.sign(S[0]*S[3]-S[1]*S[2])||1;
+    const qh=[-hsign*ph[1], hsign*ph[0]];
+    const pts=[]; const p=el.a*(1-el.e*el.e);
+    for(let k=0;k<=200;k++){ const nu=k/200*6.283; const r=p/(1+el.e*Math.cos(nu));
+      const x=r*(Math.cos(nu)*ph[0]+Math.sin(nu)*qh[0]);
+      const y=r*(Math.cos(nu)*ph[1]+Math.sin(nu)*qh[1]);
+      pts.push(sc(x,y)); }
+    predLine.geometry.setFromPoints(pts);
+    apoM.visible=periM.visible=true;
+    const rp=el.a*(1-el.e), ra=el.a*(1+el.e);
+    periM.position.copy(sc(rp*ph[0],rp*ph[1]));
+    apoM.position.copy(sc(-ra*ph[0],-ra*ph[1]));
+  } else { predLine.visible=false; apoM.visible=periM.visible=false; }
+  sat.position.copy(sc(S[0],S[1]));
+}
+
+function resize(){ const st=$('stage'),w=st.clientWidth,h=st.clientHeight; r3.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); }
+addEventListener('resize',resize);
+
+/* ------------------------------ altitude plot ----------------------------- */
+function drawPlot(){
+  const W=pcv.width=pcv.clientWidth*devicePixelRatio, H=pcv.height=pcv.clientHeight*devicePixelRatio;
+  pctx.clearRect(0,0,W,H); pctx.fillStyle='#00121f'; pctx.fillRect(0,0,W,H);
+  if(hist.length<2){ $('plotY0').textContent='—'; $('plotX').textContent='—'; return; }
+  let lo=Infinity, hi=-Infinity; const t0=hist[0].t, t1=hist[hist.length-1].t;
+  for(const p of hist){ const vals=[p.alt,p.peri,p.apo].filter(isFinite); for(const v of vals){ lo=Math.min(lo,v); hi=Math.max(hi,v); } }
+  if(!isFinite(lo)) return; const pad=(hi-lo)*0.08||10; lo=Math.max(0,lo-pad); hi=hi+pad;
+  const m=6*devicePixelRatio, X=t=>m+(t-t0)/((t1-t0)||1)*(W-2*m), Y=a=>H-m-(a-lo)/((hi-lo)||1)*(H-2*m);
+  if(lo<=0){ pctx.strokeStyle='#4d8fd0'; pctx.setLineDash([3,3]); pctx.beginPath(); pctx.moveTo(m,Y(0)); pctx.lineTo(W-m,Y(0)); pctx.stroke(); pctx.setLineDash([]); }
+  const line=(key,color)=>{ pctx.strokeStyle=color; pctx.lineWidth=1.6*devicePixelRatio; pctx.beginPath(); let st=false;
+    for(const p of hist){ const y=p[key]; if(!isFinite(y)) continue; const px=X(p.t),py=Y(y); if(!st){pctx.moveTo(px,py);st=true;} else pctx.lineTo(px,py);} pctx.stroke(); };
+  line('apo','#ff5a52'); line('peri','#39d353'); line('alt','#5fd0ff');
+  $('plotY0').textContent=Math.round(lo).toLocaleString()+'–'+Math.round(hi).toLocaleString()+' km';
+  $('plotX').textContent='0 → '+fmtT(t1-t0);
+}
+
+/* --------------------------------- loop ----------------------------------- */
+let lastReadout=0, lastFrame=performance.now();
+function loop(ts){
+  const wall=Math.min((ts-lastFrame)/1000,0.05); lastFrame=ts;
+  // arrow keys rotate the view (same as Modules 1 & 2)
+  const rot=2.2*wall;
+  if(keys['ArrowLeft'])camTh+=rot; if(keys['ArrowRight'])camTh-=rot;
+  if(keys['ArrowUp'])camPh=Math.max(0.05,camPh-rot); if(keys['ArrowDown'])camPh=Math.min(Math.PI-0.05,camPh+rot);
+
+  if(mode==='sunsync'){
+    if(!paused){ ssYear=(ssYear + (warp/172800)*0.02)%1; }
+    const nodeA=ssYear*2*Math.PI;                      // one turn per year
+    // The Sun's direction advances with the year AND the orbit planes precess to match it,
+    // so the plane keeps a FIXED angle to the Sun. Both are driven by the same nodeA.
+    ssGroup.rotation.y=nodeA;                          // planes swivel together
+    const sr=6.5, sx=Math.cos(nodeA)*sr, sz=-Math.sin(nodeA)*sr;
+    ssSun.position.set(sx,0,sz);                       // Sun tracks the same angle (NOT double-rotated)
+    // sunlight direction & Earth shading follow the Sun
+    sunLight.position.set(sx,0,sz);
+    ssSunRay();                                        // draw arriving-sunlight vector
+    earth.rotation.y+=0.02;
+  } else if(running && !paused && !impacted){
+    // TRUE time-rate: advance (warp × real elapsed) seconds of simulation this frame.
+    // ',' / '.' change warp, so they directly change how fast time flows.
+    const simDelta=warp*wall;                          // sim-seconds to integrate this frame
+    const dt=Math.min(4, Math.max(0.5, simDelta/1200));// adaptive step, capped for stability
+    let steps=Math.min(4000, Math.max(1, Math.round(simDelta/dt)));
+    for(let k=0;k<steps;k++){
+      S=rk4(S,dt); simT+=dt;
+      const r=Math.hypot(S[0],S[1]), h=r-Re;
+      if(k%4===0){ trail.push([S[0],S[1]]); if(trail.length>2400) trail.shift(); }
+      if(h<=60){ impacted=true; const el=elems();
+        banner('💥 Re-entry! impact speed '+el.speed.toFixed(1)+' km/s (~'+Math.round(el.speed*2237).toLocaleString()+' mph)','#5c1e1e','#ff5a52');
+        running=false; break; }
+      if(r>UNIT*90){ running=false; banner('💫 Escaped — the object has left the neighborhood, never to return.','#3a2a5c','#c9a0ff'); break; } // far unbound: stop
+    }
+    updateOrbitGeometry();
+    earth.rotation.y+=(2*Math.PI/86164)*simDelta;      // sidereal spin at the same time rate
+  }
+  if(ts-lastReadout>120){
+    if(mode!=='sunsync'){ updateReadouts();
+      if(running||impacted){ const el=elems(); hist.push({t:simT,alt:el.alt,apo:el.apo,peri:el.peri}); if(hist.length>900) hist.shift(); }
+      drawPlot(); }
+    lastReadout=ts;
+  }
+  // camera
+  cam.position.set(camTarget.x+camR*Math.sin(camPh)*Math.cos(camTh),
+                   camTarget.y+camR*Math.cos(camPh),
+                   camTarget.z+camR*Math.sin(camPh)*Math.sin(camTh));
+  cam.lookAt(camTarget);
+  r3.render(scene,cam); requestAnimationFrame(loop);
+}
+resize(); showWarp(); bcLabel(); scenario('drag'); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

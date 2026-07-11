@@ -1,0 +1,176 @@
+/* Worksheet 3a content: "Naming Orbits & TLEs".
+   Same data-driven shape as worksheets 1 & 2, plus two optional fields the
+   3a renderer understands: `elements` (the illustration-linked definitions
+   table, NO symbols) and per-task `body` (extra HTML such as a sample TLE).
+   The interactive tool is tut3a.html: six element sliders + live ellipse +
+   fixed stars + period/apogee/perigee readouts + "TLE of your orbit" panel +
+   clickable real orbits (ISS, GPS, GEO, Molniya, Tundra). */
+const WORKSHEET = {
+  intro: [
+    'In Modules 1 and 2 you built a feel for how orbits move. Now we give every orbit a <b>name tag</b>: a short list of numbers that pins down its exact size, shape, and orientation in space — so anyone, anywhere, can point an antenna or a telescope at it.',
+    'The idealized, perfectly-repeating ellipse is called a <b>Keplerian orbit</b> — the path a satellite would follow if Earth were a perfect point of gravity and nothing else touched it. It takes exactly <b>six numbers</b> to describe one. Open the orbit tool and drag each slider: watch which numbers change the <i>shape</i> of the ellipse and which only <i>turn it</i> in space.',
+    'At the end we connect those six numbers to the <b>Two-Line Element set (TLE)</b> — the compact text format the U.S. Space Force publishes for every tracked object — and see why a real orbit slowly <i>drifts</i> away from its ideal Keplerian values over time.',
+  ],
+
+  // The illustration-linked definitions table (no Greek symbols, by request).
+  elements: {
+    title: 'The six numbers that name any orbit',
+    blurb: 'Every one of these is a slider in the orbit tool. The first two set the <b>shape</b> of the ellipse; the next three <b>orient</b> that ellipse in space; the last says <b>where the satellite is</b> right now. Drag each and watch the picture.',
+    rows: [
+      { name:'Size <span style="color:#5a6270">(semi-major axis)</span>',
+        meaning:'How big the orbit is — the average of its closest and farthest distances. Size <b>alone</b> sets the orbital period.',
+        tool:'Slider 1. Bigger → longer period, higher apogee &amp; perigee.' },
+      { name:'Shape <span style="color:#5a6270">(eccentricity)</span>',
+        meaning:'How stretched the ellipse is. 0 = a perfect circle; closer to 1 = a long, thin cigar.',
+        tool:'Slider 2. Watch the circle stretch into an ellipse.' },
+      { name:'Tilt <span style="color:#5a6270">(inclination)</span>',
+        meaning:'The angle of the orbit plane relative to the equator. 0° hugs the equator; 90° goes over the poles.',
+        tool:'Slider 3. The ring tips away from the blue equatorial plane.' },
+      { name:'Swivel <span style="color:#5a6270">(right ascension of the ascending node, “RAAN”)</span>',
+        meaning:'Which way the tilted plane is turned, measured against the fixed stars. Think of spinning a tilted hula-hoop around the vertical axis.',
+        tool:'Slider 4a. The plane swivels; the background stars stay put so you can see it.' },
+      { name:'Twist <span style="color:#5a6270">(argument of perigee)</span>',
+        meaning:'Within that plane, which way the ellipse points — i.e., where the low point (perigee) sits. This is “the angle everyone forgets.”',
+        tool:'Slider 4b. The whole ellipse rotates inside its plane; the red/green low &amp; high points move.' },
+      { name:'Position <span style="color:#5a6270">(true / mean anomaly)</span>',
+        meaning:'Where along the ellipse the satellite is at this instant. This is the only one that changes minute to minute.',
+        tool:'Slider 5, or tick “auto-move” to watch the satellite fly.' },
+    ],
+    foot: 'Two more words you’ll hear constantly: <b>perigee</b> = closest approach, <b>apogee</b> = farthest point. And mind the difference between distance <b>from Earth’s center</b> and <b>altitude above the surface</b> — they differ by one Earth radius (~6,371 km). The tool shows both.',
+  },
+
+  parts: [
+    { title:'PART A · Exercise the six elements', blurb:'Drag one slider at a time and watch the readouts. The goal is to feel which numbers do what.', tasks:['a1','a2','a3','a4'] },
+    { title:'PART B · What stays fixed? (invariants)', blurb:'Some elements reshape the orbit; others only turn it in space. This distinction is the heart of the module.', tasks:['b1','b2'] },
+    { title:'PART C · Reading a TLE', blurb:'Connect your six sliders to the text format the Space Force actually publishes.', tasks:['c1','c2','c3'] },
+    { title:'PART D · Real orbits & why they’re chosen', blurb:'Load real satellites and discover why their orbits look the way they do.', tasks:['d1','d2','d3'] },
+  ],
+
+  summary: [
+    'A <b>Keplerian orbit</b> is the idealized, unperturbed ellipse — what you’d get with a perfect point-mass Earth and nothing else acting on the satellite.',
+    'It takes <b>six numbers</b>: <b>size</b> &amp; <b>shape</b> set the ellipse; <b>tilt</b>, <b>swivel</b>, and <b>twist</b> orient it in space; <b>position</b> says where the satellite is now.',
+    '<b>Size alone sets the period.</b> Turning the orbit (swivel = RAAN, twist = argument of perigee) does <i>not</i> change period, apogee, or perigee — those are invariant under re-orientation.',
+    '<b>Perigee</b> = closest, <b>apogee</b> = farthest. Distance <b>from Earth’s center</b> and <b>altitude above the surface</b> differ by one Earth radius (~6,371 km).',
+    'A <b>TLE (two-line element set)</b> is just those six numbers written in a fixed-column text format, plus a drag term and an epoch (the timestamp the elements are valid for).',
+    'In a TLE, <b>mean motion</b> (orbits per day) encodes the size/period, and <b>mean anomaly</b> is the time-averaged position — both are stand-ins for the sliders you dragged.',
+    '<b>Molniya orbits</b> (highly eccentric, ~12-hour, 63.4° inclination, perigee in the south) let a satellite <i>loiter over high northern latitudes</i> for hours — coverage a GEO satellite over the equator can’t give. <b>Tundra</b> is the 24-hour cousin.',
+    'The <b>63.4° “magic” inclination</b> freezes the argument of perigee, so apogee stays parked over the same hemisphere instead of drifting.',
+    'An orbit is set by Earth’s <b>mass/gravity</b> and the satellite’s velocity in the fixed-star frame — <b>not</b> by Earth’s spin. If Earth stopped rotating, the orbits wouldn’t change (only our ground-relative view of them would).',
+    'A TLE describes the <b>ideal (Keplerian)</b> orbit at one epoch. Real orbits drift off it because of perturbations — the subject of the next module.',
+  ],
+
+  resources: [
+    { t:'Two-line element set (TLE) — Wikipedia', u:'https://en.wikipedia.org/wiki/Two-line_element_set' },
+    { t:'Orbital elements — Wikipedia', u:'https://en.wikipedia.org/wiki/Orbital_elements' },
+    { t:'Molniya orbit — Wikipedia', u:'https://en.wikipedia.org/wiki/Molniya_orbit' },
+    { t:'Tundra orbit — Wikipedia', u:'https://en.wikipedia.org/wiki/Tundra_orbit' },
+    { t:'CelesTrak — live TLEs for tracked satellites', u:'https://celestrak.org/NORAD/elements/' },
+    { t:'Space-Track.org — the official U.S. catalog', u:'https://www.space-track.org/' },
+  ],
+
+  tasks: [
+    // ---- PART A: exercise the elements ----
+    { id:'a1', title:'Size sets the period',
+      do:'Reset the tool. Drag only the <b>size (semi-major axis)</b> slider from small to large and watch the <b>period</b> readout.',
+      observe:'a bigger orbit has a longer period, and both apogee and perigee climb. Size is the one knob that changes how long an orbit takes.',
+      quiz:{ q:'Which single element determines the orbital period?',
+        opts:['Inclination','Size (semi-major axis)','RAAN','Argument of perigee'],
+        a:1, why:'Correct — period depends only on the semi-major axis (the orbit’s size). Nothing else changes it.',
+        feedback:['Tilt changes orientation, not timing.','','Swivel turns the plane; the period is unchanged.','Twist rotates the ellipse in place; period is unchanged.'] } },
+    { id:'a2', title:'Shape: circle to cigar',
+      do:'Set size to a mid value, then drag <b>shape (eccentricity)</b> from 0 up toward 0.7. Watch apogee and perigee split apart.',
+      observe:'the circle stretches into an ellipse: perigee drops closer to Earth while apogee balloons outward — but the period doesn’t change, because the size (average) is fixed.',
+      quiz:{ q:'As you increase eccentricity while holding size fixed, what happens?',
+        opts:['The orbit stays circular','Perigee drops and apogee rises, but the period is unchanged','The period gets shorter','The satellite escapes Earth'],
+        a:1, why:'Correct — eccentricity splits the low and high points apart. Period stays put because it depends on size, not shape.',
+        feedback:['Only e = 0 is circular; you’re stretching it.','','Period depends on size, not shape — it’s unchanged.','It stays bound for any e below 1.'] } },
+    { id:'a3', title:'The two orientation angles (against the stars)',
+      do:'Give the orbit some tilt, then sweep <b>RAAN (swivel)</b> and, separately, <b>argument of perigee (twist)</b>. Watch the fixed background stars.',
+      observe:'RAAN swivels the whole tilted plane around the vertical; argument of perigee rotates the ellipse <i>within</i> that plane, moving the red (perigee) and green (apogee) markers. The stars stay fixed so both rotations are visible.',
+      quiz:{ q:'What does the “argument of perigee” (twist) control?',
+        opts:['How big the orbit is','Which direction the ellipse points within its plane (where perigee sits)','The satellite’s speed','How tilted the plane is vs. the equator'],
+        a:1, why:'Correct — argument of perigee is the in-plane twist that decides where the low point (perigee) lies. It’s the element people most often forget.',
+        feedback:['That’s size.','','Speed follows from size and where you are on the ellipse, not from this angle.','That’s inclination (tilt).'] } },
+
+    { id:'a4', title:'Thought experiment: what if Earth stopped spinning?',
+      do:'Notice that the orbit and its elements are all defined against the <b>fixed stars</b>, not against the ground. The tool even lets Earth rotate underneath a completely unchanging orbit. Now imagine Earth’s spin suddenly froze.',
+      observe:'the orbit doesn’t care. What holds a satellite up is Earth’s <b>mass and gravity</b>, which don’t change if the planet stops rotating. The six elements, the period, apogee, and perigee would all be exactly the same.',
+      quiz:{ q:'If the Earth suddenly stopped rotating on its axis, how would the orbits of satellites already in space change?',
+        opts:['They would all fall out of the sky',
+              'They wouldn’t change at all — orbits depend on Earth’s mass and gravity, not its spin',
+              'Only geostationary satellites would be affected — they would drift east',
+              'Every orbit would slow down to match the stopped Earth'],
+        a:1, why:'Correct — a satellite’s orbit is set by Earth’s mass (gravity) and the satellite’s own velocity, both measured against the fixed stars. Earth’s rotation is irrelevant to the orbit itself. (What WOULD change is our ground-based description: a “geostationary” satellite would no longer hover over one spot, because the spot beneath it stopped moving — but the satellite keeps circling exactly as before.)',
+        feedback:['Gravity is unchanged, so nothing falls — the orbits are held by Earth’s mass, not its spin.','',
+                  'The GEO satellite keeps orbiting unchanged; what changes is only the ground beneath it, so it no longer appears to hover. Its actual orbit is untouched.',
+                  'Orbital speed is set by gravity and altitude, not by Earth’s rotation rate — it wouldn’t change.'] } },
+
+    // ---- PART B: invariants (the question the user specifically asked for) ----
+    { id:'b1', title:'Turning the orbit vs. reshaping it',
+      do:'Watch the period / apogee / perigee readouts. Now change <b>RAAN</b> and <b>argument of perigee</b> across their full range.',
+      observe:'the ellipse rotates and swivels in space, but the period, apogee, and perigee numbers do not budge. Re-orienting an orbit doesn’t change its size or shape.',
+      quiz:{ q:'You change RAAN and argument of perigee through their whole range. Which readouts stay fixed?',
+        opts:['None — everything changes','Period, apogee, and perigee all stay fixed','Only the period','Only apogee'],
+        a:1, why:'Exactly — RAAN and argument of perigee only re-orient the orbit. Period, apogee, and perigee are invariant under them; they’re set by size and shape alone.',
+        feedback:['Watch the readouts — they don’t move as you swivel/twist.','','Apogee and perigee are also unchanged — they depend on size and shape.','Period and perigee are unchanged too.'] } },
+    { id:'b2', title:'Which elements DO change the readouts?',
+      do:'Confirm the flip side: change <b>size</b> and <b>shape</b> and watch period / apogee / perigee respond.',
+      observe:'only size and shape move those three numbers. Tilt, swivel, twist, and position leave them alone.',
+      quiz:{ q:'Which pair of elements actually changes period, apogee, and perigee?',
+        opts:['RAAN and inclination','Size and shape (semi-major axis and eccentricity)','Argument of perigee and position','Inclination and RAAN'],
+        a:1, why:'Correct — size sets the period and the average distance; shape splits that into apogee and perigee. The other four only orient or place the satellite.',
+        feedback:['RAAN and inclination only orient the orbit.','','Those place/orient the satellite; they don’t resize the ellipse.','Those are both orientation angles.'] } },
+
+    // ---- PART C: TLEs ----
+    { id:'c1', title:'Your orbit as a TLE',
+      do:'Open the <b>“TLE of your orbit”</b> panel. Change a slider and watch the two lines of text update. Match each field to its slider using the map below the TLE.',
+      body:'<p>Here is a real TLE for the International Space Station (the format the Space Force publishes):</p>'+
+           '<pre class="tle">ISS (ZARYA)\n'+
+           '1 25544U 98067A   24192.51782528  .00016717  00000-0  30777-3 0  9993\n'+
+           '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.49309239 4561</pre>'+
+           '<p style="font-size:15px;color:#5a6270">On line 2, in order: <b>51.6416</b> = inclination, <b>247.4627</b> = RAAN, <b>0006703</b> = eccentricity (a leading “0.” is implied → 0.0006703), <b>130.5360</b> = argument of perigee, <b>325.0288</b> = mean anomaly (position), <b>15.4930…</b> = mean motion in orbits per day. Line 1 carries the epoch (when these numbers are valid) and a drag term.</p>',
+      quiz:{ q:'In a TLE, the “mean motion” field is 15.49 orbits per day. What does that tell you?',
+        opts:['The orbit is very large (high, slow)','The orbit is low and fast — a LEO satellite','The eccentricity','The inclination'],
+        a:1, why:'Correct — ~15.5 orbits per day means a ~93-minute period, i.e. a low, fast LEO orbit like the ISS. Mean motion is just the size/period expressed as revs per day.',
+        feedback:['High orbits go slowly — about 1 orbit/day at GEO, not 15.','','','Mean motion says nothing about tilt.'] } },
+    { id:'c2', title:'Same orbit, two ways of saying position',
+      do:'Change only the <b>position</b> slider and watch the TLE. Note that the tool shows “true anomaly” but the TLE prints “mean anomaly.”',
+      observe:'both describe where the satellite is on the ellipse; mean anomaly is the time-averaged version that ground software prefers because it advances at a steady rate.',
+      quiz:{ q:'Why does a TLE list “mean motion” and “mean anomaly” instead of a period and a plain angle?',
+        opts:['To hide the real orbit','Because those “mean” quantities advance at a steady, predictable rate, which makes propagating the position forward in time easy','They mean the same as speed','It’s an arbitrary tradition with no reason'],
+        a:1, why:'Correct — the “mean” quantities change linearly with time, so predicting a future position is simple arithmetic. That’s exactly what a tracking station needs.',
+        feedback:['TLEs are public; nothing is hidden.','','Speed varies around an ellipse; these don’t represent speed.','There’s a real reason — steady, linear time behavior.'] } },
+
+    { id:'c3', title:'Two satellites, same orbit — spot the difference',
+      do:'Picture two satellites flying the exact same orbit (same ring in space), but spaced apart — one chasing the other, like two beads on the same wire. Compare what their two TLEs would look like.',
+      observe:'five of the six element fields are identical (same size, shape, tilt, swivel, twist — it’s literally the same ellipse). Only the position field differs.',
+      quiz:{ q:'Two satellites share the identical orbit but sit at different points along it. Which TLE field differs between them?',
+        opts:['Inclination','Mean anomaly (the position along the orbit)','Mean motion','Eccentricity'],
+        a:1, why:'Correct — same orbit means identical size, shape, tilt, swivel, and twist, so only the mean anomaly (where each one is along the ring) differs. This is exactly how you tell apart satellites in a formation or a Starlink train.',
+        feedback:['Same orbit ⇒ same inclination.','','Same orbit ⇒ same size ⇒ same mean motion (period).','Same orbit ⇒ same shape ⇒ same eccentricity.'] } },
+
+    // ---- PART D: real orbits, incl. the Molniya trial-and-error challenge ----
+    { id:'d1', title:'Load real orbits and compare',
+      do:'In the tool’s <b>“Load a real orbit”</b> list, click <b>ISS</b>, then <b>GPS</b>, then <b>GEO</b>. Read each one’s period and shape.',
+      observe:'ISS is a low, fast, nearly circular LEO (~92 min); GPS is a circular half-day MEO (~12 h, 2 orbits/day); GEO is equatorial and takes exactly one day, so it hangs over one longitude.',
+      quiz:{ q:'GPS satellites orbit twice a day in a nearly circular orbit. Compared to GEO, GPS is…',
+        opts:['Higher and slower','Lower and faster (about half GEO’s altitude, ~12-hour period)','At the same altitude','Below the ISS'],
+        a:1, why:'Correct — GPS sits around 20,200 km with a ~12-hour period, well below the ~35,800 km GEO belt, so it moves faster.',
+        feedback:['GPS is lower than GEO, so it’s faster.','','GEO is roughly twice as high as GPS.','GPS is far above the ISS (~20,000 km vs ~420 km).'] } },
+    { id:'d2', title:'Invent the Molniya orbit by trial and error',
+      do:'Reset the sliders. Now make a Soviet-style communications orbit for high northern latitudes: (1) drag the <b>size</b> slider until the <b>period</b> reads about <b>12 hours</b>; (2) crank <b>shape (eccentricity)</b> up high (~0.7); (3) set <b>argument of perigee (twist)</b> to <b>270°</b> so perigee is in the south and apogee swings over the north; (4) set inclination to <b>63.4°</b>. Then click the <b>Molniya</b> preset and compare your ghost ellipse to it.',
+      observe:'a 12-hour period needs a semi-major axis of ~26,600 km. With high eccentricity, apogee reaches ~40,000 km over the northern hemisphere while perigee skims low in the south. By Kepler’s 2nd law the satellite crawls near apogee — so it loiters over the north for roughly 8 of its 12 hours.',
+      quiz:{ q:'Roughly what orbital period did you have to dial in for a Molniya orbit?',
+        opts:['About 90 minutes','About 12 hours','About 24 hours','About 3 days'],
+        a:1, why:'Correct — a Molniya is a ~12-hour (half-day) orbit, semi-major axis ≈ 26,600 km. That timing puts apogee back over the same region twice a day. (Its 24-hour cousin is the Tundra orbit.)',
+        feedback:['90 min is a low LEO like the ISS, far too fast.','','24 hours is the Tundra orbit — Molniya is half that.','Far too long — a 12-hour half-day period is the target.'] } },
+    { id:'d3', title:'Why the Soviets loved Molniya (and what Tundra adds)',
+      do:'With Molniya loaded, read the call-out in the tool. Then click <b>Tundra</b> and compare.',
+      observe:'a GEO satellite sits over the equator and barely rises above the horizon as seen from far-northern Russia — poor coverage. A Molniya’s long dwell at high-latitude apogee fixes that; a trio gives 24/7 coverage. Tundra is the 24-hour version with milder eccentricity.',
+      quiz:{ q:'Why did the USSR use Molniya orbits instead of geostationary ones for northern communications?',
+        opts:['They were cheaper to launch','A geostationary satellite sits over the equator and stays low on the horizon from high latitudes; a Molniya lingers high over the north for hours',
+              'Molniya orbits use no fuel','Geostationary orbits don’t exist that far north — the Earth blocks them entirely'],
+        a:1, why:'Correct — from far-northern latitudes a GEO bird barely clears the horizon. A highly eccentric Molniya loiters near apogee high over the north, giving hours of good, high-elevation coverage per pass. The 63.4° inclination keeps apogee parked there.',
+        feedback:['Launch cost isn’t the reason — it’s coverage geometry.','','Every orbit needs some station-keeping; that’s not the driver.','GEO satellites are visible from the north, just too low on the horizon to be useful.'] } },
+  ],
+};

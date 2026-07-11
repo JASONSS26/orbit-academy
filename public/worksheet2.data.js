@@ -1,5 +1,10 @@
 /* Worksheet 2 — Angular Rates & Geosynchronous Orbits. Same schema as Worksheet 1. */
 const WORKSHEET = {
+  intro: [
+    'In Module 1 you saw that an orbit’s size and shape come from how fast an object is going. Now we look at <b>how fast a satellite appears to move across the sky</b> — its <i>angular rate</i> — which depends on BOTH its orbital speed and its distance from us.',
+    'That leads to one very special orbit: the <b>geostationary belt</b>, ~35,800 km over the equator, where a satellite circles Earth in exactly one day and so appears to <b>hover over a fixed spot</b>. This is where most TV, weather, and relay satellites live — and it’s crowded, finite real-estate.',
+    'You’ll compare the view from a ground telescope (where the sky drifts past) with a satellite’s own view, learn why some things streak in a photo and others don’t, and meet the vocabulary of angles (degrees, arcminutes, arcseconds). Do each task in the simulator, then answer its check question.',
+  ],
   parts: [
     { title: 'PART A · The GEO belt',                      tasks: ['a2','a3','a4'] },
     { title: 'PART B · Geostationary vs. geosynchronous',  tasks: ['b1','b2','b3'] },

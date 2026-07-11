@@ -15,10 +15,11 @@ body-size guard, and prints `ALL SUITES PASSED ✅` on success (non-zero exit on
 
 ## What's covered
 
-**`test/functional.test.js` (18 checks)** — every page loads; register → 6-module course →
-t1 unlocked/t2 locked → complete 11 worksheet tasks → t1 passes → t2 unlocks → all tasks
-recorded → progress persists on resume → partial progress saved → instructor roster lists
-users and pass state → logout+login round-trip.
+**`test/functional.test.js` (28 checks)** — every page loads (incl. Modules 3 & 4 tools and
+worksheets); register → 6-module course → t1 unlocked/t2 locked → complete 11 worksheet tasks →
+t1 passes → t2 unlocks → all tasks recorded → progress persists on resume → t3a locked before
+t2 / unlocked after → partial progress saved → instructor roster lists users and pass state →
+logout+login round-trip.
 
 **`test/security.test.js` (22 checks)** — path traversal (source never served); all protected
 endpoints reject no-session; first-user-instructor / no self-assigned role / student denied
@@ -31,4 +32,4 @@ malformed-JSON rejection; logout invalidates the session.
 ## Notes
 - Isolated via the `ORBIT_DATA` env var (server reads its data path from it).
 - Default test port is 8099 (override with `PORT=...`).
-- Latest result: **v1.0 — 18 + 22 + DoS, all passing.**
+- Latest result: **v1.2 — 28 functional + 22 security + DoS, all passing.**

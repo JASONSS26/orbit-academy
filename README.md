@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v1.0
+# 🛰 ORBIT ACADEMY — v1.2
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -7,20 +7,25 @@ course-management backend (accounts, prerequisite gating, progress tracking, ins
 Built for JASON / US Space Force technical-staff training. Companion to the CISLUNAR PATROL game
 and the xGEO simulator.
 
-## What's here (v1.0)
+## What's here (v1.2)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
-- The **live simulator** (`tut1.html`): real two-body physics (analytic conics, no numerical
-  drift), to-scale Earth, ISS/Starlink/GPS/GEO constellations, inject-your-own-object, GEO-lock demo.
-- An **interactive worksheet** (`worksheet1.html`) that opens beside the simulator: 11 tasks in a
-  logical sequence, each with a check question and demo-specific remediation; progress saves as you go.
+- **Module 2 — Angular Rates & Geosync** (complete): split-view (top-down + ground telescope),
+  the GEO belt & slots, geostationary vs. geosynchronous, streaks & astrometry.
+- **Module 3 — Naming Orbits & TLEs** (complete): the six Keplerian elements (live-slider
+  ellipse), "TLE of your orbit," and real orbits incl. Molniya/Tundra.
+- **Module 4 — Maneuvers & Perturbations** (complete): Δv burns (with a fuel "gas gauge"),
+  GTO→GEO transfer, drag decay & re-entry, escape/unbound orbits, radiation pressure/HAMR,
+  J2 & sun-synchronous — a 3-D simulator with real RK4 integration of gravity + drag.
+- The **live simulators** (`tut1.html`–`tut4.html`) with matching camera/time controls.
+- **Interactive worksheets** that open beside each simulator: guided tasks with check questions
+  and demo-specific remediation; progress saves as you go.
 - A shared **controls reference** (`controls.html`) linked from every module.
 - **Backend** (`server.js`): accounts, login/sessions, per-task progress, prerequisite gating,
   instructor dashboard. Zero dependencies.
 
-Modules 2–5 (angular rates/geosync split-view, TLEs & orbit regimes, maneuvers & perturbations,
-observability, xGEO) are planned — see `docs/MODULE_NOTES.md`.
+Modules 5–6 (xGEO/cislunar, then observability) are planned — see `docs/MODULE_NOTES.md`.
 
 ## Run it
 
@@ -65,10 +70,11 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v1.2: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
-validated, DoS-guarded, no XSS, no secrets committed. For internet-facing use, front it with
-HTTPS + rate-limiting (see SECURITY.md "Accepted").
+validated, DoS-guarded, no XSS, no secrets committed. Modules 3 & 4 are static client-side files
+(no new server surface). For internet-facing use, front it with HTTPS + rate-limiting
+(see SECURITY.md "Accepted").
 
 ## License
 

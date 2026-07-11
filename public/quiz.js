@@ -7,6 +7,16 @@
    The server independently records the score and enforces prerequisites, so the client
    cannot unlock ahead by tampering. */
 const TUTORIALS = {
+  t4: {
+    worksheet: 'worksheet4.html',   // Module 4 — Maneuvers & Perturbations
+    tool: 'tut4.html',
+    blurb: 'Δv burns, GTO→GEO transfers, drag, radiation pressure, and sun-synchronous orbits.',
+  },
+  t3a: {
+    worksheet: 'worksheet3a.html',  // Module 3 — Naming Orbits & TLEs
+    tool: 'tut3a.html',
+    blurb: 'The six Keplerian elements, TLEs, and why orbits like Molniya are chosen.',
+  },
   t2: {
     worksheet: 'worksheet2.html',   // Module 2 — Angular Rates & Geosync
     tool: 'tut2.html',
@@ -138,5 +148,5 @@ const TUTORIALS = {
         ] },
     ],
   },
-  // t2, t3a, t3b, t4, t5 added as their tools are built.
+  // t3b, t4, t5 added as their tools are built.
 };

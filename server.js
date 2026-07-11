@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* ORBIT ACADEMY v1.1 — course-management backend. Zero external dependencies.
+/* ORBIT ACADEMY v1.2 — course-management backend. Zero external dependencies.
    - Accounts (scrypt-hashed passwords), session cookies (random tokens).
    - Per-user progress, prerequisite gating, instructor dashboard.
    - JSON file store (academy_data.json). Suitable for a training cohort, not web-scale.
@@ -40,10 +40,10 @@ loadDB();
 const COURSE=[
   {id:'t1', title:'Orbital Dynamics', prereq:[]},
   {id:'t2', title:'Angular Rates & Geosync', prereq:['t1']},
-  {id:'t3a',title:'Naming Orbits & TLEs', prereq:['t2']},
-  {id:'t3b',title:'Maneuvers & Perturbations', prereq:['t3a']},
-  {id:'t4', title:'Observability', prereq:['t3b']},
-  {id:'t5', title:'xGEO Space', prereq:['t4']},
+  {id:'t3a',title:'Naming Orbits & TLEs', prereq:['t2']},   // displayed as "Module 3"
+  {id:'t4', title:'Maneuvers & Perturbations', prereq:['t3a']},
+  {id:'t5', title:'xGEO / Cislunar Space', prereq:['t4']},
+  {id:'t6', title:'Observability', prereq:['t5']},
 ];
 function unlocked(progress){ // which tutorials are available given completed set
   const done=new Set(Object.keys(progress||{}).filter(k=>progress[k]&&progress[k].passed));

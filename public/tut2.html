@@ -115,46 +115,52 @@
     <div style="color:var(--accent);font-size:20px;font-weight:bold;margin-bottom:2px">Anatomy of a geostationary satellite — a close-up (inspector) view</div>
     <div style="color:#ff9d7a;font-size:12.5px;margin-bottom:8px">⚠ You could NOT see this from the ground: at 36,000 km a satellite spans only ~0.2″, far below the ~1″ atmospheric blur — it’s just a point. This is what an <b>inspector spacecraft flying alongside it</b> would see.</div>
     <div id="anatStage" style="position:relative;overflow:hidden;border:1px solid #1d3350;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#0a1830,#01030a)">
-      <svg id="anatSvg" viewBox="0 0 900 520" style="width:100%;display:block;transform-origin:50% 50%">
-        <!-- solar panels -->
-        <g stroke="#3a6bd0" stroke-width="1">
-          <rect x="70" y="215" width="250" height="90" fill="#12346b"/>
-          <rect x="580" y="215" width="250" height="90" fill="#12346b"/>
+      <!-- Orientation matches a real GEO satellite: solar-panel WINGS run vertically (North–South,
+           parallel to Earth's spin axis); the bus faces Earth (right, toward the dish/beams). -->
+      <svg id="anatSvg" viewBox="0 0 900 560" style="width:100%;display:block;transform-origin:50% 50%">
+        <!-- N–S spin-axis reference -->
+        <line x1="470" y1="30" x2="470" y2="530" stroke="#33507a" stroke-width="1" stroke-dasharray="5 6"/>
+        <text x="478" y="40" font-family="monospace" font-size="12" fill="#5a7ba8">N</text>
+        <text x="478" y="528" font-family="monospace" font-size="12" fill="#5a7ba8">S</text>
+        <!-- solar-panel WINGS: long, vertical (N–S), one above and one below the bus -->
+        <g stroke="#3a6bd0" stroke-width="1.5">
+          <rect x="430" y="55" width="80" height="185" fill="#12346b"/>
+          <rect x="430" y="320" width="80" height="185" fill="#12346b"/>
           <g stroke="#2b5686" stroke-width="1">
-            <line x1="95" y1="215" x2="95" y2="305"/><line x1="145" y1="215" x2="145" y2="305"/><line x1="195" y1="215" x2="195" y2="305"/><line x1="245" y1="215" x2="245" y2="305"/><line x1="295" y1="215" x2="295" y2="305"/>
-            <line x1="605" y1="215" x2="605" y2="305"/><line x1="655" y1="215" x2="655" y2="305"/><line x1="705" y1="215" x2="705" y2="305"/><line x1="755" y1="215" x2="755" y2="305"/><line x1="805" y1="215" x2="805" y2="305"/>
+            <line x1="430" y1="92" x2="510" y2="92"/><line x1="430" y1="129" x2="510" y2="129"/><line x1="430" y1="166" x2="510" y2="166"/><line x1="430" y1="203" x2="510" y2="203"/>
+            <line x1="470" y1="55" x2="470" y2="240"/>
+            <line x1="430" y1="357" x2="510" y2="357"/><line x1="430" y1="394" x2="510" y2="394"/><line x1="430" y1="431" x2="510" y2="431"/><line x1="430" y1="468" x2="510" y2="468"/>
+            <line x1="470" y1="320" x2="470" y2="505"/>
           </g>
         </g>
-        <line x1="320" y1="260" x2="360" y2="260" stroke="#889" stroke-width="4"/>
-        <line x1="540" y1="260" x2="580" y2="260" stroke="#889" stroke-width="4"/>
-        <!-- bus (body) -->
-        <rect x="360" y="205" width="180" height="130" rx="8" fill="#c9d2de" stroke="#8896aa" stroke-width="2"/>
-        <rect x="378" y="225" width="60" height="40" fill="#9aa7ba"/><rect x="462" y="225" width="60" height="40" fill="#9aa7ba"/>
-        <!-- big comm dish (Earth-facing, down) -->
-        <ellipse cx="450" cy="380" rx="70" ry="26" fill="#e8edf4" stroke="#9aa7ba" stroke-width="2"/>
-        <line x1="450" y1="335" x2="450" y2="360" stroke="#889" stroke-width="4"/>
-        <circle cx="450" cy="360" r="5" fill="#556"/>
-        <!-- small dishes / antennas -->
-        <ellipse cx="400" cy="200" rx="20" ry="8" fill="#e8edf4" stroke="#9aa7ba"/>
-        <ellipse cx="500" cy="200" rx="20" ry="8" fill="#e8edf4" stroke="#9aa7ba"/>
-        <line x1="450" y1="205" x2="450" y2="165" stroke="#889" stroke-width="3"/><circle cx="450" cy="163" r="4" fill="#ccd"/>
-        <!-- star tracker cameras (small boxes with a lens) -->
-        <rect x="368" y="312" width="18" height="18" fill="#2a2f3a" stroke="#556"/><circle cx="377" cy="321" r="4" fill="#5fd0ff"/>
-        <rect x="514" y="312" width="18" height="18" fill="#2a2f3a" stroke="#556"/><circle cx="523" cy="321" r="4" fill="#5fd0ff"/>
-        <!-- thruster -->
-        <polygon points="450,335 442,352 458,352" fill="#886"/>
+        <!-- yokes from panels to bus -->
+        <line x1="470" y1="240" x2="470" y2="258" stroke="#889" stroke-width="4"/>
+        <line x1="470" y1="302" x2="470" y2="320" stroke="#889" stroke-width="4"/>
+        <!-- bus (body), Earth-facing side = right -->
+        <rect x="428" y="258" width="90" height="44" rx="6" fill="#c9d2de" stroke="#8896aa" stroke-width="2"/>
+        <rect x="440" y="268" width="26" height="24" fill="#9aa7ba"/><rect x="478" y="268" width="26" height="24" fill="#9aa7ba"/>
+        <!-- main comm dish on the EARTH-FACING (right) side + beams to Earth -->
+        <ellipse cx="560" cy="280" rx="26" ry="40" fill="#e8edf4" stroke="#9aa7ba" stroke-width="2"/>
+        <line x1="518" y1="280" x2="536" y2="280" stroke="#889" stroke-width="4"/>
+        <g stroke="#ff5aa0" stroke-width="1" stroke-dasharray="2 4" opacity="0.8">
+          <line x1="560" y1="280" x2="820" y2="215"/><line x1="560" y1="280" x2="820" y2="280"/><line x1="560" y1="280" x2="820" y2="345"/>
+        </g>
+        <!-- star-tracker cameras on the bus -->
+        <rect x="432" y="304" width="16" height="16" fill="#2a2f3a" stroke="#556"/><circle cx="440" cy="312" r="3.5" fill="#5fd0ff"/>
         <!-- labels -->
         <g font-family="monospace" font-size="14" fill="#cfe3ff">
-          <text x="195" y="200" text-anchor="middle" fill="#5fd0ff">◄ Solar panels ►</text>
-          <text x="195" y="330" text-anchor="middle" font-size="11" fill="#8aa">(track the Sun for power)</text>
-          <text x="450" y="150" text-anchor="middle" fill="#ffcf4d">Antennas / feeds</text>
-          <text x="450" y="420" text-anchor="middle" fill="#ffcf4d">Main comm dish (points at Earth)</text>
-          <text x="700" y="475" text-anchor="middle" font-size="13" fill="#c9d2de">Satellite bus (body: fuel, electronics, computers)</text>
-          <line x1="620" y1="470" x2="540" y2="285" stroke="#c9d2de" stroke-width="1" opacity="0.6"/>
-          <text x="330" y="352" text-anchor="end" fill="#39d353">Star-tracker cameras</text>
-          <line x1="335" y1="348" x2="372" y2="324" stroke="#39d353" stroke-width="1"/>
-          <text x="640" y="352" text-anchor="start" fill="#39d353">(measure orientation vs. the stars)</text>
-          <line x1="636" y1="348" x2="528" y2="324" stroke="#39d353" stroke-width="1"/>
+          <text x="300" y="150" text-anchor="middle" fill="#5fd0ff">Solar-panel wings</text>
+          <text x="300" y="172" text-anchor="middle" font-size="11" fill="#8aa">long &amp; vertical (N–S),</text>
+          <text x="300" y="188" text-anchor="middle" font-size="11" fill="#8aa">rotate to face the Sun</text>
+          <line x1="360" y1="150" x2="428" y2="148" stroke="#5fd0ff" stroke-width="1"/>
+          <text x="700" y="200" text-anchor="middle" fill="#ff8ac0">Comm beams → Earth</text>
+          <text x="690" y="260" text-anchor="middle" fill="#ffcf4d">Earth-facing dish</text>
+          <line x1="640" y1="256" x2="580" y2="272" stroke="#ffcf4d" stroke-width="1"/>
+          <text x="300" y="300" text-anchor="middle" fill="#c9d2de">Bus (body)</text>
+          <line x1="352" y1="298" x2="428" y2="285" stroke="#c9d2de" stroke-width="1" opacity="0.6"/>
+          <text x="300" y="470" text-anchor="middle" fill="#39d353">Star-tracker cameras</text>
+          <text x="300" y="486" text-anchor="middle" font-size="11" fill="#39d353">(orientation vs. the stars)</text>
+          <line x1="360" y1="466" x2="434" y2="316" stroke="#39d353" stroke-width="1"/>
         </g>
       </svg>
     </div>

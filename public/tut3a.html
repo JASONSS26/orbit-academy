@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Tutorial 3a: Naming Orbits</title>
+<style>
+  :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000407;color:var(--fg);
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
+  #app{display:grid;grid-template-columns:340px minmax(0,1fr) 280px;height:100vh;gap:8px;padding:8px}
+  .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
+  #left h2{margin:0 0 6px;font-size:19px;color:#fff}
+  .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
+  .el{margin:10px 0}
+  .el .lab{display:flex;justify-content:space-between;font-size:14px}
+  .el .lab b{color:var(--cyan)}
+  .el .q{color:var(--dim);font-size:12px;margin-bottom:2px}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:20px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+    padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
+  button:hover{background:#1f4a7a;border-color:var(--cyan)}
+  .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.7);padding:4px 9px;border-radius:6px;border:1px solid #234}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.7);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  #read .big{font-size:15px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  #read .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:14px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  #read .kv span:last-child{color:#fff;font-weight:bold}
+  #read .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
+  kbd{background:#13273f;border:1px solid #274266;border-bottom-width:2px;border-radius:4px;padding:0 5px;color:#fff;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- ELEMENT SLIDERS -->
+  <div id="left" class="col panel">
+    <h2>③ Naming Orbits</h2>
+    <button onclick="(function(){var w=window.open('worksheet3a.html','worksheet_t3a');w&&w.focus();})()"
+      style="background:#1f4a7a">📋 Back to worksheet</button>
+    <div style="color:var(--dim);font-size:13px;margin-top:8px">Six numbers fully describe any orbit. Drag each and watch the ellipse change. Which readouts stay fixed?</div>
+
+    <div class="sec">
+      <div class="el"><div class="q">1 · how BIG is the orbit?</div>
+        <div class="lab">semi-major axis <b><span id="aV">20000</span> km</b></div>
+        <input id="a" type="range" min="6600" max="45000" step="100" value="20000"></div>
+      <div class="el"><div class="q">2 · how STRETCHED (circle → ellipse)?</div>
+        <div class="lab">eccentricity <b><span id="eV">0.20</span></b></div>
+        <input id="e" type="range" min="0" max="0.8" step="0.01" value="0.20"></div>
+      <div class="el"><div class="q">3 · TILT vs. the equator</div>
+        <div class="lab">inclination <b><span id="iV">30</span>°</b></div>
+        <input id="i" type="range" min="0" max="90" step="1" value="30"></div>
+      <div class="el"><div class="q">4a · SWIVEL of the orbit plane (vs. the stars)</div>
+        <div class="lab">RAAN <b><span id="raanV">40</span>°</b></div>
+        <input id="raan" type="range" min="0" max="360" step="1" value="40"></div>
+      <div class="el"><div class="q">4b · TWIST of the ellipse within its plane</div>
+        <div class="lab">argument of perigee <b><span id="argpV">60</span>°</b></div>
+        <input id="argp" type="range" min="0" max="360" step="1" value="60"></div>
+      <div class="el"><div class="q">5 · WHERE along the orbit is the satellite?</div>
+        <div class="lab">position (true anomaly) <b><span id="nuV">0</span>°</b></div>
+        <input id="nu" type="range" min="0" max="360" step="1" value="0"></div>
+    </div>
+    <div class="sec">
+      <label style="font-size:13px"><input type="checkbox" id="animate"> auto-move the satellite along the orbit</label>
+      <button id="reset">reset to a typical orbit</button>
+    </div>
+
+    <div class="sec">
+      <div style="font-size:13px;color:#fff;font-weight:bold;margin-bottom:4px">🛰 Load a real orbit</div>
+      <div style="color:var(--dim);font-size:12px;margin-bottom:6px">Click one to set the sliders to its actual elements — its ellipse stays drawn as a ghost so you can compare.</div>
+      <div id="satList"></div>
+      <div id="satNote" style="display:none;margin-top:8px;background:#12233a;border:1px solid #24466e;border-radius:6px;padding:9px 10px;font-size:12px;line-height:1.5;color:#cfe3ff"></div>
+    </div>
+    <div class="sec" style="color:var(--dim);font-size:12px">drag=rotate view · wheel=zoom · the faint dots are FIXED background stars (an inertial reference)</div>
+  </div>
+
+  <!-- 3D ORBIT -->
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <div class="stitle">🌍 Your orbit (stars fixed behind it)</div>
+    <div id="hint"></div>
+  </div>
+
+  <!-- READOUTS + TLE -->
+  <div class="col" id="rightcol">
+    <div id="read" class="panel">
+      <div class="big">This orbit</div>
+      <div class="kv"><span>period</span><span id="rP">—</span></div>
+      <div class="kv"><span>apogee (from center)</span><span id="rApoR">—</span></div>
+      <div class="kv"><span>apogee altitude</span><span id="rApoA">—</span></div>
+      <div class="kv"><span>perigee (from center)</span><span id="rPeriR">—</span></div>
+      <div class="kv"><span>perigee altitude</span><span id="rPeriA">—</span></div>
+      <div class="kv"><span>regime</span><span id="rReg">—</span></div>
+      <div class="note">
+        <b style="color:var(--accent)">Altitude</b> = height above Earth’s <i>surface</i>.
+        <b style="color:var(--accent)">From center</b> = distance from Earth’s <i>middle</i> (add ~6,371 km).<br><br>
+        Try it: change <b>RAAN</b> or <b>argument of perigee</b> — the ellipse turns in space, but do the
+        period, apogee, and perigee change? Which sliders actually change the size &amp; shape?
+      </div>
+    </div>
+
+    <div id="tlePanel" class="panel">
+      <div class="big" style="color:var(--cyan)">📡 TLE of your orbit</div>
+      <div style="color:var(--dim);font-size:12px;margin-bottom:8px">The same six numbers, written the way NORAD publishes them — a <b style="color:var(--fg)">Two-Line Element set</b>. This is what a ground station downloads to track your satellite.</div>
+      <pre id="tleText" style="background:#00121f;border:1px solid #16304e;border-radius:6px;padding:9px;font-size:11.5px;line-height:1.5;color:#bfe6ff;overflow-x:auto;white-space:pre;margin:0">—</pre>
+      <button id="tleCopy" style="margin-top:6px">📋 copy TLE</button>
+      <div id="tleMap" style="margin-top:10px;font-size:12px;line-height:1.55"></div>
+      <div class="note" style="margin-top:8px">
+        The <b style="color:var(--accent)">mean anomaly</b> field is your “position” slider re-expressed as an <i>average</i> angle, and <b style="color:var(--accent)">mean motion</b> (orbits per day) is just another way of stating the period. Notice: moving RAAN or argument of perigee changes the <i>TLE</i>, but not the mean motion — same size, same period.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
+<script>
+"use strict";
+/* ============================================================================
+   TUTORIAL 3a — Naming Orbits (the six Keplerian elements).
+   A live elliptical orbit around Earth, driven by six sliders. Fixed background
+   stars provide the inertial reference so RAAN & argument-of-perigee are visible.
+   Readouts: period, apogee/perigee (from center AND altitude). NO perturbations —
+   this is the ideal (Keplerian) orbit.
+   ============================================================================ */
+const MU=398600.4418, Re=6371, UNIT=Re;
+const $=id=>document.getElementById(id);
+const toS=km=>km/UNIT;
+
+const r=new THREE.WebGLRenderer({canvas:$('c'),antialias:true}); r.setPixelRatio(Math.min(devicePixelRatio,2)); r.setClearColor(0x000407,1);
+const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(50,1,0.01,2000);
+// FIXED background stars (inertial frame) — bright & plentiful so RAAN/argp rotations are visible
+(function stars(){const g=new THREE.BufferGeometry(),N=2200,p=new Float32Array(N*3);
+  for(let k=0;k<N;k++){const rr=90+Math.random()*120,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+    p[k*3]=rr*Math.sin(ph)*Math.cos(th);p[k*3+1]=rr*Math.sin(ph)*Math.sin(th);p[k*3+2]=rr*Math.cos(ph);}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xbfd0ee,size:0.6})));})();
+scene.add(new THREE.DirectionalLight(0xffffff,1.3).translateZ(6)); scene.add(new THREE.AmbientLight(0x445566,0.7));
+const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),earthMat); scene.add(earth);
+new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',
+  t=>{earthMat.map=t;earthMat.color.set(0xffffff);earthMat.needsUpdate=true;},undefined,()=>{});
+// equatorial plane disk (reference for inclination)
+{ const disk=new THREE.Mesh(new THREE.CircleGeometry(7,64),new THREE.MeshBasicMaterial({color:0x2b6fb5,transparent:true,opacity:0.07,side:THREE.DoubleSide,depthWrite:false}));
+  disk.rotation.x=Math.PI/2; disk.renderOrder=-1; scene.add(disk);
+  const eq=[]; for(let k=0;k<=128;k++){const t=k/128*6.283; eq.push(new THREE.Vector3(7*Math.cos(t),0,7*Math.sin(t)));}
+  const eqLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints(eq),new THREE.LineBasicMaterial({color:0x2b6fb5,transparent:true,opacity:0.3,depthWrite:false}));
+  eqLine.renderOrder=-1; scene.add(eqLine); }
+// reference direction (RAAN measured from this fixed direction toward the ascending node = "vernal equinox" ♈)
+{ const ar=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,0),9,0x66788f,0.5,0.3); scene.add(ar); }
+
+// X / Y / Z reference axes (X = toward ♈ reference direction, Z = Earth's spin/north)
+function axis(dir,color,len){ const a=new THREE.ArrowHelper(dir.clone().normalize(),new THREE.Vector3(0,0,0),len,color,0.45,0.28); a.line.material.transparent=true;a.line.material.opacity=0.85; scene.add(a); }
+axis(new THREE.Vector3(1,0,0),0xff6b6b,8.5);   // scene +x  (orbital X, toward ♈)
+axis(new THREE.Vector3(0,0,-1),0x5fd07f,8.5);  // scene -z  (orbital +Y, in equatorial plane)
+axis(new THREE.Vector3(0,1,0),0x8fb4ff,8.5);   // scene +y  (orbital +Z, north / spin axis)
+function axisLabel(txt,pos,color){ const cv=document.createElement('canvas');cv.width=64;cv.height=64;const g=cv.getContext('2d');
+  g.font='bold 44px monospace';g.fillStyle=color;g.textAlign='center';g.textBaseline='middle';g.fillText(txt,32,32);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
+  sp.position.copy(pos);sp.scale.set(0.9,0.9,0.9);scene.add(sp); }
+axisLabel('X',new THREE.Vector3(9.2,0,0),'#ff9b9b');
+axisLabel('Y',new THREE.Vector3(0,0,-9.2),'#9be0af');
+axisLabel('Z',new THREE.Vector3(0,9.2,0),'#b7ccff');
+
+// GHOST orbit (a loaded reference satellite's ellipse, drawn for comparison)
+const ghostLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.6}));
+ghostLine.visible=false; scene.add(ghostLine);
+
+// orbit line + translucent fill + markers
+const orbitLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x5fd0ff,transparent:true,opacity:0.9}));
+scene.add(orbitLine);
+const orbitFill=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshBasicMaterial({color:0x5fd0ff,transparent:true,opacity:0.13,side:THREE.DoubleSide,depthWrite:false}));
+scene.add(orbitFill);
+const sat=new THREE.Mesh(new THREE.SphereGeometry(0.09,12,10),new THREE.MeshBasicMaterial({color:0xffffff})); scene.add(sat);
+const apoM=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),new THREE.MeshBasicMaterial({color:0xff5a52})); scene.add(apoM);
+const periM=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),new THREE.MeshBasicMaterial({color:0x39d353})); scene.add(periM);
+const nodeLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.5})); scene.add(nodeLine);
+
+// build a rotation from (i, RAAN, argp): standard 3-1-3 (Rz(RAAN)·Rx(i)·Rz(argp))
+function orbToWorld(vec, i, raan, argp){
+  // vec is in perifocal frame (x toward perigee). Apply Rz(argp), Rx(i), Rz(raan).
+  let x=vec.x,y=vec.y,z=vec.z;
+  let ca=Math.cos(argp),sa=Math.sin(argp); let x1=x*ca-y*sa, y1=x*sa+y*ca, z1=z;
+  let ci=Math.cos(i),si=Math.sin(i);       let x2=x1, y2=y1*ci-z1*si, z2=y1*si+z1*ci;
+  let cr=Math.cos(raan),sr=Math.sin(raan); let x3=x2*cr-y2*sr, y3=x2*sr+y2*cr, z3=z2;
+  // map orbital (x,y,z) -> three.js (x, z, -y) so the equatorial plane is y=0 in the scene
+  return new THREE.Vector3(x3, z3, -y3);
+}
+// build the perifocal-frame points for an ellipse, transformed into the scene
+function orbitPoints(a,e,i,raan,argp,steps){
+  const p=a*(1-e*e), out=[];
+  for(let k=0;k<=steps;k++){const th=k/steps*6.283; const rr=p/(1+e*Math.cos(th));
+    out.push(orbToWorld(new THREE.Vector3(toS(rr)*Math.cos(th),toS(rr)*Math.sin(th),0),i,raan,argp));}
+  return out;
+}
+function rebuild(){
+  const a=+$('a').value, e=+$('e').value, i=+$('i').value*Math.PI/180,
+        raan=+$('raan').value*Math.PI/180, argp=+$('argp').value*Math.PI/180, nu=+$('nu').value*Math.PI/180;
+  // orbit polyline
+  const pts=orbitPoints(a,e,i,raan,argp,180);
+  orbitLine.geometry.setFromPoints(pts);
+  // translucent fill: fan of triangles from Earth's center (a focus) out to the ellipse
+  { const pos=[], c=new THREE.Vector3(0,0,0);
+    for(let k=0;k<pts.length-1;k++){ pos.push(c.x,c.y,c.z, pts[k].x,pts[k].y,pts[k].z, pts[k+1].x,pts[k+1].y,pts[k+1].z); }
+    const g=orbitFill.geometry; g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3)); g.computeVertexNormals(); }
+  // perigee (θ=0) & apogee (θ=π)
+  const rp=a*(1-e), ra=a*(1+e);
+  periM.position.copy(orbToWorld(new THREE.Vector3(toS(rp),0,0),i,raan,argp));
+  apoM.position.copy(orbToWorld(new THREE.Vector3(-toS(ra),0,0),i,raan,argp));
+  // satellite at true anomaly nu
+  const rr=(a*(1-e*e))/(1+e*Math.cos(nu));
+  sat.position.copy(orbToWorld(new THREE.Vector3(toS(rr)*Math.cos(nu),toS(rr)*Math.sin(nu),0),i,raan,argp));
+  // line of nodes (intersection of orbit plane with equatorial plane) — through ascending/descending nodes
+  const nodeDir=orbToWorld(new THREE.Vector3(1,0,0),0,raan,0);   // ascending-node direction in scene
+  nodeLine.geometry.setFromPoints([nodeDir.clone().multiplyScalar(-8), nodeDir.clone().multiplyScalar(8)]);
+  // readouts
+  const P=2*Math.PI*Math.sqrt(a*a*a/MU)/60;   // minutes
+  $('rP').textContent = P<100? P.toFixed(1)+' min' : (P/60).toFixed(1)+' hr';
+  $('rApoR').textContent=Math.round(ra).toLocaleString()+' km';
+  $('rApoA').textContent=Math.round(ra-Re).toLocaleString()+' km';
+  $('rPeriR').textContent=Math.round(rp).toLocaleString()+' km';
+  $('rPeriA').textContent=Math.round(rp-Re).toLocaleString()+' km';
+  const altP=rp-Re;
+  $('rReg').textContent = rp<Re+10?'⚠ hits Earth!' : altP<2000?'LEO' : altP<35000?'MEO' : altP<37000?'GEO-ish' : 'high / xGEO';
+  $('hint').textContent = rp<Re+100 ? '⚠ perigee is below the surface — this orbit would re-enter!' :
+    'stars are fixed behind the orbit — RAAN swivels the plane against them; argument of perigee twists the ellipse within the plane.';
+  $('rPeriA').style.color = rp<Re+100 ? '#ff5a52' : '#fff';
+  // labels for value spans
+  $('aV').textContent=a; $('eV').textContent=e.toFixed(2); $('iV').textContent=+$('i').value;
+  $('raanV').textContent=+$('raan').value; $('argpV').textContent=+$('argp').value; $('nuV').textContent=+$('nu').value;
+  buildTLE(a,e,+$('i').value,+$('raan').value,+$('argp').value,nu,P);
+}
+['a','e','i','raan','argp','nu'].forEach(id=>$(id).addEventListener('input',rebuild));
+$('reset').onclick=()=>{$('a').value=20000;$('e').value=0.2;$('i').value=30;$('raan').value=40;$('argp').value=60;$('nu').value=0;clearGhost();rebuild();};
+
+/* ---- TLE generation --------------------------------------------------------
+   Format the six live elements as a genuine NORAD two-line element set:
+   implied-decimal eccentricity, true→mean anomaly, mean motion (rev/day),
+   and correct mod-10 checksums. Epoch is a fixed placeholder (this is a
+   teaching artifact, not a tracked object). */
+function trueToMean(nu,e){ // true anomaly -> eccentric -> mean
+  const E=Math.atan2(Math.sqrt(1-e*e)*Math.sin(nu),e+Math.cos(nu));
+  const M=E-e*Math.sin(E); return (M+2*Math.PI)%(2*Math.PI);
+}
+function fixdec(x,intlen,declen){ // e.g. inclination "051.6400"
+  const s=x.toFixed(declen); const [a,b]=s.split('.'); return a.padStart(intlen,'0')+'.'+b;
+}
+function checksum(line){ let s=0; for(const ch of line){ if(ch>='0'&&ch<='9') s+=+ch; else if(ch==='-') s+=1; } return s%10; }
+function buildTLE(a,e,iDeg,raanDeg,argpDeg,nuRad,Pmin){
+  const revday=1440/Pmin;                       // mean motion, orbits per day
+  const Mdeg=trueToMean(nuRad,e)*180/Math.PI;
+  const eccStr=Math.round(e*1e7).toString().padStart(7,'0');   // implied leading decimal
+  const NORAD='90210';   // fictitious catalog # for a made-up orbit
+  // Line 1 (drag/epoch are fixed placeholders for a synthetic object)
+  let l1='1 '+NORAD+'U 26001A   26192.50000000  .00000000  00000-0  00000-0 0  999';
+  l1+=checksum(l1);
+  // Line 2: cols per spec — inc, RAAN, ecc, argp, mean anomaly, mean motion, rev#
+  let l2='2 '+NORAD+' '+fixdec(iDeg,3,4)+' '+fixdec(raanDeg,3,4)+' '+eccStr+' '+
+         fixdec(argpDeg,3,4)+' '+fixdec(Mdeg,3,4)+' '+revday.toFixed(8).padStart(11,'0')+'00001';
+  l2+=checksum(l2);
+  $('tleText').textContent='YOUR ORBIT\n'+l1+'\n'+l2;
+  $('tleMap').innerHTML=
+    row('inclination', iDeg.toFixed(1)+'°', 'tilt vs. equator (slider 3)')+
+    row('RAAN', raanDeg.toFixed(1)+'°', 'swivel of the plane (slider 4a)')+
+    row('eccentricity', '0.'+eccStr+' → '+e.toFixed(3), 'shape (slider 2); a leading “0.” is implied')+
+    row('arg. of perigee', argpDeg.toFixed(1)+'°', 'twist of the ellipse (slider 4b)')+
+    row('mean anomaly', Mdeg.toFixed(1)+'°', 'position, time-averaged (slider 5)')+
+    row('mean motion', revday.toFixed(4)+' /day', 'orbits per day ⇒ size/period (slider 1)');
+}
+function row(field,val,desc){ return '<div style="display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #12263f;padding:3px 0">'+
+  '<span style="color:var(--cyan)">'+field+'</span><span style="color:#fff;font-weight:bold">'+val+'</span></div>'+
+  '<div style="color:var(--dim);font-size:11px;margin:-1px 0 4px">'+desc+'</div>'; }
+$('tleCopy').onclick=()=>{ navigator.clipboard&&navigator.clipboard.writeText($('tleText').textContent);
+  $('tleCopy').textContent='✓ copied'; setTimeout(()=>$('tleCopy').textContent='📋 copy TLE',1200); };
+
+/* ---- Candidate satellites (representative real elements) --------------------
+   Clicking one sets the sliders to its orbit and draws its ellipse as a ghost.
+   note = the "why this orbit?" payoff, especially Molniya/Tundra. */
+const SATS=[
+  {id:'iss',  name:'ISS (space station)', c:0x9be0af, a:6798, e:0.0006, i:51.6, raan:120, argp:80, nu:0,
+    note:'<b>Low Earth Orbit.</b> Nearly circular, ~420 km up, 92-minute period. Inclination 51.6° so it overflies most of the populated world (and is reachable from Baikonur).'},
+  {id:'gps',  name:'GPS (navigation)', c:0x5fd0ff, a:26560, e:0.01, i:55, raan:200, argp:60, nu:120,
+    note:'<b>Medium Earth Orbit,</b> ~20,200 km, half-day period (two orbits per day). Circular by design so signal timing is uniform everywhere.'},
+  {id:'geo',  name:'GEO (TV / weather)', c:0xffffff, a:42164, e:0.0002, i:0.1, raan:0, argp:0, nu:0,
+    note:'<b>Geostationary.</b> Equatorial (i≈0), exactly one orbit per day, so it hangs over one longitude. Great for the equator — but poor coverage of high latitudes.'},
+  {id:'moln', name:'Molniya (Soviet comms)', c:0xffcf4d, a:26600, e:0.74, i:63.4, raan:190, argp:270, nu:180,
+    note:'<b>Why the Soviets loved it:</b> a GEO satellite sits over the equator and barely clears the horizon from high latitudes — useless for northern Russia. A <b>Molniya</b> orbit is a highly eccentric 12-hour ellipse with <b>apogee ~40,000 km over the north.</b> By Kepler’s 2nd law it <i>crawls</i> near apogee, so it loafs over Russia for ~8 of every 12 hours. Argument of perigee is pinned near 270° (perigee in the south) and inclination is <b>63.4°</b> — the “magic” angle where Earth’s bulge (J2) does <i>not</i> rotate the ellipse, so apogee stays parked over the north. A trio covers the high Arctic 24/7.'},
+  {id:'tund', name:'Tundra (SiriusXM / SBIRS)', c:0xff7bd0, a:42164, e:0.24, i:63.4, raan:180, argp:270, nu:180,
+    note:'<b>Tundra</b> is Molniya’s bigger cousin: same 63.4° magic inclination and southern perigee, but a <b>24-hour</b> geosynchronous period with milder eccentricity. It traces a lopsided figure-8 ground track and dwells for hours over one high-latitude region — used by SiriusXM radio and missile-warning (SBIRS) satellites. One satellite gives a long daily dwell; a pair gives continuous coverage.'},
+];
+let ghost=null;
+function clearGhost(){ ghostLine.visible=false; ghost=null; $('satNote').style.display='none';
+  document.querySelectorAll('.satbtn').forEach(b=>b.style.borderColor='#2b5686'); }
+function loadSat(s,btn){
+  $('a').value=s.a; $('e').value=s.e; $('i').value=s.i; $('raan').value=s.raan; $('argp').value=s.argp; $('nu').value=s.nu;
+  // draw its ellipse as a ghost in its own color
+  ghostLine.material.color.setHex(s.c);
+  ghostLine.geometry.setFromPoints(orbitPoints(s.a,s.e,s.i*Math.PI/180,s.raan*Math.PI/180,s.argp*Math.PI/180,180));
+  ghostLine.visible=true; ghost=s;
+  $('satNote').style.display='block'; $('satNote').innerHTML='<b style="color:#fff">'+s.name+'</b><br>'+s.note;
+  document.querySelectorAll('.satbtn').forEach(b=>b.style.borderColor='#2b5686');
+  if(btn) btn.style.borderColor=('#'+s.c.toString(16).padStart(6,'0'));
+  rebuild();
+}
+(function buildSatList(){ const host=$('satList');
+  SATS.forEach(s=>{ const b=document.createElement('button'); b.className='satbtn';
+    b.style.cssText='text-align:left;display:flex;align-items:center;gap:8px;margin-top:5px';
+    b.innerHTML='<span style="flex:0 0 auto;width:11px;height:11px;border-radius:50%;background:#'+s.c.toString(16).padStart(6,'0')+'"></span>'+s.name;
+    b.onclick=()=>loadSat(s,b); host.appendChild(b); });
+})();
+
+// auto-move satellite
+$('animate').addEventListener('change',()=>{});
+// camera
+let camR=9,camTh=0.6,camPh=0.9,drag=false,lx=0,ly=0;
+$('c').addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+addEventListener('mouseup',()=>drag=false);
+addEventListener('mousemove',e=>{if(!drag)return;camTh-=(e.clientX-lx)*0.005;camPh=Math.max(0.05,Math.min(Math.PI-0.05,camPh-(e.clientY-ly)*0.005));lx=e.clientX;ly=e.clientY;});
+$('c').addEventListener('wheel',e=>{camR=Math.max(2.5,Math.min(60,camR*(1+Math.sign(e.deltaY)*0.1)));e.preventDefault();},{passive:false});
+function resize(){const st=$('stage'),w=st.clientWidth,h=st.clientHeight;r.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+addEventListener('resize',resize);
+
+let last=performance.now();
+function loop(){const now=performance.now();const dt=Math.min((now-last)/1000,0.05);last=now;
+  if($('animate').checked){ let v=(+$('nu').value + dt*40)%360; $('nu').value=v; $('nuV').textContent=Math.round(v); rebuild(); }
+  earth.rotation.y+=0.0008;
+  cam.position.set(camR*Math.sin(camPh)*Math.cos(camTh),camR*Math.cos(camPh),camR*Math.sin(camPh)*Math.sin(camTh));
+  cam.lookAt(0,0,0); r.render(scene,cam); requestAnimationFrame(loop);
+}
+resize(); rebuild(); loop();
+</script>
+</body>
+</html>

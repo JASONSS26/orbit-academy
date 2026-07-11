@@ -17,7 +17,9 @@ let pass=0,fail=0; const P=(n,ok,x)=>{console.log((ok?'  ✓ ':'  ✗ FAIL ')+n+
   for(const [pg,needle] of [['/','ORBIT ACADEMY'],['/worksheet1.html','How Orbits Work'],
     ['/tut1.html','How orbits work'],['/controls.html','Simulator Controls'],
     ['/quiz.js','TUTORIALS'],['/worksheet1.data.js','WORKSHEET'],
-    ['/tut2.html','Angular Rates'],['/worksheet2.html','Angular Rates'],['/worksheet2.data.js','WORKSHEET'],['/tut2.data.js','GEO_SATS']]){
+    ['/tut2.html','Angular Rates'],['/worksheet2.html','Angular Rates'],['/worksheet2.data.js','WORKSHEET'],['/tut2.data.js','GEO_SATS'],
+    ['/tut3a.html','Naming Orbits'],['/worksheet3a.html','Naming Orbits'],['/worksheet3a.data.js','WORKSHEET'],
+    ['/tut4.html','Maneuvers'],['/worksheet4.html','Maneuvers'],['/worksheet4.data.js','WORKSHEET']]){
     const r=await req('GET',pg); P('page loads: '+pg,r.status===200&&r.body.includes(needle),'status '+r.status); }
 
   const inst=await req('POST','/api/register',{name:'Prof',email:'prof@j.org',password:'orbits123'});
