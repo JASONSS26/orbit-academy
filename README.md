@@ -56,6 +56,13 @@ node server.js          # -> http://localhost:8080
 - `public/quiz.js` — tutorial registry
 - `docs/` — `SECURITY.md` (audit log), `CHANGELOG.md`, `MODULE_NOTES.md`
 
+## Tests
+
+```bash
+bash test/run.sh   # 18 functional + 22 security checks + DoS guard, isolated data file
+```
+See `docs/TESTING.md`. Zero dependencies; run before every release.
+
 ## Security
 
 Each release passes a security audit (see `docs/SECURITY.md`). v1.0: **PASS** — path traversal

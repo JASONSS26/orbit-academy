@@ -8,7 +8,7 @@
 const http=require('http'), fs=require('fs'), path=require('path'), crypto=require('crypto');
 const PORT=process.env.PORT||8080;
 const ROOT=path.join(__dirname,'public');
-const DB_FILE=path.join(__dirname,'academy_data.json');
+const DB_FILE=process.env.ORBIT_DATA||path.join(__dirname,'academy_data.json');
 
 /* ---------------- data store ---------------- */
 let DB={users:{}, sessions:{}};              // users[id]={id,name,email,role,salt,hash,progress:{}}

@@ -25,3 +25,6 @@ First complete module + full course-management shell.
 
 **Security:** audit PASS (path traversal, auth, priv-esc, session integrity, prereq bypass,
 input validation, DoS, XSS, secrets). See `docs/SECURITY.md`.
+
+**Tests:** `bash test/run.sh` — 18 functional + 22 security checks + DoS guard, all passing.
+See `docs/TESTING.md`. Reproducible, zero-dependency, isolated data file.
