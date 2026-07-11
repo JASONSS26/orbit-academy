@@ -1,5 +1,7 @@
 # user data — contains password hashes & progress, NEVER commit
 academy_data.json
+academy_data.json.bak
+academy_data.json.tmp
 # scratch / test artifacts
 _*.png
 _*.html

@@ -4,6 +4,17 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v1.1 — audit result: **PASS** (re-run)
+Module 2 added **no new server attack surface**: it's all client-side rendering plus the
+existing, already-audited `/api/task` endpoint (which enforces prerequisites and score clamping
+server-side). Re-ran the full suite — **25 functional + 22 security checks + DoS guard, all
+passing** (`bash test/run.sh`). Durability changes reviewed: atomic temp-file writes + rolling
+`.bak` (no new external input; the `.bak`/`.tmp` files are gitignored alongside the data file).
+The optional bring-your-own Claude key remains browser-only (never sent to this server). No
+new secrets, no new endpoints, no XSS sinks introduced (new user-facing text is static/escaped).
+Cleared to ship v1.1.
+
+
 ## Threat model
 
 - Small-cohort training tool, run on a trusted machine/LAN or a modestly-hosted instance.

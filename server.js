@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* ORBIT ACADEMY v1.0 — course-management backend. Zero external dependencies.
+/* ORBIT ACADEMY v1.1 — course-management backend. Zero external dependencies.
    - Accounts (scrypt-hashed passwords), session cookies (random tokens).
    - Per-user progress, prerequisite gating, instructor dashboard.
    - JSON file store (academy_data.json). Suitable for a training cohort, not web-scale.
@@ -10,12 +10,30 @@ const PORT=process.env.PORT||8080;
 const ROOT=path.join(__dirname,'public');
 const DB_FILE=process.env.ORBIT_DATA||path.join(__dirname,'academy_data.json');
 
-/* ---------------- data store ---------------- */
+/* ---------------- data store ----------------
+   Durability: on load, if the primary file is missing/corrupt we fall back to the most
+   recent .bak. On save we write atomically (temp file + rename) and keep a rolling backup,
+   so an accidental delete or a crash mid-write can't lose accounts. */
+const BAK_FILE=DB_FILE+'.bak';
 let DB={users:{}, sessions:{}};              // users[id]={id,name,email,role,salt,hash,progress:{}}
-function loadDB(){ try{ DB=JSON.parse(fs.readFileSync(DB_FILE,'utf8')); }catch(e){ DB={users:{},sessions:{}}; } }
+function readStore(f){ const d=JSON.parse(fs.readFileSync(f,'utf8')); if(!d||typeof d!=='object'||!d.users) throw new Error('bad shape'); return d; }
+function loadDB(){
+  try{ DB=readStore(DB_FILE); }
+  catch(e){
+    try{ DB=readStore(BAK_FILE); console.warn('primary store unreadable — recovered from backup'); saveNow(); }
+    catch(e2){ DB={users:{},sessions:{}}; }
+  }
+}
+function saveNow(){
+  try{
+    const tmp=DB_FILE+'.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(DB));      // write to temp
+    try{ if(fs.existsSync(DB_FILE)) fs.copyFileSync(DB_FILE,BAK_FILE); }catch(e){}   // roll current -> .bak
+    fs.renameSync(tmp, DB_FILE);                     // atomic replace
+  }catch(e){ console.error('save failed',e.message); }
+}
 let saveTimer=null;
-function saveDB(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{
-  try{ fs.writeFileSync(DB_FILE, JSON.stringify(DB)); }catch(e){ console.error('save failed',e.message); } },100); }
+function saveDB(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,100); }
 loadDB();
 
 /* ---------------- course definition (prerequisites) ---------------- */

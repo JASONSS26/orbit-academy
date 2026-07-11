@@ -7,6 +7,11 @@
    The server independently records the score and enforces prerequisites, so the client
    cannot unlock ahead by tampering. */
 const TUTORIALS = {
+  t2: {
+    worksheet: 'worksheet2.html',   // Module 2 — Angular Rates & Geosync
+    tool: 'tut2.html',
+    blurb: 'Angular rates and the geosynchronous belt.',
+  },
   t1: {
     worksheet: 'worksheet1.html',   // opens the interactive worksheet in its own window
     tool: 'tut1.html',

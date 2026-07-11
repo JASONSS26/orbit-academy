@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Tutorial 2: Angular Rates & Geosync</title>
+<style>
+  :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000407;color:var(--fg);
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
+  #app{display:grid;grid-template-columns:300px minmax(0,1fr) minmax(0,1fr);height:100vh;gap:8px;padding:8px}
+  .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;font-size:14px;line-height:1.55}
+  #left h2{margin:0 0 6px;font-size:19px;color:#fff}
+  .sec{border-top:1px solid #1d3350;margin-top:11px;padding-top:10px}
+  .sec h3{margin:0 0 6px;font-size:14px;color:var(--accent)}
+  label{display:block;font-size:14px;margin:8px 0 2px}
+  label b{color:var(--cyan)}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:20px}
+  .chk{display:flex;align-items:center;gap:8px;margin:6px 0;cursor:pointer;font-size:14px}
+  .chk input{accent-color:var(--cyan);width:15px;height:15px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:14px;
+    padding:9px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
+  button:hover{background:#1f4a7a;border-color:var(--cyan)}
+  button.go{background:#0a3a33;border-color:var(--grn);color:#c0ffe6;font-weight:bold}
+  .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.7);
+    padding:4px 9px;border-radius:6px;border:1px solid #234}
+  #warpInd{position:absolute;top:8px;right:10px;z-index:3;background:rgba(6,12,24,.8);border:1px solid #2b5686;
+    border-radius:6px;padding:4px 9px;color:var(--accent);font-size:13px;font-weight:bold}
+  #scopeInfo{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12.5px;color:var(--cyan);
+    background:rgba(6,12,24,.7);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  kbd{background:#13273f;border:1px solid #274266;border-bottom-width:2px;border-radius:4px;padding:0 5px;color:#fff;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- CONTROLS -->
+  <div id="left" class="col panel">
+    <h2>② Angular Rates &amp; Geosync</h2>
+    <button onclick="(function(){var w=window.open('worksheet2.html','worksheet_t2');w&&w.focus();})()"
+      style="background:#1f4a7a;border:1px solid #2b5686;color:#fff;font-size:13px;padding:8px;margin:0 0 8px">📋 Back to worksheet</button>
+    <div style="color:var(--dim);font-size:13px">Left: orbit from above. Right: the view through a ground telescope. Watch how satellites move across the sky.</div>
+
+    <div class="sec">
+      <h3>The GEO belt</h3>
+      <label class="chk"><input type="checkbox" id="cBelt" checked>show GEO belt ring + 1° slots</label>
+      <label class="chk"><input type="checkbox" id="cSats" checked>show real GEO satellites</label>
+      <label class="chk"><input type="checkbox" id="cJunk">show graveyard orbit (dead sats, above the belt)</label>
+      <label class="chk"><input type="checkbox" id="cEcliptic">show ecliptic plane (Sun’s plane, tilted 23.5°)</label>
+      <label class="chk"><input type="checkbox" id="cRide">🛰 ride along a satellite (Sun sweeps by once/day)</label>
+      <button id="anatomy" style="margin-top:8px">🛰 Fly out for a close-up (inspector view)</button>
+    </div>
+
+    <div class="sec">
+      <h3>Inject your own</h3>
+      <label>orbit type:</label>
+      <select id="otype" style="width:100%;background:#0a1526;color:#fff;border:1px solid #274266;border-radius:6px;padding:7px;font-family:inherit;font-size:14px">
+        <option value="geostat">Geostationary (0° incl)</option>
+        <option value="geosync">Inclined geosync (figure-8)</option>
+        <option value="polar">Polar orbit (90°)</option>
+        <option value="leo">Low orbit (fast)</option>
+      </select>
+      <label>inclination: <b><span id="incV">0</span>°</b></label>
+      <input id="inc" type="range" min="0" max="90" step="1" value="0">
+      <button class="go" id="inject">◇ INJECT</button>
+      <button id="clear">clear my objects</button>
+    </div>
+
+    <div class="sec">
+      <h3>Ground telescope (right)</h3>
+      <label>Telescope drive:</label>
+      <label class="chk"><input type="radio" name="drive" value="stars" checked>track the STARS (sidereal drive)</label>
+      <label class="chk"><input type="radio" name="drive" value="sat">track a GEO SATELLITE</label>
+      <div style="color:var(--dim);font-size:12px;margin:4px 0">Live, both look like moving points. The difference shows up when you take a time-exposure:</div>
+      <button class="go" id="shutter" style="background:#3a2a0a;border-color:#ffcf4d;color:#ffe38a">📷 TAKE A PICTURE (4 min exposure)</button>
+    </div>
+
+    <div class="sec" style="color:var(--dim);font-size:12px">
+      <kbd>,</kbd><kbd>.</kbd> time · <kbd>drag</kbd> pan (left view) · <kbd>wheel</kbd> zoom
+    </div>
+  </div>
+
+  <!-- 3D ORBIT VIEW -->
+  <div class="stage" id="stage3d">
+    <canvas id="c3d"></canvas>
+    <div class="stitle">🌍 Orbit view (from above the pole)</div>
+    <div id="warpInd">time ×1</div>
+  </div>
+
+  <!-- RIGHT: live sky view (top) + captured images (bottom) -->
+  <div style="display:grid;grid-template-rows:1fr 1fr;gap:8px;min-height:0">
+    <div class="stage" id="stageScope">
+      <canvas id="cScope"></canvas>
+      <div class="stitle">🔭 Live sky view</div>
+      <div id="scopeInfo"></div>
+    </div>
+    <div class="stage" id="stageShots" style="background:#060a12">
+      <div class="stitle">📸 Captured image</div>
+      <canvas id="cShot" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+      <div id="shotFlash" style="position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .15s;pointer-events:none;z-index:4"></div>
+      <div id="shotCap" style="position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12.5px;color:var(--cyan);background:rgba(6,12,24,.7);padding:6px 10px;border-radius:6px;border:1px solid #234"></div>
+      <div id="shotX" style="position:absolute;top:8px;right:10px;z-index:5;color:#fff;background:rgba(179,38,30,.9);border-radius:5px;width:26px;height:26px;line-height:26px;text-align:center;cursor:pointer;font-size:15px;display:none">✕</div>
+      <div id="shotsEmpty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:14px;pointer-events:none">Take a picture — your 4-minute exposure will appear here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SATELLITE ANATOMY OVERLAY -->
+<div id="anat" style="position:fixed;inset:0;z-index:50;background:rgba(2,6,14,.92);display:none;align-items:center;justify-content:center">
+  <div style="max-width:900px;width:94vw;text-align:center">
+    <div style="color:var(--accent);font-size:20px;font-weight:bold;margin-bottom:2px">Anatomy of a geostationary satellite — a close-up (inspector) view</div>
+    <div style="color:#ff9d7a;font-size:12.5px;margin-bottom:8px">⚠ You could NOT see this from the ground: at 36,000 km a satellite spans only ~0.2″, far below the ~1″ atmospheric blur — it’s just a point. This is what an <b>inspector spacecraft flying alongside it</b> would see.</div>
+    <div id="anatStage" style="position:relative;overflow:hidden;border:1px solid #1d3350;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,#0a1830,#01030a)">
+      <svg id="anatSvg" viewBox="0 0 900 520" style="width:100%;display:block;transform-origin:50% 50%">
+        <!-- solar panels -->
+        <g stroke="#3a6bd0" stroke-width="1">
+          <rect x="70" y="215" width="250" height="90" fill="#12346b"/>
+          <rect x="580" y="215" width="250" height="90" fill="#12346b"/>
+          <g stroke="#2b5686" stroke-width="1">
+            <line x1="95" y1="215" x2="95" y2="305"/><line x1="145" y1="215" x2="145" y2="305"/><line x1="195" y1="215" x2="195" y2="305"/><line x1="245" y1="215" x2="245" y2="305"/><line x1="295" y1="215" x2="295" y2="305"/>
+            <line x1="605" y1="215" x2="605" y2="305"/><line x1="655" y1="215" x2="655" y2="305"/><line x1="705" y1="215" x2="705" y2="305"/><line x1="755" y1="215" x2="755" y2="305"/><line x1="805" y1="215" x2="805" y2="305"/>
+          </g>
+        </g>
+        <line x1="320" y1="260" x2="360" y2="260" stroke="#889" stroke-width="4"/>
+        <line x1="540" y1="260" x2="580" y2="260" stroke="#889" stroke-width="4"/>
+        <!-- bus (body) -->
+        <rect x="360" y="205" width="180" height="130" rx="8" fill="#c9d2de" stroke="#8896aa" stroke-width="2"/>
+        <rect x="378" y="225" width="60" height="40" fill="#9aa7ba"/><rect x="462" y="225" width="60" height="40" fill="#9aa7ba"/>
+        <!-- big comm dish (Earth-facing, down) -->
+        <ellipse cx="450" cy="380" rx="70" ry="26" fill="#e8edf4" stroke="#9aa7ba" stroke-width="2"/>
+        <line x1="450" y1="335" x2="450" y2="360" stroke="#889" stroke-width="4"/>
+        <circle cx="450" cy="360" r="5" fill="#556"/>
+        <!-- small dishes / antennas -->
+        <ellipse cx="400" cy="200" rx="20" ry="8" fill="#e8edf4" stroke="#9aa7ba"/>
+        <ellipse cx="500" cy="200" rx="20" ry="8" fill="#e8edf4" stroke="#9aa7ba"/>
+        <line x1="450" y1="205" x2="450" y2="165" stroke="#889" stroke-width="3"/><circle cx="450" cy="163" r="4" fill="#ccd"/>
+        <!-- star tracker cameras (small boxes with a lens) -->
+        <rect x="368" y="312" width="18" height="18" fill="#2a2f3a" stroke="#556"/><circle cx="377" cy="321" r="4" fill="#5fd0ff"/>
+        <rect x="514" y="312" width="18" height="18" fill="#2a2f3a" stroke="#556"/><circle cx="523" cy="321" r="4" fill="#5fd0ff"/>
+        <!-- thruster -->
+        <polygon points="450,335 442,352 458,352" fill="#886"/>
+        <!-- labels -->
+        <g font-family="monospace" font-size="14" fill="#cfe3ff">
+          <text x="195" y="200" text-anchor="middle" fill="#5fd0ff">◄ Solar panels ►</text>
+          <text x="195" y="330" text-anchor="middle" font-size="11" fill="#8aa">(track the Sun for power)</text>
+          <text x="450" y="150" text-anchor="middle" fill="#ffcf4d">Antennas / feeds</text>
+          <text x="450" y="420" text-anchor="middle" fill="#ffcf4d">Main comm dish (points at Earth)</text>
+          <text x="700" y="475" text-anchor="middle" font-size="13" fill="#c9d2de">Satellite bus (body: fuel, electronics, computers)</text>
+          <line x1="620" y1="470" x2="540" y2="285" stroke="#c9d2de" stroke-width="1" opacity="0.6"/>
+          <text x="330" y="352" text-anchor="end" fill="#39d353">Star-tracker cameras</text>
+          <line x1="335" y1="348" x2="372" y2="324" stroke="#39d353" stroke-width="1"/>
+          <text x="640" y="352" text-anchor="start" fill="#39d353">(measure orientation vs. the stars)</text>
+          <line x1="636" y1="348" x2="528" y2="324" stroke="#39d353" stroke-width="1"/>
+        </g>
+      </svg>
+    </div>
+    <div style="color:var(--dim);font-size:13px;margin-top:8px;max-width:820px;margin:8px auto 0">
+      In the satellite’s own frame: the dish stays locked on Earth while the <b style="color:#5fd0ff">solar panels rotate on
+      their actuation axis</b> (which runs North–South, parallel to Earth’s spin axis) to keep facing the Sun as it circles
+      the sky once per day. <b style="color:#39d353">Star-tracker cameras</b> photograph the background stars to know which way the satellite points.
+    </div>
+    <div style="margin-top:12px;display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap">
+      <canvas id="panelAnim" width="360" height="240" style="border:1px solid #1d3350;border-radius:10px;background:#02040d"></canvas>
+      <div style="text-align:left;max-width:300px;font-size:13px;color:var(--dim)">
+        <div style="color:var(--accent);font-weight:bold;margin-bottom:4px">☀ Sun-tracking (satellite frame)</div>
+        The Sun (yellow) circles once per day. Watch the blue panels <b style="color:#5fd0ff">rotate about the N–S axis</b>
+        to stay face-on to it. Edge-on = no power; face-on = full power.
+        <label class="chk" style="margin-top:8px"><input type="checkbox" id="panelFreeze"> freeze panels (show what happens if they DIDN’T track)</label>
+      </div>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;justify-content:center">
+      <a href="https://www.goes-r.gov/3dModelAR/" target="_blank" rel="noopener"
+        style="background:#0a3a33;border:1px solid #39d353;color:#c0ffe6;font-size:15px;padding:10px 22px;border-radius:8px;text-decoration:none">🛰 Explore the real GOES satellite in 3D (NOAA)</a>
+      <button onclick="document.getElementById('anat').style.display='none'"
+        style="background:#1f4a7a;border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:15px;padding:10px 22px;border-radius:8px;cursor:pointer">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
+<script src="tut2.data.js"></script>
+<script>
+"use strict";
+/* ============================================================================
+   TUTORIAL 2 — Angular Rates & Geosync.
+   LEFT: top-down 3-D orbit view (Three.js). RIGHT: a 2-D "telescope" view painted
+   on a canvas showing the sky — stars streak past a fixed scope at the sidereal
+   rate (15"/s); a geostationary sat sits still. Toggle tracking to swap which one
+   streaks. Everything runs on one warp-scaled clock.
+   ============================================================================ */
+const MU=398600.4418, Re=6371, UNIT=Re;
+const GEO_R=42164/UNIT;                 // GEO radius in Earth-radii
+const SIDEREAL=86164;                   // s
+const TIMESCALE=SIDEREAL/8;             // orbit-seconds per simT unit at warp 1
+const $=id=>document.getElementById(id);
+const toScene=km=>km/UNIT;
+
+/* ---------------- LEFT: 3-D orbit view ---------------- */
+const r3d=new THREE.WebGLRenderer({canvas:$('c3d'),antialias:true}); r3d.setPixelRatio(Math.min(devicePixelRatio,2)); r3d.setClearColor(0x000407,1);
+const sc3=new THREE.Scene(); const cam3=new THREE.PerspectiveCamera(50,1,0.01,500);
+(function stars3(){const g=new THREE.BufferGeometry(),N=800,p=new Float32Array(N*3);
+  for(let i=0;i<N;i++){const r=60+Math.random()*60,th=Math.random()*6.28,ph=Math.acos(2*Math.random()-1);
+    p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));sc3.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x8fa4c6,size:0.4})));})();
+const sunLight=new THREE.DirectionalLight(0xfff4e0,1.5); sc3.add(sunLight); sc3.add(sunLight.target);
+sc3.add(new THREE.AmbientLight(0x334455,0.6));
+// visible Sun far out; it circles once per day (drives the ride-along "sunlight sweeps by" effect)
+const sunSprite=(function(){const cv=document.createElement('canvas');cv.width=cv.height=64;
+  const g=cv.getContext('2d').createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'#fff');g.addColorStop(.4,'#ffe38a');g.addColorStop(1,'rgba(255,200,80,0)');
+  const cx=cv.getContext('2d');cx.fillStyle=g;cx.fillRect(0,0,64,64);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.set(6,6,1);sc3.add(s);return s;})();
+const SUN_DIST=40;
+const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),earthMat); sc3.add(earth);
+new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',
+  t=>{earthMat.map=t;earthMat.color.set(0xffffff);earthMat.needsUpdate=true;},undefined,()=>{});
+
+// GEO belt ring + 1-degree slot ticks
+const beltGrp=new THREE.Group(); sc3.add(beltGrp); let beltSlots;
+// ecliptic plane: a ring tilted 23.5° from the equatorial (belt) plane, to show the Sun's plane
+let eclipticRing, eclipticDisk;
+{ const TILT=23.5*Math.PI/180, ER=GEO_R*1.5, pts=[];
+  // EXACT same parametrization as the Sun's path, so the Sun rides on this ring:
+  //   (cos a, −sin a·sinTILT, sin a·cosTILT) · ER   (−y matches the Sun's tilt sense)
+  for(let k=0;k<=128;k++){const a=k/128*6.283;
+    pts.push(new THREE.Vector3(ER*Math.cos(a), -ER*Math.sin(a)*Math.sin(TILT), ER*Math.sin(a)*Math.cos(TILT)));}
+  const grp=new THREE.Group();
+  // brighter, thicker LINE — this is what projects to a tilted line across the sky in the ride-along
+  grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xffbb44,transparent:true,opacity:0.8})));
+  // faint translucent disk (only helpful in the god's-eye view; hidden during ride-along)
+  const disk=new THREE.Mesh(new THREE.CircleGeometry(ER,48),new THREE.MeshBasicMaterial({color:0xffaa33,transparent:true,opacity:0.06,side:THREE.DoubleSide}));
+  disk.rotation.x=Math.PI/2 + TILT;   // lay flat then tilt 23.5° (matches the ring's −y sense)
+  grp.add(disk); eclipticDisk=disk;
+  eclipticRing=grp; eclipticRing.visible=false; sc3.add(eclipticRing); }
+{ const pts=[];for(let k=0;k<=256;k++){const a=k/256*6.283;pts.push(new THREE.Vector3(GEO_R*Math.cos(a),0,-GEO_R*Math.sin(a)));}
+  beltGrp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.5})));
+  // 1-degree SLOT markers: short VERTICAL posts standing off the belt at each of the 360 degrees.
+  // (They rotate with the belt via beltSlots rotation in the loop.)
+  const postPts=[]; const hi=GEO_R*0.06;   // half-height: posts straddle the equator (−hi to +hi)
+  for(let d=0;d<360;d++){const a=d*Math.PI/180, x=GEO_R*Math.cos(a), z=-GEO_R*Math.sin(a);
+    postPts.push(new THREE.Vector3(x,-hi,z), new THREE.Vector3(x,hi,z));}   // 360 posts, above & below
+  beltSlots=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(postPts),
+    new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.3}));
+  beltGrp.add(beltSlots);
+}
+
+// real GEO satellites (from tut2.data.js): placed at their longitude slot on the belt
+const satMeshes=[];
+GEO_SATS.forEach(([name,lonDeg])=>{const m=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),new THREE.MeshBasicMaterial({color:0x9fd0ff}));
+  sc3.add(m); satMeshes.push({mesh:m,lon0:lonDeg*Math.PI/180,name});});
+// Dead sats boosted to the GRAVEYARD orbit: a ring ~300 km ABOVE GEO. They slowly drift in
+// longitude (they no longer hold a slot) and have small random inclinations from years adrift.
+// Real graveyard is only ~300 km above GEO (0.7% — invisible at this scale), so we EXAGGERATE the
+// gap here (like the body-size exaggeration) purely so you can see it as a distinct outer ring.
+const GRAVE_R=GEO_R*1.14;
+const junkMeshes=[];
+for(let i=0;i<40;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.03,6,5),new THREE.MeshBasicMaterial({color:0x99aabb}));
+  m.visible=false; sc3.add(m);
+  // inc = orbital inclination (N–S bob amplitude); drift = SLOW longitude drift rate (decoupled);
+  // bobPh = phase of the ~daily N–S oscillation; bobFac ~0.98 so the bob is slightly desynced from a day.
+  junkMeshes.push({mesh:m, lon0:Math.random()*6.283, inc:(5+Math.random()*20)*Math.PI/180,
+    drift:(Math.random()-0.5)*0.03, bobPh:Math.random()*6.283, bobFac:0.95+Math.random()*0.1});}
+// faint graveyard ring to show it sits just outside the belt
+{ const pts=[];for(let k=0;k<=200;k++){const a=k/200*6.283;pts.push(new THREE.Vector3(GRAVE_R*Math.cos(a),0,-GRAVE_R*Math.sin(a)));}
+  const graveRing=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x99aabb,transparent:true,opacity:0.3}));
+  graveRing.visible=false; sc3.add(graveRing); window._graveRing=graveRing; }
+
+// user-injected objects (left view) + their apparent-motion feed to the scope
+const injected=[];
+function injectObj(type,incDeg){
+  let a=GEO_R*UNIT, inc=incDeg*Math.PI/180, period=SIDEREAL, col=0x00ffcc;
+  if(type==='geostat'){inc=0;} else if(type==='polar'){a=(Re+800); inc=Math.PI/2; period=2*Math.PI*Math.sqrt(a*a*a/MU); col=0xff8ac0;}
+  else if(type==='leo'){a=(Re+600); inc=incDeg*Math.PI/180; period=2*Math.PI*Math.sqrt(a*a*a/MU); col=0xa0ff60;}
+  const rad=toScene(a);
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8),new THREE.MeshBasicMaterial({color:col})); sc3.add(m);
+  // ground track path (faint)
+  const pts=[];for(let k=0;k<=128;k++){const u=k/128*6.283;pts.push(planeVec(rad,u,inc,0));}
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.5})); sc3.add(line);
+  injected.push({mesh:m,line,rad,inc,period,col,type});
+}
+function planeVec(rad,a,inc,raan){let x=rad*Math.cos(a),y=0,z=-rad*Math.sin(a);
+  let y2=y*Math.cos(inc)-z*Math.sin(inc),z2=y*Math.sin(inc)+z*Math.cos(inc);y=y2;z=z2;
+  let x3=x*Math.cos(raan)+z*Math.sin(raan),z3=-x*Math.sin(raan)+z*Math.cos(raan);return new THREE.Vector3(x3,y,z3);}
+function clearInjected(){injected.forEach(o=>{sc3.remove(o.mesh,o.line);});injected.length=0;}
+
+/* ---------------- RIGHT: telescope view (2-D canvas) ---------------- */
+const scopeC=$('cScope'), sx=scopeC.getContext('2d');
+let satHit=null;   // {x,y,r} clickable satellite position in the scope, set each draw
+scopeC.style.pointerEvents='auto'; scopeC.style.cursor='crosshair';
+scopeC.addEventListener('click',e=>{
+  if(!satHit)return;
+  const r=scopeC.getBoundingClientRect(), mx=(e.clientX-r.left)*scopeC.width/r.width, my=(e.clientY-r.top)*scopeC.height/r.height;
+  if(Math.hypot(mx-satHit.x,my-satHit.y)<Math.max(satHit.r,22)) flyToSatellite(); });
+// Stars scattered across a wide strip of sky (x along the E–W drift, y = up/down in FOV).
+const FOV_DEG=5;                                  // 5° × 5° telescope field of view
+// fewer, well-separated stars so each 1° streak in an exposure reads individually (no merging)
+const skyStars=[];for(let i=0;i<90;i++)skyStars.push({x:Math.random(),y:Math.random(),b:0.4+Math.random()*0.6});
+// Several GEO satellites at different belt longitudes, so when we TRACK STARS they drift
+// through the field one after another (spaced across the sky-strip like the stars).
+const fovSats=[];for(let i=0;i<5;i++)fovSats.push({x:Math.random(),y:0.35+Math.random()*0.3});
+
+/* ---------------- state / clock ---------------- */
+// drive: 'stars' = sidereal drive (stars held); 'sat' = track a GEO satellite (sat held).
+const G={warp:0.25, simT:0, drive:'stars', showBelt:true, showSats:true, showJunk:false, ride:false, showEcliptic:false};  // 0.25 = 45 min/sec
+
+/* ---------------- input ---------------- */
+addEventListener('keydown',e=>{ if(e.key===',')G.warp=Math.max(0.03125,G.warp/2); if(e.key==='.')G.warp=Math.min(64,G.warp*2);});
+$('inc').addEventListener('input',()=>{$('incV').textContent=$('inc').value;});
+document.querySelectorAll('input[name="drive"]').forEach(r=>r.addEventListener('change',e=>{if(e.target.checked)G.drive=e.target.value;}));
+$('shutter').addEventListener('click',takePicture);
+$('cBelt').addEventListener('change',e=>{G.showBelt=e.target.checked;beltGrp.visible=e.target.checked;});
+$('cSats').addEventListener('change',e=>{G.showSats=e.target.checked;satMeshes.forEach(s=>s.mesh.visible=e.target.checked);});
+$('cJunk').addEventListener('change',e=>{G.showJunk=e.target.checked;junkMeshes.forEach(s=>s.mesh.visible=e.target.checked);
+  if(window._graveRing)window._graveRing.visible=e.target.checked;});
+$('cEcliptic').addEventListener('change',e=>{G.showEcliptic=e.target.checked;});
+$('cRide').addEventListener('change',e=>{G.ride=e.target.checked;
+  if(e.target.checked){$('cEcliptic').checked=true;G.showEcliptic=true;}});  // ecliptic on by default in ride (still toggleable)
+$('otype').addEventListener('change',()=>{const t=$('otype').value;$('inc').disabled=(t==='geostat'||t==='polar');
+  if(t==='geostat')$('inc').value=0; if(t==='polar')$('inc').value=90; if(t==='geosync'&&+$('inc').value===0)$('inc').value=30; $('incV').textContent=$('inc').value;});
+$('inject').addEventListener('click',()=>injectObj($('otype').value,+$('inc').value));
+$('clear').addEventListener('click',clearInjected);
+// fly OUT to the satellite for a close-up (an inspector-satellite view, NOT a ground telescope)
+function flyToSatellite(){const ov=$('anat'),svg=$('anatSvg');ov.style.display='flex';
+  svg.style.transition='none'; svg.style.transform='scale(0.04)'; svg.style.opacity='0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{svg.style.transition='transform 1.2s cubic-bezier(.2,.8,.2,1),opacity .6s';svg.style.transform='scale(1)';svg.style.opacity='1';}));}
+$('anatomy').addEventListener('click',flyToSatellite);
+// left-view camera: simple drag-orbit + wheel zoom
+let camR=18,camTh=0.0,camPh=0.5,drag=false,lx=0,ly=0;
+$('c3d').addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+addEventListener('mouseup',()=>drag=false);
+addEventListener('mousemove',e=>{if(!drag)return;camTh-=(e.clientX-lx)*0.005;camPh=Math.max(0.02,Math.min(Math.PI-0.02,camPh-(e.clientY-ly)*0.005));lx=e.clientX;ly=e.clientY;});
+$('c3d').addEventListener('wheel',e=>{camR=Math.max(2,Math.min(30,camR*(1+Math.sign(e.deltaY)*0.1)));e.preventDefault();},{passive:false});
+
+/* ---------------- resize ---------------- */
+function resize(){const st=$('stage3d'),w=st.clientWidth,h=st.clientHeight;r3d.setSize(w,h,false);cam3.aspect=w/h;cam3.updateProjectionMatrix();
+  const ss=$('stageScope'); scopeC.width=ss.clientWidth; scopeC.height=ss.clientHeight;
+  const sh=$('stageShots'), shot=$('cShot'); shot.width=sh.clientWidth; shot.height=sh.clientHeight;}
+addEventListener('resize',resize);
+$('shotX').addEventListener('click',()=>{const cv=$('cShot');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+  $('shotsEmpty').style.display='flex'; $('shotX').style.display='none'; $('shotCap').innerHTML='';});
+
+/* ---------------- loop ---------------- */
+let last=performance.now();
+function loop(){const now=performance.now();let wall=Math.min((now-last)/1000,0.05);last=now;
+  G.simT+=wall*G.warp; const sky=G.simT*TIMESCALE*(2*Math.PI/SIDEREAL);   // sidereal rotation angle
+  // ---- LEFT 3D ----
+  // In ride-along the camera rides the geostationary frame, so everything geostationary is FROZEN
+  // (Earth, belt, working sats). Only the dead junk still moves (inclination bob + longitude drift).
+  const belt = G.ride ? 0 : sky;              // geostationary objects don't move in the ride frame
+  earth.rotation.y = belt;
+  if(beltSlots) beltSlots.rotation.y = belt;
+  satMeshes.forEach(s=>{const a=s.lon0+belt; s.mesh.position.set(GEO_R*Math.cos(a),0,-GEO_R*Math.sin(a));});
+  // Junk: longitude = slow drift (belt-frozen in ride-along, +belt otherwise); the N–S bob runs at
+  // the ~daily orbital rate ALWAYS (an inclined orbit crosses the equator twice per orbit), slightly
+  // desynced per object. Bob is vertical (±y) so it shows in BOTH the top-down and ride views.
+  junkMeshes.forEach(s=>{
+    const lon = s.lon0 + belt + s.drift*G.simT;           // slow longitude drift
+    const bob = Math.sin(sky*s.bobFac + s.bobPh)*s.inc;    // daily N–S swing, amplitude = inclination
+    const x=GRAVE_R*Math.cos(lon), z=-GRAVE_R*Math.sin(lon), y=GRAVE_R*Math.sin(bob);
+    s.mesh.position.set(x,y,z);
+  });
+  for(const o of injected){const a=sky*(SIDEREAL/o.period); o.mesh.position.copy(planeVec(o.rad,a,o.inc,0)); o.line.rotation.y=0;}
+  // The Sun travels the ECLIPTIC: a great circle tilted 23.5° from the equatorial plane. We move it
+  // slowly along that circle (a compressed "year") so you can SEE it follow the inclined line, while
+  // Earth spins fast (a day). Light comes FROM the Sun, so Earth's terminator stays perpendicular to
+  // the Earth–Sun line → tilted with the Sun's position.
+  const TILT=23.5*Math.PI/180;
+  const yr = G.simT*0.06;                       // slow ecliptic progress (compressed year)
+  // point on a circle in the x–z plane, then tilt the whole circle 23.5° about the x-axis:
+  const ex=Math.cos(yr), ez=Math.sin(yr);
+  const sunV=new THREE.Vector3(ex, -ez*Math.sin(TILT), ez*Math.cos(TILT)).normalize();  // −y: correct tilt sense
+  sunSprite.position.copy(sunV.clone().multiplyScalar(SUN_DIST));
+  sunLight.position.copy(sunV.clone().multiplyScalar(SUN_DIST)); sunLight.target.position.set(0,0,0);
+  // ride-along: sit ON a GEO satellite and look DOWN at Earth (nadir). As the sat orbits once/day
+  // the lit Earth (and its tilted terminator) rotates through the view once per day.
+  if(G.ride){
+    // View DOWN THE LINE OF NODES (the x-axis, where equatorial & ecliptic planes intersect), from
+    // well outside the belt "as if sitting out there". Earth fills ~1/3 of the frame; the ecliptic
+    // plane is seen edge-on → a true LINE.
+    cam3.position.set(GEO_R*2.6, 0, 0); cam3.lookAt(0,0,0); cam3.up.set(0,1,0);
+    if(cam3.fov!==22){cam3.fov=22;cam3.updateProjectionMatrix();}
+  } else {
+    if(cam3.fov!==50){cam3.fov=50;cam3.updateProjectionMatrix();}
+    cam3.position.set(camR*Math.sin(camPh)*Math.cos(camTh),camR*Math.cos(camPh),camR*Math.sin(camPh)*Math.sin(camTh));
+    cam3.lookAt(0,0,0);
+  }
+  if(eclipticRing) eclipticRing.visible=G.showEcliptic;   // controlled by the checkbox in all views
+  if(eclipticDisk) eclipticDisk.visible=!G.ride;                  // hide the disk in ride-along -> ecliptic reads as a LINE
+  r3d.render(sc3,cam3);
+  // ---- warp indicator ----
+  const su=G.warp*TIMESCALE; let ws=su>=3600?(su/3600).toFixed(1)+' hr/s':su>=60?(su/60).toFixed(0)+' min/s':su.toFixed(0)+' s/s';
+  $('warpInd').textContent='⏱ '+ws;
+  // ---- RIGHT telescope ----
+  drawScope(sky);
+  if($('anat').style.display==='flex') drawPanelAnim(sky);
+  requestAnimationFrame(loop);
+}
+
+// Solar-panel Sun-tracking, viewed looking DOWN the panels' N–S rotation axis (so the panel is a
+// line we see edge-on/face-on). The Sun circles once per day. TRACKING: the panel turns to face the
+// Sun (its flat face always toward the Sun) → always fully lit. FROZEN: the panel stays put, so it's
+// only lit when the Sun is in front of its face, and edge-on (dark) a quarter-turn later.
+function drawPanelAnim(sky){
+  const cv=$('panelAnim'); if(!cv)return; const c=cv.getContext('2d'), W=cv.width, H=cv.height, cx=W/2, cy=H/2;
+  c.fillStyle='#02040d'; c.fillRect(0,0,W,H);
+  const sunA=sky*0.6;                                   // Sun's angular position (once per "day")
+  const R=90, sunx=cx+R*Math.cos(sunA), suny=cy+R*Math.sin(sunA);
+  const frozen=$('panelFreeze') && $('panelFreeze').checked;
+  const panelDir = frozen ? 0 : sunA;                   // direction the panel FACE points
+  // how much sunlight the panel catches = cos(angle between panel-face-normal and Sun direction)
+  const illum = Math.max(0, Math.cos(sunA - panelDir)); // tracking → 1; frozen → varies 0..1
+
+  // Sun orbit path + Sun
+  c.strokeStyle='rgba(255,207,77,.2)'; c.lineWidth=1; c.beginPath(); c.arc(cx,cy,R,0,6.283); c.stroke();
+  c.strokeStyle='rgba(255,225,140,'+(0.15+0.35*illum)+')'; c.lineWidth=1;   // ray Sun→satellite, brighter when lit
+  c.beginPath(); c.moveTo(sunx,suny); c.lineTo(cx,cy); c.stroke();
+  c.fillStyle='#ffd24a'; c.beginPath(); c.arc(sunx,suny,12,0,6.283); c.fill();
+
+  // satellite: bus at centre; the panel is a bar whose FACE normal = panelDir. We draw the bar along
+  // the tangent (perpendicular to the normal); its lit-ness = illum. Panel length is constant (it does
+  // NOT foreshorten here — we're looking along its long axis), only its brightness changes.
+  c.fillStyle='#c9d2de'; c.fillRect(cx-10,cy-12,20,24);         // bus
+  const L=58, nx=Math.cos(panelDir), ny=Math.sin(panelDir), tx=-ny, ty=nx;   // normal & tangent
+  const g=Math.round(40+150*illum);                             // brightness
+  c.strokeStyle='#3a6bd0'; c.lineWidth=7; c.lineCap='round';
+  c.strokeStyle='rgb('+Math.round(15+g*0.25)+','+Math.round(40+g*0.5)+','+(70+g)+')';
+  for(const side of [1,-1]){
+    const bx=cx+side*14*nx, by=cy+side*14*ny;                   // panel offset out along the normal from bus
+    c.beginPath(); c.moveTo(bx - tx*L/2, by - ty*L/2); c.lineTo(bx + tx*L/2, by + ty*L/2); c.stroke();
+    // little "face arrow" showing which way the panel looks (toward Sun when tracking)
+    c.strokeStyle='rgba(255,225,140,'+(0.25+0.5*illum)+')'; c.lineWidth=1.5;
+    c.beginPath(); c.moveTo(bx,by); c.lineTo(bx+nx*14, by+ny*14); c.stroke();
+    c.strokeStyle='rgb('+Math.round(15+g*0.25)+','+Math.round(40+g*0.5)+','+(70+g)+')'; c.lineWidth=7;
+  }
+  // labels
+  c.fillStyle='#8aa'; c.font='11px monospace'; c.textAlign='center';
+  c.fillText('viewed down the N–S rotation axis', cx, 15);
+  c.fillStyle=(illum>0.9?'#39d353':illum<0.35?'#ff6b6b':'#ffcf4d');
+  c.fillText((frozen?'frozen':'tracking')+' → power '+Math.round(illum*100)+'%', cx, H-8);
+  c.textAlign='left';
+}
+
+// A "sky offset": how far the sky has drifted (E→W), in field-widths. Stars are anchored to
+// this; satellites sit at their own belt spots. Which one appears fixed depends on the drive.
+function skyOffset(sky){ return sky*0.9; }
+// screen position of a star (fixed to the sky) and a sat (fixed to the belt/ground) given the drive.
+// E is on the LEFT, W on the RIGHT; stars drift E→W (rightward), so +off with time.
+function starFX(baseX,off){ const d = (G.drive==='stars') ? 0 : off;   return frac(baseX + d); }
+function satFX(baseX,off){  const d = (G.drive==='sat')   ? 0 : off;   return frac(baseX + d); }
+function frac(v){ return ((v%1)+1)%1; }
+
+// Synthesized camera-shutter "cha-chk": two short filtered-noise clicks (mirror up, then down).
+// Pure WebAudio — cross-platform (Mac/Windows/Linux), no audio file needed.
+function shutterClick(){ try{
+  const ac=new (window.AudioContext||window.webkitAudioContext)();
+  // short noise buffer reused for both clicks
+  const n=ac.sampleRate*0.05|0, buf=ac.createBuffer(1,n,ac.sampleRate), ch=buf.getChannelData(0);
+  for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/n,2.5);   // decaying noise burst
+  function click(at,gain,freq){ const src=ac.createBufferSource(); src.buffer=buf;
+    const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=freq; bp.Q.value=1.1;
+    const g=ac.createGain(); g.gain.value=gain;
+    src.connect(bp).connect(g).connect(ac.destination); src.start(ac.currentTime+at); }
+  click(0,    0.5, 2600);    // first click (mirror up) — sharp
+  click(0.11, 0.38, 1700);   // second click (shutter/mirror down) — a touch lower, quieter
+  setTimeout(()=>ac.close(),400);
+}catch(e){} }
+function takePicture(){
+  shutterClick();
+  // brief shutter flash on the SHOTS panel only; top live panel keeps running
+  const flash=$('shotFlash'); if(flash){flash.style.opacity='1'; setTimeout(()=>flash.style.opacity='0',150);}
+  // capture the current sky offset now; render the static developed image into the shots panel
+  const sky=G.simT*TIMESCALE*(2*Math.PI/SIDEREAL);
+  saveShot(skyOffset(sky), 0, G.drive);
+}
+
+function drawScope(sky){
+  const W=scopeC.width,H=scopeC.height; if(!W)return;
+  const S=Math.min(W,H)*0.86, x0=(W-S)/2, y0=(H-S)/2;
+  const dyPerX=0;
+  const off=skyOffset(sky);
+  sx.fillStyle='#01030a'; sx.fillRect(0,0,W,H);
+
+  // ----- LIVE view: always running. Everything is a moving POINT. -----
+  sx.save(); sx.beginPath(); sx.rect(x0,y0,S,S); sx.clip(); sx.fillStyle='#02040d'; sx.fillRect(x0,y0,S,S);
+  for(const s of skyStars){ const fx=starFX(s.x,off); const px=x0+fx*S, py=y0+s.y*S+(fx-0.5)*dyPerX*S;
+    sx.fillStyle='rgba(225,235,252,'+s.b+')'; sx.beginPath(); sx.arc(px,py,1.6,0,6.283); sx.fill(); }
+  // GEO sats: when tracking stars, several drift through the FOV; when tracking a sat, one sits still
+  const showSats = (G.drive==='sat') ? [fovSats[0]] : fovSats;
+  satHit=null;
+  for(const sO of showSats){ const fx=satFX(sO.x,off); const px=x0+fx*S, py=y0+sO.y*S;
+    sx.fillStyle='#ff5a52'; sx.beginPath(); sx.arc(px,py,4.5,0,6.283); sx.fill();
+    if(G.drive==='sat'){ satHit={x:px,y:py,r:18};
+      sx.fillStyle='#ffb0a8'; sx.font='11px monospace'; sx.fillText('GEO sat (held) — click to fly out',px+9,py+4); } }
+  sx.restore();
+  drawFrame(x0,y0,S,'LIVE — everything is a moving point. Take a picture to see what streaks.');
+}
+
+// render a developed 30-s time-exposure into ANY 2-D context (live panel or a shot thumbnail).
+// held objects = points; moving objects = streaks. E is LEFT, W is RIGHT, N up, S down.
+function renderExposure(ctx,x0,y0,S,off,dyPerX,drive){
+  ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,S,S); ctx.clip(); ctx.fillStyle='#03060f'; ctx.fillRect(x0,y0,S,S);
+  // streak length = sky drift during the exposure, as a fraction of the 5° FOV.
+  // sidereal rate = 360°/86164 s ≈ 15″/s. A 4-minute (240 s) exposure drifts exactly 1°
+  // (= one GEO slot width) → 1/5 = 20% of the 5° field.
+  const EXPOSURE_S=240, FOV=5, expFrac=(360/86164)*EXPOSURE_S/FOV;   // ≈0.20 (1° streak)
+  const starsMove=(drive==='sat');
+  const sfx=b=>frac(b+((drive==='stars')?0:off));       // star screen-x for this frozen frame
+  const satfx=b=>frac(b+((drive==='sat')?0:off));
+  for(const s of skyStars){ const fx=sfx(s.x); const px=x0+fx*S, py=y0+s.y*S+(fx-0.5)*dyPerX*S;
+    if(starsMove){ const L=expFrac*S; ctx.strokeStyle='rgba(210,224,248,'+s.b+')'; ctx.lineWidth=1.6; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(px-L/2,py-dyPerX*L/2); ctx.lineTo(px+L/2,py+dyPerX*L/2); ctx.stroke(); }
+    else { ctx.fillStyle='rgba(230,238,255,'+s.b+')'; ctx.beginPath(); ctx.arc(px,py,1.7,0,6.283); ctx.fill(); } }
+  const showSats=(drive==='sat')?[fovSats[0]]:fovSats;
+  for(const sO of showSats){ const fx=satfx(sO.x); const px=x0+fx*S, py=y0+sO.y*S;
+    if(!starsMove){ const L=expFrac*S; ctx.strokeStyle='rgba(255,90,80,0.95)'; ctx.lineWidth=3; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(px-L/2,py); ctx.lineTo(px+L/2,py); ctx.stroke(); }   // streak only, no end-dot
+    else { ctx.fillStyle='#ff5a52'; ctx.beginPath(); ctx.arc(px,py,4,0,6.283); ctx.fill(); } }
+  ctx.restore();
+  // frame + compass (E left, W right, N up, S down)
+  ctx.strokeStyle='#22406a'; ctx.lineWidth=2; ctx.strokeRect(x0,y0,S,S);
+  ctx.fillStyle='#8aa'; ctx.font=(S<300?'10px':'12px')+' monospace';
+  ctx.textAlign='left';  ctx.fillText('E',x0+6,y0+S/2+4);
+  ctx.textAlign='right'; ctx.fillText('W',x0+S-6,y0+S/2+4);
+  ctx.textAlign='center';ctx.fillText('N',x0+S/2,y0+14); ctx.fillText('S',x0+S/2,y0+S-6);
+  ctx.textAlign='left';
+}
+
+// snapshot the current exposure into a thumbnail in the "Captured images" panel
+let shotN=0;
+function saveShot(off,dyPerX,drive){
+  shotN++;
+  const cv=$('cShot'); const sh=$('stageShots');
+  if(cv.width<10||cv.height<10){ cv.width=sh.clientWidth||600; cv.height=sh.clientHeight||400; }  // ensure sized
+  const c=cv.getContext('2d'), W=cv.width, H=cv.height;
+  c.fillStyle='#01030a'; c.fillRect(0,0,W,H);
+  const S=Math.min(W,H)*0.92, x0=(W-S)/2, y0=(H-S)/2;   // fill the frame
+  renderExposure(c,x0,y0,S,off,dyPerX,drive);
+  const driveTxt=drive==='stars'?'tracking the STARS (sidereal drive)':'tracking a GEO SATELLITE';
+  const streaks=drive==='stars'?'the satellite STREAKS; stars are points':'the STARS STREAK; the satellite is a point';
+  $('shotCap').innerHTML='📸 4-min exposure #'+shotN+' · '+driveTxt+' → <b>'+streaks+'</b> <span style="color:#8aa">(streak ≈ 7.5′ per min; the sky moves 15″/s)</span>';
+  $('shotsEmpty').style.display='none'; $('shotX').style.display='block';
+}
+
+function drawFrame(x0,y0,S,caption){
+  sx.strokeStyle='#22406a'; sx.lineWidth=2; sx.strokeRect(x0,y0,S,S);
+  sx.strokeStyle='rgba(95,208,255,.22)'; sx.lineWidth=1;
+  sx.beginPath(); sx.moveTo(x0+S/2,y0);sx.lineTo(x0+S/2,y0+S);sx.moveTo(x0,y0+S/2);sx.lineTo(x0+S,y0+S/2); sx.stroke();
+  sx.fillStyle='#5fd0ff'; sx.font='12px monospace'; sx.textAlign='left'; sx.fillText('5° × 5° field of view',x0+8,y0+18);
+  // compass: E left, W right, N up, S down
+  sx.fillStyle='#8aa';
+  sx.textAlign='left';  sx.fillText('E',x0+8,y0+S/2+4);
+  sx.textAlign='right'; sx.fillText('W',x0+S-8,y0+S/2+4);
+  sx.textAlign='center';sx.fillText('N',x0+S/2,y0+34); sx.fillText('S',x0+S/2,y0+S-8);
+  sx.textAlign='left';
+  const drive = G.drive==='stars' ? 'DRIVE: tracking the STARS (sidereal)' : 'DRIVE: tracking a GEO SATELLITE';
+  $('scopeInfo').textContent='🔭 '+drive+' · '+caption;
+}
+
+resize(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

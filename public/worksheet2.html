@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Worksheet 1 — How Orbits Work</title>
+<style>
+  :root{--bg:#e9ebee;--panel:#ffffff;--fg:#1b1e24;--dim:#5a6270;--line:#c6ccd4;--accent:#1a4c8b;--grn:#1e7a33;--red:#b3261e;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55;font-size:18px}
+  .wrap{max-width:none;margin:0;padding:0 40px 100px}
+  /* header */
+  header{background:var(--panel);border-bottom:3px solid var(--accent);
+    padding:20px 40px;margin-bottom:0;position:sticky;top:0;z-index:20}
+  header .inner{max-width:none;margin:0;display:flex;align-items:center;gap:18px}
+  .crest{flex:0 0 auto}
+  header h1{margin:0;font-size:26px;color:var(--fg);font-weight:700}
+  header .sub{color:var(--dim);font-size:15px;margin-top:2px}
+  header .who{margin-left:auto;text-align:right;font-size:15px;color:var(--dim)}
+  header .who b{color:var(--fg)}
+  /* progress rail */
+  #railWrap{position:sticky;top:88px;z-index:15;background:var(--bg);padding:14px 40px 10px;margin:0 -40px}
+  #rail{display:flex;gap:6px;flex-wrap:wrap}
+  .pip{flex:1 1 0;min-width:18px;height:12px;border-radius:3px;background:#c6ccd4;transition:.2s}
+  .pip.done{background:var(--grn)}
+  #railTxt{font-size:15px;color:var(--dim);margin-top:7px;font-weight:600}
+  /* tip banner */
+  .tip{background:#dfeefe;border:1px solid #9bc2ea;border-radius:6px;padding:14px 18px;font-size:16px;color:#123;margin:18px 0}
+  .tip b{color:var(--accent)}
+  /* part + task cards */
+  .part{margin-top:34px}
+  .part h2{font-size:20px;color:var(--accent);letter-spacing:.3px;border-bottom:2px solid var(--line);padding-bottom:8px;font-weight:700}
+  .task{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px 26px;margin:16px 0;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .task.done{border-left:5px solid var(--grn);background:#f2f9f3}
+  .task .n{position:absolute;top:-12px;left:18px;background:var(--accent);color:#fff;font-weight:700;
+    font-size:13px;padding:3px 11px;border-radius:4px}
+  .task h3{margin:6px 0 10px;font-size:20px;color:var(--fg);font-weight:700}
+  .task p{margin:9px 0;font-size:17px}
+  .task .do{color:var(--accent);font-weight:600} .task b{color:var(--fg);font-weight:700}
+  .task ol{margin:8px 0;padding-left:24px} .task li{margin:6px 0;font-size:17px}
+  /* quiz */
+  .quiz{margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
+  .quiz .q{font-weight:700;font-size:18px;margin-bottom:12px}
+  .opt{display:block;padding:13px 16px;margin:8px 0;border:1.5px solid var(--line);border-radius:6px;cursor:pointer;font-size:17px;transition:.1s;background:#fbfbfc}
+  .opt:hover{border-color:var(--accent);background:#f0f5fb}
+  .opt.correct{background:#e3f4e6;border-color:var(--grn)}
+  .opt.wrong{background:#f9e2e0;border-color:var(--red)}
+  .fb{margin-top:14px;padding:14px 16px;border-radius:6px;font-size:16px;display:none}
+  .fb.ok{background:#e3f4e6;border:1px solid var(--grn);color:#124a1d;display:block}
+  .fb.no{background:#f9e2e0;border:1px solid var(--red);color:#6b1712;display:block}
+  .simlink{color:var(--accent);cursor:pointer;text-decoration:underline;font-weight:600}
+  /* completion */
+  #done{display:none;background:var(--panel);border:2px solid var(--grn);
+    border-radius:8px;padding:32px;text-align:center;margin-top:36px}
+  #done h2{color:var(--grn);font-size:26px}
+  .btn{background:var(--accent);border:1px solid var(--accent);color:#fff;font-family:inherit;font-size:16px;font-weight:600;padding:13px 24px;border-radius:6px;cursor:pointer;margin:4px}
+  .btn:hover{background:#15406f}
+  #status{position:fixed;bottom:16px;right:16px;background:var(--panel);border:1px solid var(--line);
+    border-radius:6px;padding:10px 15px;font-size:15px;color:var(--dim);z-index:30;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+  #status b{color:var(--grn)}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <svg class="crest" width="52" height="52" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="94" fill="#fff" stroke="#1a4c8b" stroke-width="6"/>
+      <g fill="none" stroke="#1a4c8b" stroke-width="4" opacity=".7"><ellipse cx="100" cy="100" rx="70" ry="28" transform="rotate(-20 100 100)"/><ellipse cx="100" cy="100" rx="55" ry="55"/></g>
+      <path d="M100 55 L128 130 L100 115 L72 130 Z" fill="#1a4c8b"/><circle cx="100" cy="100" r="10" fill="#1a4c8b"/>
+    </svg>
+    <div>
+      <h1>Worksheet 2 · Angular Rates & Geosync</h1>
+      <div class="sub">ORBIT ACADEMY — Cislunar Fundamentals · work through each task in the live simulator</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+      <button class="btn" style="margin:0" onclick="openControls()">🎮 Controls</button>
+      <button class="btn" style="margin:0;background:#fff;color:var(--accent);border:1px solid var(--accent)" onclick="openSim()">↗ Simulator</button>
+      <div class="who" id="who"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="railWrap">
+    <div id="rail"></div>
+    <div id="railTxt"></div>
+  </div>
+
+  <div class="tip">
+    <b>How this works:</b> keep the <span class="simlink" onclick="openSim()">simulator window</span> open beside this sheet.
+    Do what each task says in the sim, then answer its check question — a correct answer marks the task complete.
+    Your progress is saved automatically, so you can close this and pick up later. Finishing every task completes the module.
+  </div>
+
+  <!-- Controls overview: the first thing every student sees; used in every module -->
+  <div class="task" style="border-left:5px solid var(--accent)">
+    <div class="n" style="background:var(--accent)">START HERE</div>
+    <h3>🎮 Simulator controls (you’ll use these throughout)</h3>
+    <p>Open the simulator and get comfortable moving around before you start. These same controls work in every module.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px 24px;margin:10px 0;font-size:16.5px">
+      <div>🖱 <b>Click + drag</b> — pan (slide the view)</div>
+      <div>🖱 <b>Right-drag</b> or <b>Shift+drag</b> — rotate</div>
+      <div>⌨️ <b>Arrow keys</b> — rotate</div>
+      <div>🖱 <b>Scroll / pinch</b> — zoom</div>
+      <div>⌨️ <b>,</b> and <b>.</b> — slow down / speed up time</div>
+      <div>⌨️ <b>R</b> — reset the view</div>
+    </div>
+    <p style="margin-top:8px"><button class="btn" style="margin:0" onclick="openControls()">📖 Open the full controls reference</button>
+    &nbsp; <span style="color:var(--dim);font-size:15px">(also in the header — available in every module)</span></p>
+  </div>
+
+  <div id="tasks"></div>
+
+  <div id="done">
+    <div style="font-size:40px">🎓</div>
+    <h2>Module 2 complete!</h2>
+    <div style="color:var(--dim)">You’ve earned your badge and unlocked the next tutorial.</div>
+    <div id="summary" style="text-align:left;max-width:900px;margin:24px auto 0"></div>
+    <div style="margin-top:24px"><button class="btn" onclick="backToHub()">← Back to your flight path</button></div>
+  </div>
+</div>
+
+<div id="status">saving to your account…</div>
+
+<script src="worksheet2.data.js"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const TUT='t2';
+let SIMWIN=null;
+function openSim(){ if(SIMWIN&&!SIMWIN.closed){SIMWIN.focus();return;}
+  SIMWIN=window.open('tut2.html','orbitsim','width=1200,height=850'); }
+function openControls(){ window.open('controls.html','orbitcontrols','width=1000,height=800'); }
+function backToHub(){ window.opener?window.opener.focus():null; window.open('/','_self'); }
+
+let ME=null, state={};   // state[taskId] = {done, answered}
+async function boot(){
+  const r=await fetch('/api/me'); if(!r.ok){ document.body.innerHTML='<p style="padding:40px">Please <a href="/">sign in</a> first.</p>'; return; }
+  const d=await r.json(); ME=d.user;
+  $('who').innerHTML='<b>'+esc(ME.name)+'</b><br>'+ME.role;
+  const prog=ME.progress[TUT]||{}; const tasks=(prog.tasks)||{};
+  WORKSHEET.tasks.forEach(t=>{ state[t.id]={done:!!(tasks[t.id]&&tasks[t.id].done), answered:!!(tasks[t.id]&&tasks[t.id].done)}; });
+  render(); updateRail();
+}
+function render(){
+  const host=$('tasks'); host.innerHTML='';
+  let n=0;
+  for(const part of WORKSHEET.parts){
+    const pd=document.createElement('div'); pd.className='part';
+    pd.innerHTML='<h2>'+esc(part.title)+'</h2>';
+    host.appendChild(pd);
+    for(const tid of part.tasks){ n++;
+      const t=WORKSHEET.tasks.find(x=>x.id===tid); const done=state[tid].done;
+      const card=document.createElement('div'); card.className='task'+(done?' done':''); card.id='card_'+tid;
+      let html='<div class="n">TASK '+n+(done?' ✓':'')+'</div><h3>'+esc(t.title)+'</h3>';
+      html+='<p class="do">▶ In the sim: '+t.do+'</p>';
+      if(t.observe) html+='<p style="color:var(--dim)">👁 Notice: '+t.observe+'</p>';
+      if(t.quiz){ html+='<div class="quiz"><div class="q">'+esc(t.quiz.q)+'</div>';
+        t.quiz.opts.forEach((o,oi)=>{ html+='<label class="opt" data-t="'+tid+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'>'+esc(o)+'</label>'; });
+        html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+tid+'">'+(done?'✓ '+esc(t.quiz.why):'')+'</div></div>'; }
+      card.innerHTML=html; host.appendChild(card);
+      if(t.quiz && !done) card.querySelectorAll('.opt').forEach(el=>el.onclick=()=>answer(tid,+el.dataset.o));
+    }
+  }
+  if(WORKSHEET.tasks.every(t=>state[t.id].done)) showDone();
+}
+async function answer(tid,oi){
+  const t=WORKSHEET.tasks.find(x=>x.id===tid); const q=t.quiz;
+  const card=$('card_'+tid); const opts=card.querySelectorAll('.opt'); const fb=$('fb_'+tid);
+  const correct=oi===q.a;
+  opts.forEach(el=>{const i=+el.dataset.o; el.classList.remove('sel','wrong','correct');
+    if(i===oi) el.classList.add(correct?'correct':'wrong');});
+  if(correct){ // answering correctly = task complete (no separate button)
+    opts.forEach(el=>el.style.pointerEvents='none');
+    fb.className='fb ok'; fb.innerHTML='✓ '+esc(q.why);
+    state[tid].done=true; state[tid].answered=true;
+    card.classList.add('done'); const nlabel=card.querySelector('.n'); if(nlabel&&!/✓/.test(nlabel.textContent)) nlabel.textContent+=' ✓';
+    await save(tid,true); updateRail();
+    if(WORKSHEET.tasks.every(x=>state[x.id].done)) showDone();
+  }else{ fb.className='fb no'; fb.innerHTML='✗ '+esc((q.feedback&&q.feedback[oi])||'Not quite — try it in the sim and answer again.');
+    setTimeout(()=>opts.forEach(el=>el.classList.remove('wrong')),1000); }
+}
+async function save(tid,done){
+  $('status').innerHTML='saving…';
+  const total=WORKSHEET.tasks.length;
+  const r=await fetch('/api/task',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({tutorial:TUT,task:tid,done,attempt:true,totalTasks:total})});
+  if(r.ok){ const d=await r.json(); ME.progress=d.progress;
+    $('status').innerHTML='<b>saved ✓</b> '+doneCount()+'/'+total+' tasks'; }
+  else $('status').innerHTML='save failed (are you signed in?)';
+}
+function showDone(){ const d=$('done'); d.style.display='block';
+  if($('summary').innerHTML) return;
+  let html='';
+  if(WORKSHEET.summary){
+    html+='<h3 style="border-bottom:2px solid var(--line);padding-bottom:8px;color:var(--accent)">Key points to remember</h3>'+
+      '<ul style="line-height:1.7;padding-left:22px">'+WORKSHEET.summary.map(s=>'<li style="margin:8px 0">'+s+'</li>').join('')+'</ul>'; }
+  if(WORKSHEET.resources){
+    html+='<h3 style="border-bottom:2px solid var(--line);padding-bottom:8px;color:var(--accent);margin-top:26px">Learn more (Wikipedia)</h3>'+
+      '<ul style="line-height:1.8;padding-left:22px">'+WORKSHEET.resources.map(r=>'<li><a href="'+esc(r.u)+'" target="_blank" rel="noopener" style="color:var(--accent)">'+esc(r.t)+'</a></li>').join('')+'</ul>'; }
+  $('summary').innerHTML=html;
+}
+function doneCount(){ return WORKSHEET.tasks.filter(t=>state[t.id].done).length; }
+function updateRail(){
+  const total=WORKSHEET.tasks.length, done=doneCount();
+  const rail=$('rail'); rail.innerHTML='';
+  WORKSHEET.tasks.forEach(t=>{const d=document.createElement('div');d.className='pip'+(state[t.id].done?' done':'');rail.appendChild(d);});
+  $('railTxt').textContent=done+' of '+total+' tasks complete'+(done===total?' — module finished! 🎉':'');
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+boot();
+</script>
+</body>
+</html>
