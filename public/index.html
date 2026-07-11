@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy</title>
+<style>
+  :root{--bg:#050a14;--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--card:#0b1526;--line:#1d3350;}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% -10%,#0d1e38,#050a14 60%);
+    color:var(--fg);font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace}
+  a{color:var(--accent);cursor:pointer;text-decoration:none}
+  .wrap{max-width:1000px;margin:0 auto;padding:24px 18px 60px}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .logo{font-size:22px;font-weight:bold;letter-spacing:1px;
+    background:linear-gradient(90deg,#5fd0ff,#ffcf4d,#39d353);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .who{font-size:12px;color:var(--dim)}
+  .who b{color:var(--fg)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin:14px 0}
+  h1{font-size:26px;margin:0 0 4px} h2{font-size:18px;margin:0 0 10px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:16px}
+  input,button{font-family:inherit;font-size:14px}
+  input{width:100%;background:#0a1526;border:1px solid var(--line);color:#fff;padding:10px;border-radius:8px;margin:6px 0}
+  button{background:#1f4a7a;border:1px solid #2b5686;color:#fff;padding:11px 18px;border-radius:9px;cursor:pointer;transition:.13s}
+  button:hover{background:#2b5c96;border-color:var(--cyan)}
+  button.ghost{background:transparent}
+  .err{color:#ff6b6b;font-size:12px;min-height:16px;margin:4px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:680px){.grid{grid-template-columns:1fr}}
+  .tut{border:1px solid var(--line);border-radius:12px;padding:16px;background:#0a1424;position:relative;overflow:hidden}
+  .tut.locked{opacity:.5}
+  .tut .num{font-size:11px;color:var(--dim);letter-spacing:1px}
+  .tut .ttl{font-size:16px;color:#fff;font-weight:bold;margin:3px 0 6px}
+  .tut .st{font-size:12px}
+  .tut .st.pass{color:var(--grn)} .tut .st.lock{color:var(--dim)} .tut .st.ready{color:var(--accent)}
+  .tut button{margin-top:10px;width:100%;padding:8px}
+  .badge{position:absolute;top:10px;right:10px;font-size:18px}
+  .prog{height:8px;background:#0a1526;border-radius:4px;overflow:hidden;margin:6px 0 18px}
+  .prog>i{display:block;height:100%;background:linear-gradient(90deg,#2b8cff,#39d353)}
+  .q{margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:10px;background:#0a1424}
+  .q .opt{display:block;padding:8px 10px;margin:5px 0;border:1px solid var(--line);border-radius:7px;cursor:pointer}
+  .q .opt:hover{border-color:var(--cyan)}
+  .q .opt.sel{background:#1f4a7a;border-color:var(--cyan)}
+  .q .opt.correct{background:#12401f;border-color:var(--grn)}
+  .q .opt.wrong{background:#3a1414;border-color:#ff6b6b}
+  ol.steps{margin:6px 0 0;padding-left:22px} ol.steps li{margin:9px 0;line-height:1.55;font-size:14px}
+  ol.steps li b{color:var(--cyan)} ol.steps li i{color:var(--accent);font-style:normal}
+  .fb{margin:12px 0 4px;padding:12px 14px;border-radius:9px;font-size:14px;line-height:1.55}
+  .fb.ok{background:#0e2e18;border:1px solid var(--grn);color:#d6ffe4}
+  .fb.no{background:#331414;border:1px solid #ff6b6b;color:#ffd6d6}
+  #cert{background:linear-gradient(135deg,#0d1e38,#0a1424);border:2px solid var(--accent);border-radius:14px;padding:36px;text-align:center}
+  #cert .seal{font-size:44px}
+  #cert h1{font-size:30px;background:linear-gradient(90deg,#5fd0ff,#ffcf4d);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #cert .name{font-size:26px;color:#fff;margin:14px 0;border-bottom:1px solid var(--line);display:inline-block;padding:0 30px 8px}
+  iframe{width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;background:#000}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  th{color:var(--accent)} td.n{text-align:left}
+  .hide{display:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">◈ ORBIT ACADEMY</div>
+    <div class="who" id="who"></div>
+  </header>
+
+  <div id="auth" class="card" style="max-width:420px;margin:40px auto;text-align:center">
+    <svg width="150" height="150" viewBox="0 0 200 200" style="margin-bottom:6px">
+      <defs><radialGradient id="cg" cx="50%" cy="40%"><stop offset="0" stop-color="#123"/><stop offset="1" stop-color="#050a14"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="94" fill="url(#cg)" stroke="#ffcf4d" stroke-width="3"/>
+      <circle cx="100" cy="100" r="94" fill="none" stroke="#5fd0ff" stroke-width="1" opacity=".4"/>
+      <g fill="none" stroke="#5fd0ff" stroke-width="2" opacity=".8">
+        <ellipse cx="100" cy="100" rx="70" ry="28" transform="rotate(-20 100 100)"/><ellipse cx="100" cy="100" rx="55" ry="55"/></g>
+      <path d="M100 55 L128 130 L100 115 L72 130 Z" fill="#ffcf4d" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="100" cy="100" r="10" fill="#2b6fb5"/><circle cx="163" cy="88" r="4" fill="#c9c9c9"/>
+      <g fill="#fff"><circle cx="55" cy="60" r="1.5"/><circle cx="150" cy="150" r="1.5"/><circle cx="60" cy="140" r="1.2"/><circle cx="145" cy="55" r="1.2"/></g>
+    </svg>
+    <h1 id="authTitle">Sign in</h1>
+    <div class="sub" id="authSub">Learn how orbits work — from circles to cislunar space.</div>
+    <div id="nameRow" class="hide"><input id="fName" placeholder="your name (shown on your certificate)"/></div>
+    <input id="fEmail" placeholder="email" autocomplete="username"/>
+    <input id="fPass" type="password" placeholder="password (8+ characters)" autocomplete="current-password"/>
+    <div class="err" id="authErr"></div>
+    <button id="authGo" style="width:100%">Sign in</button>
+    <div style="margin-top:12px;font-size:12px;color:var(--dim)">
+      <span id="toggleAuth"><a>New here? Create an account</a></span>
+    </div>
+  </div>
+
+  <div id="hub" class="hide">
+    <div class="card">
+      <h1>Your flight path</h1>
+      <div class="sub">Complete each tutorial's quiz (70%+) to unlock the next. Finish all six to earn your certificate.</div>
+      <div class="prog"><i id="progBar" style="width:0%"></i></div>
+      <div class="grid" id="tutGrid"></div>
+      <div id="certLink" class="hide" style="margin-top:16px;text-align:center">
+        <button onclick="showCert()">🎓 View your certificate</button>
+      </div>
+    </div>
+    <div id="instrPanel" class="hide card">
+      <h2>Instructor dashboard</h2>
+      <div class="sub">Who has completed what.</div>
+      <div id="roster"></div>
+    </div>
+  </div>
+
+  <div id="tutView" class="hide">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 id="tutTitle"></h2>
+      <button class="ghost" onclick="goHub()">← back to flight path</button>
+    </div>
+    <div id="tutStage"></div>
+  </div>
+
+  <div id="certView" class="hide">
+    <div class="row" style="justify-content:flex-end"><button class="ghost" onclick="goHub()">← back</button></div>
+    <div id="cert">
+      <div class="seal">🎓</div>
+      <h1>Certificate of Completion</h1>
+      <div class="sub">Orbit Academy — Cislunar Fundamentals</div>
+      <div class="name" id="certName"></div>
+      <div style="color:var(--dim);font-size:13px">has demonstrated qualitative understanding of orbital dynamics,<br>angular rates, orbit taxonomy, maneuvers, observability, and cislunar space.</div>
+      <div style="margin-top:20px;font-size:12px;color:var(--dim)" id="certDate"></div>
+    </div>
+    <div class="row" style="justify-content:center;margin-top:14px"><button onclick="window.print()">Print / Save PDF</button></div>
+  </div>
+</div>
+
+<script src="quiz.js"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let ME=null, COURSE=[], UNLOCKED={};
+let authMode='login';
+
+$('toggleAuth').onclick=()=>{ authMode=authMode==='login'?'register':'login';
+  $('authTitle').textContent=authMode==='login'?'Sign in':'Create account';
+  $('nameRow').classList.toggle('hide',authMode==='login');
+  $('authGo').textContent=authMode==='login'?'Sign in':'Create account';
+  $('toggleAuth').innerHTML=authMode==='login'?'<a>New here? Create an account</a>':'<a>Have an account? Sign in</a>';
+  $('authErr').textContent=''; };
+$('authGo').onclick=async()=>{
+  $('authErr').textContent='';
+  const email=$('fEmail').value.trim(), password=$('fPass').value, name=$('fName').value.trim();
+  const path=authMode==='login'?'/api/login':'/api/register';
+  const body=authMode==='login'?{email,password}:{name,email,password};
+  const r=await fetch(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){ $('authErr').textContent=d.error||'error'; return; }
+  await refresh();
+};
+async function refresh(){
+  const r=await fetch('/api/me'); if(!r.ok){ showAuth(); return; }
+  const d=await r.json(); ME=d.user; COURSE=d.course; UNLOCKED=d.unlocked;
+  showHub();
+}
+function showAuth(){ $('auth').classList.remove('hide'); $('hub').classList.add('hide');
+  $('tutView').classList.add('hide'); $('certView').classList.add('hide'); $('who').textContent=''; }
+
+function passedCount(){ return COURSE.filter(c=>ME.progress[c.id]&&ME.progress[c.id].passed).length; }
+function showHub(){
+  $('auth').classList.add('hide'); $('tutView').classList.add('hide'); $('certView').classList.add('hide');
+  $('hub').classList.remove('hide');
+  $('who').innerHTML='<b>'+esc(ME.name)+'</b> · '+ME.role+' · <a onclick="logout()">sign out</a>';
+  const total=COURSE.length, done=passedCount();
+  $('progBar').style.width=(100*done/total)+'%';
+  const grid=$('tutGrid'); grid.innerHTML='';
+  COURSE.forEach((c,i)=>{
+    const pr=ME.progress[c.id], passed=pr&&pr.passed, open=UNLOCKED[c.id];
+    const div=document.createElement('div'); div.className='tut'+(open?'':' locked');
+    let st = passed?'<span class="st pass">✓ passed ('+pr.score+'%)</span>'
+      : open?'<span class="st ready">▶ ready</span>'
+      : '<span class="st lock">🔒 needs '+c.prereq.map(p=>COURSE.find(x=>x.id===p).title).join(', ')+'</span>';
+    const built = !!TUTORIALS[c.id];
+    div.innerHTML='<div class="num">TUTORIAL '+(i+1)+'</div><div class="ttl">'+esc(c.title)+'</div>'+st+
+      (passed?'<div class="badge">'+hexBadge(i+1)+'</div>':'')+
+      (open? '<button onclick="openTut(\''+c.id+'\')">'+(built?(passed?'Review':'Start'):'Coming soon')+'</button>' : '<button disabled style="opacity:.4">Locked</button>');
+    grid.appendChild(div);
+  });
+  $('certLink').classList.toggle('hide',done<total);
+  if(ME.role==='instructor'){ $('instrPanel').classList.remove('hide'); loadRoster(); } else $('instrPanel').classList.add('hide');
+}
+function goHub(){ refresh(); }
+async function logout(){ await fetch('/api/logout',{method:'POST'}); ME=null; showAuth(); }
+
+let curTut=null;
+function openTut(id){
+  const t=TUTORIALS[id]; if(!t){ alert('This tutorial is being built.'); return; }
+  // worksheet-driven modules open in their own window; the hub stays as a launcher/status view
+  if(t.worksheet){
+    curTut=id; $('hub').classList.add('hide'); $('tutView').classList.remove('hide');
+    $('tutTitle').textContent=COURSE.find(c=>c.id===id).title;
+    const w=window.open(t.worksheet,'worksheet_'+id);
+    $('tutStage').innerHTML='<div class="card" style="text-align:center">'+
+      '<h2>📋 Worksheet opened in a new window</h2>'+
+      '<div class="sub">Work through the interactive worksheet alongside the simulator. Your progress saves automatically as you complete each task.</div>'+
+      '<div class="row" style="justify-content:center"><button onclick="(function(){var w=window.open(\''+t.worksheet+'\',\'worksheet_'+id+'\');w&&w.focus();})()">↗ Re-open the worksheet</button>'+
+      '<button class="ghost" onclick="goHub()">← Back to flight path (refresh progress)</button></div>'+
+      '<div class="sub" style="margin-top:12px">If the window didn’t open, allow pop-ups for this site, then click “Re-open the worksheet.”</div></div>';
+    if(!w) flashPopupHint();
+    return;
+  }
+  curTut=id; $('hub').classList.add('hide'); $('tutView').classList.remove('hide');
+  $('tutTitle').textContent=COURSE.find(c=>c.id===id).title;
+  const stage=$('tutStage');
+  let stepsHtml='';
+  if(t.steps&&t.steps.length){ stepsHtml='<div class="card"><h2>Guided exercise — do these in order</h2>'+
+    '<div class="sub">Work through each step in the tool above and think about what changes. These set you up for the quiz.</div><ol class="steps">'+
+    t.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol></div>'; }
+  stage.innerHTML='<div class="card"><div class="sub">'+esc(t.blurb)+'</div>'+
+    '<iframe src="'+t.tool+'" title="interactive tool"></iframe></div>'+
+    stepsHtml+
+    '<div class="card" style="text-align:center"><button style="max-width:360px;margin:0 auto" onclick="startQuiz(\''+id+'\')">I\'ve worked through the steps → take the quiz</button></div>';
+}
+// Quiz: one question at a time, per-answer feedback, unlimited retries until correct.
+let QZ=null;
+function startQuiz(id){
+  QZ={id, i:0, firstTry:[], done:new Array(TUTORIALS[id].quiz.length).fill(false)};
+  renderQuestion();
+}
+function renderQuestion(){
+  const t=TUTORIALS[QZ.id], q=t.quiz[QZ.i], stage=$('tutStage');
+  const n=t.quiz.length;
+  let html='<div class="card"><div class="sub">Question '+(QZ.i+1)+' of '+n+' · answer until you get it right — that\'s how you learn it</div>'+
+    '<div class="q"><b style="font-size:15px">'+esc(q.q)+'</b>';
+  q.opts.forEach((o,oi)=>{ html+='<label class="opt" data-o="'+oi+'">'+esc(o)+'</label>'; });
+  html+='</div><div id="qfb"></div><div id="qnav" class="row" style="margin-top:10px"></div></div>';
+  stage.innerHTML=html;
+  stage.querySelectorAll('.opt').forEach(el=>el.onclick=()=>answerQuestion(+el.dataset.o));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function answerQuestion(oi){
+  const t=TUTORIALS[QZ.id], q=t.quiz[QZ.i], stage=$('tutStage');
+  if(QZ.firstTry[QZ.i]===undefined) QZ.firstTry[QZ.i]=oi;   // record first attempt (for the record)
+  const opts=stage.querySelectorAll('.opt');
+  const correct = oi===q.a;
+  opts.forEach(el=>{ const i=+el.dataset.o;
+    el.classList.remove('sel');
+    if(i===oi) el.classList.add(correct?'correct':'wrong'); });
+  const fb=$('qfb');
+  if(correct){
+    QZ.done[QZ.i]=true;
+    opts.forEach(el=>el.style.pointerEvents='none');
+    fb.innerHTML='<div class="fb ok">✓ '+esc(q.why)+'</div>';
+    const last=QZ.i>=t.quiz.length-1;
+    $('qnav').innerHTML='<button onclick="'+(last?'finishQuiz()':'nextQuestion()')+'">'+(last?'Finish & earn badge →':'Next question →')+'</button>';
+  }else{
+    fb.innerHTML='<div class="fb no">✗ '+esc((q.feedback&&q.feedback[oi])||'Not quite — rethink it and try another answer.')+'</div>';
+    // let them try again: re-enable, clear the wrong marker after a moment
+    setTimeout(()=>{ opts.forEach(el=>el.classList.remove('wrong')); },900);
+  }
+}
+function nextQuestion(){ QZ.i++; renderQuestion(); }
+async function finishQuiz(){
+  const id=QZ.id, t=TUTORIALS[id];
+  const firstPass=QZ.firstTry.filter((v,i)=>v===t.quiz[i].a).length;
+  const firstScore=Math.round(100*firstPass/t.quiz.length);
+  // Mastery model: completing every question correctly earns the badge (score 100 recorded);
+  // we also show their first-attempt accuracy for self-awareness.
+  const r=await fetch('/api/complete',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({tutorial:id,score:100})});
+  const d=await r.json();
+  if(r.ok){ ME.progress=d.progress; UNLOCKED=d.unlocked; }
+  const stage=$('tutStage');
+  stage.innerHTML='<div class="card" style="text-align:center">'+hexBadgeBig()+
+    '<h2>🎉 Tutorial complete — badge earned!</h2>'+
+    '<div class="sub">You answered every question correctly. First-attempt accuracy: '+firstScore+'%. '+
+    'The next tutorial is now unlocked.</div>'+
+    '<div class="row" style="justify-content:center"><button style="max-width:280px" onclick="goHub()">Back to flight path →</button></div></div>';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function hexBadgeBig(){ return '<div style="font-size:0">'+hexBadge(COURSE.findIndex(c=>c.id===QZ.id)+1).replace('width="30" height="30"','width="90" height="90"')+'</div>'; }
+
+function showCert(){ $('hub').classList.add('hide'); $('certView').classList.remove('hide');
+  $('certName').textContent=ME.name; $('certDate').textContent='Completed '+new Date().toLocaleDateString(); }
+async function loadRoster(){ const r=await fetch('/api/roster'); if(!r.ok)return; const d=await r.json();
+  let h='<table><tr><th class="n">Name</th><th>Email</th>'+d.course.map(c=>'<th>'+esc(c.title.split(' ')[0])+'</th>').join('')+'</tr>';
+  d.roster.forEach(u=>{ h+='<tr><td class="n">'+esc(u.name)+'</td><td>'+esc(u.email)+'</td>'+
+    d.course.map(c=>{ const s=u.progress[c.id]; return '<td>'+(s==='pass'?'✅':s==='fail'?'❌':'·')+'</td>'; }).join('')+'</tr>'; });
+  h+='</table>'; $('roster').innerHTML=h;
+}
+function flashPopupHint(){ alert('Your browser blocked the worksheet pop-up. Please allow pop-ups for this site, then click “Re-open the worksheet.”'); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const ROMAN=['','I','II','III','IV','V','VI'];
+function hexBadge(n){ return '<svg width="30" height="30" viewBox="0 0 120 120">'+
+  '<polygon points="60,8 108,34 108,86 60,112 12,86 12,34" fill="#0b1526" stroke="#39d353" stroke-width="6"/>'+
+  '<ellipse cx="60" cy="60" rx="40" ry="16" transform="rotate(-25 60 60)" fill="none" stroke="#5fd0ff" stroke-width="4" opacity=".8"/>'+
+  '<circle cx="60" cy="60" r="9" fill="#2b6fb5"/>'+
+  '<text x="60" y="66" text-anchor="middle" fill="#fff" font-family="monospace" font-size="26" font-weight="bold">'+(ROMAN[n]||n)+'</text></svg>'; }
+
+refresh();
+</script>
+</body>
+</html>

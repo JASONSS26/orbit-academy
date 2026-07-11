@@ -1,0 +1,8 @@
+# user data — contains password hashes & progress, NEVER commit
+academy_data.json
+# scratch / test artifacts
+_*.png
+_*.html
+*.log
+.DS_Store
+node_modules/

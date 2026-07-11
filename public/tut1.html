@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>ORBIT ACADEMY — Tutorial 1: How orbits work</title>
+<style>
+  :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--warn:#ff7a52;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000407;color:var(--fg);
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
+  /* 3-column layout: controls | visualization (~34%) | readout+tutor, filling the viewport */
+  /* fixed side columns so the central visualization gets ALL remaining width */
+  #app{display:grid;grid-template-columns:320px minmax(0,1fr) 320px;
+    height:100vh;gap:10px;padding:10px}
+  #stage{position:relative;border:1px solid #16304e;border-radius:10px;overflow:hidden;background:#000407}
+  #c{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #tag{position:absolute;top:6px;left:50%;transform:translateX(-50%);color:#3d557a;font-size:11px;letter-spacing:2px;z-index:2}
+  #warpInd{position:absolute;top:8px;left:10px;z-index:2;background:rgba(6,12,24,.8);border:1px solid #2b5686;
+    border-radius:7px;padding:5px 11px;color:var(--accent);font-size:14px;font-weight:bold}
+  .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(6,12,24,.82);border:1px solid #1d3350;border-radius:10px;
+    padding:14px 16px;font-size:14px;line-height:1.6}
+  #left h2{margin:0 0 2px;font-size:20px;color:#fff}
+  #left .lead{color:var(--dim);font-size:13px;margin-bottom:12px}
+  .sec{border-top:1px solid #1d3350;margin-top:12px;padding-top:11px}
+  .sec h3{margin:0 0 7px;font-size:15px;color:var(--accent)}
+  label{display:block;font-size:14px;margin:9px 0 2px}
+  label b{color:var(--cyan)}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:22px}
+  .chk{display:flex;align-items:center;gap:9px;margin:7px 0;cursor:pointer;font-size:14px}
+  .chk input{accent-color:var(--cyan);width:16px;height:16px}
+  .sw{width:11px;height:11px;border-radius:50%}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;
+    font-size:14px;padding:10px;border-radius:8px;cursor:pointer;width:100%;margin-top:7px}
+  button:hover{background:#1f4a7a;border-color:var(--cyan)}
+  button.go{background:#0a3a33;border-color:var(--grn);color:#c0ffe6;font-weight:bold;font-size:15px}
+  button.clr{background:#3a1f1f;border-color:#c0562b}
+  #read .big{font-size:17px;color:var(--accent);font-weight:bold}
+  #read .kv{display:flex;justify-content:space-between;margin:3px 0;font-size:14px}
+  #read .kv span:last-child{color:#fff}
+  #tutor .hd{color:var(--grn);font-weight:bold;margin-bottom:6px;font-size:15px}
+  #tutorText{color:var(--fg);font-size:14px;min-height:54px;line-height:1.6}
+  #tutor .keybox{display:none;margin-top:8px}
+  #tutor input[type=password]{width:100%;background:#0a1526;border:1px solid #274266;color:#fff;
+    font-family:inherit;padding:7px;border-radius:6px;font-size:13px}
+  #tutor a{color:var(--accent);cursor:pointer}
+  kbd{background:#13273f;border:1px solid #274266;border-bottom-width:2px;border-radius:4px;padding:0 6px;color:#fff;font-size:12px}
+  @media(max-width:900px){#app{grid-template-columns:1fr;grid-auto-rows:auto}#stage{height:60vh}}
+  .tag{position:fixed;top:3px;left:50%;transform:translateX(-50%);color:#3d557a;font-size:10px;letter-spacing:2px;z-index:8}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="left" class="col panel">
+  <h2>① How orbits work</h2>
+  <div class="lead">Around Earth, zoomed in. Turn on the real constellations, then inject your own object and change its speed to see circles become ellipses.</div>
+
+  <div class="sec">
+    <h3>Real orbits (for scale)</h3>
+    <label class="chk"><input type="checkbox" id="cISS" checked><span class="sw" style="background:#ffffff"></span>Space Station (ISS) — 420 km</label>
+    <label class="chk"><input type="checkbox" id="cLEO"><span class="sw" style="background:#66ff99"></span>LEO demo — one equatorial orbit @ 550 km</label>
+    <label class="chk"><input type="checkbox" id="cSL"><span class="sw" style="background:#9fd0ff"></span>Starlink — ~400 sats, inclined shells (53°/70°/98°)</label>
+    <label class="chk"><input type="checkbox" id="cGPS"><span class="sw" style="background:#ffd166"></span>GPS (MEO) — 20,200 km, 6 planes @ 55°</label>
+    <label class="chk"><input type="checkbox" id="cGEO"><span class="sw" style="background:#ff6b6b"></span>GEO — 35,786 km, equatorial</label>
+    <label class="chk"><input type="checkbox" id="cGeoDemo"><span class="sw" style="background:#ff3b30"></span>GEO lock demo (sat + ground tether)</label>
+  </div>
+
+  <div class="sec">
+    <h3>Inject your own object</h3>
+    <label>release altitude: <b><span id="altV">1000</span> km</b></label>
+    <input id="alt" type="range" min="300" max="42000" step="100" value="1000">
+    <label>tangential speed: <b><span id="spdV">7.35</span> km/s</b> <span id="spdRel" style="color:var(--dim)"></span></label>
+    <input id="spd" type="range" min="3" max="11" step="0.05" value="7.35">
+    <label>inclination: <b><span id="incV">0</span>°</b> <span style="color:var(--dim)">(0 = equatorial, 90 = polar)</span></label>
+    <input id="inc" type="range" min="0" max="90" step="1" value="0">
+    <button class="go" id="inject">◇ INJECT OBJECT</button>
+    <button id="injectMany">inject a fan (7 speeds, centered on your speed)</button>
+    <button class="clr" id="clear">clear my objects</button>
+  </div>
+
+  <div class="sec">
+    <h3>View</h3>
+    <label class="chk"><input type="checkbox" id="showVel" checked>show velocity arrow at release</label>
+    <label class="chk"><input type="checkbox" id="showApo" checked>mark perigee / apogee</label>
+    <div style="color:var(--dim);font-size:10.5px;margin-top:4px">drag=pan · shift/right-drag=rotate · wheel=zoom · arrows=rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset view</div>
+  </div>
+</div>
+
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div id="tag">ORBIT ACADEMY · Tutorial 1 · How orbits work</div>
+  <div id="warpInd">time ×1</div>
+</div>
+
+<div id="right" class="col">
+  <div id="read" class="panel">
+    <div class="big">Selected orbit</div>
+    <div id="readBody" style="color:var(--dim)">Inject an object to see its orbital elements.</div>
+  </div>
+  <div id="tutor" class="panel">
+    <div class="hd">🎓 Orbit tutor</div>
+    <div id="tutorText">Welcome! Try this: set the speed slider to <b>circular</b> and inject — you get a circle. Then inject again a bit slower, and a bit faster. Watch the shape change.</div>
+    <div style="margin-top:6px"><a id="tutorMode">using built-in tutor · click to add Claude API key</a></div>
+    <div class="keybox" id="keybox">
+      <input type="password" id="apiKey" placeholder="paste Anthropic API key (stays in your browser)"/>
+      <div style="color:var(--dim);font-size:10px;margin-top:3px">Optional. Enables live Claude explanations. Key is kept only in this tab, sent directly to Anthropic.</div>
+    </div>
+  </div>
+  <div class="panel" style="font-size:13px;color:var(--dim)">
+    <b style="color:var(--fg)">The big idea:</b> where you release + how fast sets the whole ellipse. Slower than circular → release point = <b>apogee</b>. Faster → <b>perigee</b>. ~11.2 km/s → escape.
+  </div>
+  <div class="panel" style="font-size:13px;color:var(--dim)">
+    <b style="color:var(--fg)">Prograde vs. retrograde:</b> looking down from above the North Pole, Earth spins <b>counter-clockwise</b>. An orbit going the <b>same</b> way (CCW) is <b>prograde</b>; one going the opposite way (CW) is <b>retrograde</b>. Almost everything launched from Earth is prograde — it's cheaper (you get Earth's spin for free).
+  </div>
+</div>
+</div><!-- #app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
+<script>
+"use strict";
+/* ============================================================================
+   ORBIT ACADEMY — Tutorial 1: two-body orbits around Earth.
+   Orbits are drawn ANALYTICALLY from the injection state (conic section from the
+   energy & eccentricity vectors) — NO numerical propagation, so there are zero
+   integration artifacts. A marker animates along each ellipse via Kepler's
+   equation (which also demonstrates the 2nd law: fast at perigee, slow at apogee).
+   ============================================================================ */
+const MU=398600.4418;        // Earth GM, km^3/s^2
+const Re=6371;               // km
+const UNIT=Re;               // scene unit = 1 Earth radius
+function toScene(km){return km/UNIT;}
+
+/* ---- three ---- */
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setClearColor(0x000407,1);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(50,1,0.01,2000);
+(function stars(){const g=new THREE.BufferGeometry(),N=1500,p=new Float32Array(N*3);
+  for(let i=0;i<N;i++){const r=120+Math.random()*200,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+    p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x8fa4c6,size:0.5})));})();
+const sun=new THREE.DirectionalLight(0xffffff,1.5); sun.position.set(5,3,8); scene.add(sun);
+scene.add(new THREE.AmbientLight(0x223344,0.6));
+
+// Earth (real texture, exact radius = 1 unit)
+const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,64,48),earthMat); scene.add(earth);
+new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',
+  t=>{earthMat.map=t;earthMat.color.set(0xffffff);earthMat.needsUpdate=true;},undefined,()=>{});
+// Ground station on the equator (child of Earth, so it rotates WITH the surface).
+// Its longitude is +x at t=0, matching the GEO demo satellite's start — so if GEO is
+// truly geostationary, the station stays directly beneath it.
+// Ground station over COLORADO (~39°N, 105°W). NOTE: a truly geostationary sat can only sit
+// over the EQUATOR, so the demo sat shares Colorado's LONGITUDE but sits on the equator, and the
+// tether beams down at a slant — exactly how a Colorado station sees a GEO bird (low, to the south).
+const CO_LAT=39*Math.PI/180, CO_LON=-105*Math.PI/180;
+const coLocal=new THREE.Vector3(Math.cos(CO_LAT)*Math.cos(CO_LON),Math.sin(CO_LAT),-Math.cos(CO_LAT)*Math.sin(CO_LON));
+const groundStation=new THREE.Mesh(new THREE.ConeGeometry(0.03,0.09,8),
+  new THREE.MeshBasicMaterial({color:0xff3b30}));
+groundStation.position.copy(coLocal);
+groundStation.lookAt(coLocal.clone().multiplyScalar(2)); groundStation.rotateX(Math.PI/2); // point outward
+earth.add(groundStation);
+earth.add(new THREE.Mesh(new THREE.SphereGeometry(1.03,48,32),
+  new THREE.MeshBasicMaterial({color:0x3a86ff,transparent:true,opacity:0.12,side:THREE.BackSide})));
+
+/* ---- global time base: real orbital seconds per unit simT ----
+   simT accumulates wall*warp. At warp 1 we run ~1 GEO day in ~8 s so motion is visible. */
+const TIMESCALE=86164/8;   // ≈10770 s of orbit per simT unit at warp 1
+
+/* ---- reference constellations ----
+   Each: planes × perPlane satellites at a given inclination. Real values:
+   ISS/LEO shown as single equatorial demo rings; GPS is the real 6 planes × 4 sats @ 55°;
+   GEO is equatorial. ---- */
+const REF=[
+  {id:'cISS', alt:420,   col:0xffffff, planes:1, per:1, inc:0,  op:0.6},
+  {id:'cLEO', alt:550,   col:0x66ff99, planes:1, per:8, inc:0,  op:0.6},
+  {id:'cGPS', alt:20200, col:0xffd166, planes:6, per:4, inc:55, op:0.35},  // real GPS: 6 planes, 4/plane, 55°
+  {id:'cGEO', alt:35786, col:0xff6b6b, planes:1, per:4, inc:0,  op:0.6},
+];
+const refObjs=REF.map(r=>{
+  const rad=toScene(Re+r.alt), inc=r.inc*Math.PI/180;
+  const period=2*Math.PI*Math.sqrt(Math.pow(Re+r.alt,3)/MU);
+  const msz=r.id==='cISS'?0.02:0.03;
+  const rings=[], sats=[];
+  for(let p=0;p<r.planes;p++){ const raan=r.planes>1? p/r.planes*Math.PI*2 : 0;
+    const pts=[];for(let k=0;k<=128;k++){const a=k/128*6.283; pts.push(planeVec(rad,a,inc,raan));}
+    const ring=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({color:r.col,transparent:true,opacity:r.op})); scene.add(ring); rings.push(ring);
+    for(let s=0;s<r.per;s++){const m=new THREE.Mesh(new THREE.SphereGeometry(msz,8,6),new THREE.MeshBasicMaterial({color:r.col}));
+      scene.add(m); sats.push({mesh:m, rad, inc, raan, ph:s/r.per*6.283 + p*0.4});}
+  }
+  return {...r,rings,sats,period};
+});
+// honor each checkbox's initial state (so an unchecked box really starts hidden)
+for(const r of REF){const el=document.getElementById(r.id); if(!el)continue; const on=el.checked;
+  const ro=refObjs.find(x=>x.id===r.id); ro.rings.forEach(g=>g.visible=on); ro.sats.forEach(s=>s.mesh.visible=on);}
+
+/* ---- Geostationary demo: one GEO sat + a tether to a ground station, both starting at +x.
+   If GEO is truly geostationary the tether stays radial (vertical) as Earth spins. ---- */
+const geoDemoRad=toScene(Re+35786);
+const geoDemoPeriod=2*Math.PI*Math.sqrt(Math.pow(Re+35786,3)/MU);
+const geoDemoSat=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),new THREE.MeshBasicMaterial({color:0xff3b30}));
+scene.add(geoDemoSat);
+const geoTetherGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(1,0,0),new THREE.Vector3(geoDemoRad,0,0)]);
+const geoTether=new THREE.Line(geoTetherGeo,new THREE.LineDashedMaterial({color:0xff8a52,dashSize:0.15,gapSize:0.1,transparent:true,opacity:0.7}));
+geoTether.computeLineDistances(); scene.add(geoTether);
+let showGeoDemo=false; geoDemoSat.visible=false; geoTether.visible=false; groundStation.visible=false;
+
+/* ---- Starlink-style LEO shell: many sats across inclined planes.
+   Rendered as individual sphere Meshes (same look as GPS, world-sized so they scale with zoom).
+   Real Starlink shells use 53°, 70°, and 97.6° (sun-synchronous) inclinations. ---- */
+const SL={sats:[], group:new THREE.Group(), ringGroup:new THREE.Group()};
+scene.add(SL.group); scene.add(SL.ringGroup);
+(function buildStarlink(){
+  const alt=550, rad=toScene(Re+alt), period=2*Math.PI*Math.sqrt(Math.pow(Re+alt,3)/MU);
+  const geo=new THREE.SphereGeometry(0.02,8,6);                 // shared geometry (cheap)
+  const mat=new THREE.MeshBasicMaterial({color:0x9fd0ff});      // shared material
+  const shells=[{inc:53, planes:12, per:18},{inc:70, planes:8, per:14},{inc:97.6, planes:6, per:12}];
+  for(const sh of shells){ const inc=sh.inc*Math.PI/180;
+    for(let p=0;p<sh.planes;p++){ const raan=p/sh.planes*Math.PI*2;
+      const pts=[];for(let k=0;k<=64;k++){const a=k/64*6.283; pts.push(planeVec(rad,a,inc,raan));}
+      const ring=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({color:0x2b6fb5,transparent:true,opacity:0.10}));
+      SL.ringGroup.add(ring);
+      for(let s=0;s<sh.per;s++){const m=new THREE.Mesh(geo,mat); SL.group.add(m);
+        SL.sats.push({mesh:m,rad,inc,raan,period,ph:s/sh.per*6.283 + p*0.5});}
+    }
+  }
+  SL.group.visible=false; SL.ringGroup.visible=false;
+})();
+// position on an inclined circular orbit: argument a, inclination inc, RAAN raan (prograde)
+function planeVec(rad,a,inc,raan){
+  // in-plane (prograde: negate z), then rotate by inclination about x, then RAAN about y
+  let x=rad*Math.cos(a), y=0, z=-rad*Math.sin(a);
+  // incline about x-axis
+  let y2=y*Math.cos(inc)-z*Math.sin(inc), z2=y*Math.sin(inc)+z*Math.cos(inc); y=y2; z=z2;
+  // rotate about y-axis by raan
+  let x3=x*Math.cos(raan)+z*Math.sin(raan), z3=-x*Math.sin(raan)+z*Math.cos(raan);
+  return new THREE.Vector3(x3,y,z3);
+}
+
+/* ---- analytic orbit from a release state (2-D, in x-z plane) ----
+   Given release radius r0 (km) at angle 0 (on +x axis) and a purely tangential
+   speed v (km/s), compute the conic and return the full polyline + elements. */
+function orbitFromRelease(r0_km, v_kms){
+  // state: position on +x, velocity tangential (+z direction for prograde)
+  const r0=r0_km, v=v_kms;
+  const energy=0.5*v*v - MU/r0;                 // specific orbital energy
+  const a=-MU/(2*energy);                        // semi-major axis (km); <0 => hyperbolic
+  const h=r0*v;                                  // specific ang. momentum (tangential release)
+  const e=Math.abs(1 - r0*v*v/MU);               // eccentricity for tangential burn at an apse
+  const bound=energy<0 && a>0;
+  // is release point perigee or apogee? tangential release is always an apse.
+  const releaseIsPerigee = (v*v > MU/r0);        // faster than circular -> perigee here
+  const rp = releaseIsPerigee ? r0 : a*(1-e);
+  const ra = releaseIsPerigee ? a*(1+e) : r0;
+  // build polyline of the conic (or open arc if unbound)
+  const pts=[]; const NS=256;
+  // orient so that perigee is along +x if releaseIsPerigee, else apogee along +x (release at +x)
+  // true anomaly of release: 0 if perigee, pi if apogee
+  const nu0 = releaseIsPerigee?0:Math.PI;
+  if(bound){
+    for(let k=0;k<=NS;k++){const nu=k/NS*2*Math.PI;
+      const r=a*(1-e*e)/(1+e*Math.cos(nu));
+      // measure angle from +x: release sits at nu0, so scene angle = (nu - nu0)
+      const ang=nu-nu0; pts.push(new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang))));}
+  }else{
+    // hyperbolic/parabolic: sweep true anomaly within asymptote limits
+    const numax = e>1?Math.acos(-1/e)*0.98:Math.PI*0.98;
+    for(let k=-NS;k<=NS;k++){const nu=k/NS*numax;
+      const r=a*(1-e*e)/(1+e*Math.cos(nu)); if(r<0||r>toScene(80)*UNIT*3)continue;
+      const ang=nu-nu0; pts.push(new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang))));}
+  }
+  const period = bound? 2*Math.PI*Math.sqrt(a*a*a/MU):Infinity;
+  return {a,e,rp,ra,h,energy,bound,releaseIsPerigee,nu0,pts,period,r0,v};
+}
+// position along a bound orbit at time t (Kepler's equation) -> scene Vector3
+function posAtTime(orb,t){
+  if(!orb.bound){ // just march along nu for the open arc
+    const nu=orb.nu0 + (t*0.3)%(2*Math.PI); const r=orb.a*(1-orb.e*orb.e)/(1+orb.e*Math.cos(nu));
+    const ang=nu-orb.nu0; return new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang)));
+  }
+  const n=2*Math.PI/orb.period; let M=(n*t)%(2*Math.PI);
+  // release at perigee(nu0=0) => M starts at 0; at apogee => M starts at pi
+  M += orb.releaseIsPerigee?0:Math.PI;
+  let E=M; for(let i=0;i<50;i++)E=E-(E-orb.e*Math.sin(E)-M)/(1-orb.e*Math.cos(E));
+  const nu=2*Math.atan2(Math.sqrt(1+orb.e)*Math.sin(E/2),Math.sqrt(1-orb.e)*Math.cos(E/2));
+  const r=orb.a*(1-orb.e*Math.cos(E));
+  const ang=nu-orb.nu0; return new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang)));
+}
+
+/* ---- user-injected objects ---- */
+const injected=[]; let selected=null;
+const palette=[0x00ffcc,0xffa0e0,0xa0ff60,0xffd000,0x60c0ff,0xff6060,0xc080ff];
+function injectObject(alt_km,v_kms,colIdx,inc_deg){
+  const r0=Re+alt_km; const orb=orbitFromRelease(r0,v_kms);
+  const col=palette[(colIdx==null?injected.length:colIdx)%palette.length];
+  const reentry = orb.bound && orb.rp<Re+100;
+  // everything for this object lives in a GROUP tilted by inclination about the x-axis
+  // (the orbit's line of nodes = x-axis, so the release point on +x stays put as it inclines).
+  const grp=new THREE.Group(); grp.rotation.x=(inc_deg||0)*Math.PI/180; scene.add(grp);
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(orb.pts),
+    new THREE.LineBasicMaterial({color:reentry?0xff3b30:col,transparent:true,opacity:reentry?0.6:0.85}));
+  grp.add(line);
+  const mk=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),new THREE.MeshBasicMaterial({color:col})); grp.add(mk);
+  // apogee (red) & perigee (green) markers — diamond rings so they read distinctly from the satellite dot
+  const apo=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.02,6,4),new THREE.MeshBasicMaterial({color:0xff5a52}));
+  const per=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.02,6,4),new THREE.MeshBasicMaterial({color:0x39d353}));
+  apo.rotation.x=Math.PI/2; per.rotation.x=Math.PI/2;
+  grp.add(apo);grp.add(per);
+  // position perigee/apogee markers now, for THIS object (works for every fan member, not just selected)
+  const showAP=$('showApo').checked && orb.bound;
+  apo.visible=per.visible=showAP;
+  if(showAP){ const pgAng=orb.releaseIsPerigee?0:Math.PI, apAng=orb.releaseIsPerigee?Math.PI:0;
+    per.position.set(toScene(orb.rp*Math.cos(pgAng)),0,-toScene(orb.rp*Math.sin(pgAng)));
+    apo.position.set(toScene(orb.ra*Math.cos(apAng)),0,-toScene(orb.ra*Math.sin(apAng))); }
+  const relPos=new THREE.Vector3(toScene(r0),0,0);
+  const arrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,1),relPos,Math.max(0.3,v_kms*0.12),col,0.15,0.09);
+  grp.add(arrow);
+  const obj={orb,grp,line,mk,apo,per,arrow,col,t:0,inc:inc_deg||0};
+  injected.push(obj); selectObj(obj); tutorReact(obj);
+  return obj;
+}
+function selectObj(o){selected=o; updateReadout();}
+function clearInjected(){injected.forEach(o=>{scene.remove(o.grp);});injected.length=0;selected=null;
+  document.getElementById('readBody').innerHTML='<span style="color:var(--dim)">Inject an object to see its orbital elements.</span>';}
+
+/* ---- UI ---- */
+const $=id=>document.getElementById(id);
+function circV(alt){return Math.sqrt(MU/(Re+alt));}
+function refreshSpeedLabel(){const alt=+$('alt').value, v=+$('spd').value; const vc=circV(alt);
+  $('altV').textContent=alt; $('spdV').textContent=v.toFixed(2);
+  const rel=v<vc-0.03?'(slow → ellipse, release=apogee)':v>vc+0.03?'(fast → ellipse, release=perigee)':'(≈ circular)';
+  $('spdRel').textContent=rel + '  v_circ='+vc.toFixed(2);}
+$('alt').addEventListener('input',()=>{ // keep speed near circular as altitude changes for intuition
+  refreshSpeedLabel();});
+$('spd').addEventListener('input',refreshSpeedLabel);
+$('inc').addEventListener('input',()=>$('incV').textContent=$('inc').value);
+// toggle perigee/apogee markers on ALL injected objects live
+$('showApo').addEventListener('change',()=>{const on=$('showApo').checked;
+  injected.forEach(o=>{const vis=on&&o.orb.bound; o.apo.visible=vis; o.per.visible=vis;});});
+$('inject').onclick=()=>injectObject(+$('alt').value,+$('spd').value,null,+$('inc').value);
+$('injectMany').onclick=()=>{const alt=+$('alt').value, v0=+$('spd').value, inc=+$('inc').value;
+  const vesc=Math.sqrt(2*MU/(Re+alt)), vc=circV(alt);
+  // fan CENTERED on the chosen speed, all in the SAME plane. Spread ±0.6 km/s (gentle enough that
+  // every member stays a viewable bound ellipse — no member flies off-screen or escapes).
+  [-0.6,-0.4,-0.2,0,0.2,0.4,0.6].forEach((dv,i)=>injectObject(alt,Math.max(0.5,Math.min(v0+dv,vesc-0.15)),i,inc));
+  setTutor('A "fan" of 7 objects released at the SAME point and inclination, spread around YOUR chosen speed of '+v0.toFixed(2)+' km/s. They all pass back through the release point but reach very different distances — slower = tight inner ellipse, faster = big outer ellipse. (Speeds are capped just below escape so the fastest stays a visible ellipse.)');};
+$('clear').onclick=clearInjected;
+for(const r of REF)$(r.id).addEventListener('change',e=>{const on=e.target.checked;
+  const ro=refObjs.find(x=>x.id===r.id); ro.rings.forEach(g=>g.visible=on); ro.sats.forEach(s=>s.mesh.visible=on);});
+$('cSL').addEventListener('change',e=>{const on=e.target.checked;
+  SL.group.visible=on; SL.ringGroup.visible=on;});
+$('cGeoDemo').addEventListener('change',e=>{showGeoDemo=e.target.checked;
+  geoDemoSat.visible=showGeoDemo; geoTether.visible=showGeoDemo; groundStation.visible=showGeoDemo;});
+refreshSpeedLabel();
+
+function updateReadout(){const b=$('readBody'); if(!selected){return;} const o=selected.orb;
+  const fmt=k=>k>1e5?(k/1e3).toFixed(0)+'k':k.toFixed(0);
+  b.innerHTML=
+    '<div class="kv"><span>type</span><span>'+(o.bound?(o.rp<Re+100?'⚠ RE-ENTERS':(o.e<0.02?'circular':'elliptical')):'escape / hyperbolic')+'</span></div>'+
+    '<div class="kv"><span>eccentricity e</span><span>'+o.e.toFixed(3)+'</span></div>'+
+    (o.bound?'<div class="kv"><span>perigee alt</span><span>'+fmt(o.rp-Re)+' km</span></div>'+
+    '<div class="kv"><span>apogee alt</span><span>'+fmt(o.ra-Re)+' km</span></div>'+
+    '<div class="kv"><span>period</span><span>'+(o.period/3600).toFixed(1)+' h</span></div>'
+    :'<div class="kv"><span>excess speed</span><span>leaves Earth</span></div>')+
+    '<div class="kv"><span>release v</span><span>'+o.v.toFixed(2)+' km/s</span></div>';
+  // (apogee/perigee markers are placed per-object at injection time, for every object)
+}
+
+/* ---- tutor (built-in, or live Claude if a key is provided) ---- */
+let apiKey='';
+$('tutorMode').onclick=()=>{const kb=$('keybox');kb.style.display=kb.style.display==='block'?'none':'block';};
+$('apiKey').addEventListener('change',e=>{apiKey=e.target.value.trim();
+  $('tutorMode').textContent=apiKey?'live Claude tutor enabled ✓':'using built-in tutor · click to add Claude API key';});
+function setTutor(t){$('tutorText').innerHTML=t;}
+function builtinExplain(o){
+  if(!o.orb.bound) return 'You exceeded escape speed (~11.2 km/s at this altitude), so this path is a hyperbola — the object leaves Earth entirely. Pull the speed back down to stay bound.';
+  if(o.orb.rp<Re+100) return 'Careful — the perigee dipped to '+(o.orb.rp-Re).toFixed(0)+' km, below the atmosphere. You released SLOWER than circular, so this point is apogee and the object falls back into the Earth on the far side — it re-enters. Add a little speed to raise perigee.';
+  if(o.orb.e<0.02) return 'Nearly circular! Your speed matched the local circular speed, so the object keeps a constant altitude. This is what constellation satellites (Starlink, GPS, GEO) use.';
+  const which=o.orb.releaseIsPerigee?'faster than circular, so your release point became <b>perigee</b> (closest point) and the object swings OUT to a higher apogee on the far side'
+    :'slower than circular, so your release point became <b>apogee</b> (farthest point) and the object falls IN to a lower perigee on the far side';
+  return 'Eccentricity '+o.orb.e.toFixed(2)+'. You released '+which+'. Notice the marker moves fastest at perigee and slowest at apogee — that\'s Kepler\'s 2nd law (equal areas in equal times).';
+}
+async function tutorReact(o){
+  if(!apiKey){ setTutor(builtinExplain(o)); return; }
+  setTutor('<span style="color:var(--dim)">thinking…</span>');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'content-type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,
+        messages:[{role:'user',content:'You are an orbital-mechanics tutor for students. In 2-3 short sentences, explain this two-body orbit a student just created around Earth. Release altitude '+(o.orb.r0-Re).toFixed(0)+' km, tangential speed '+o.orb.v.toFixed(2)+' km/s, eccentricity '+o.orb.e.toFixed(2)+', perigee alt '+(o.orb.rp-Re).toFixed(0)+' km, apogee alt '+(o.orb.ra-Re).toFixed(0)+' km. Be encouraging and concrete.'}]})});
+    const d=await r.json();
+    setTutor((d.content&&d.content[0]&&d.content[0].text)||builtinExplain(o));
+  }catch(e){ setTutor(builtinExplain(o)+' <span style="color:var(--warn)">(live tutor unavailable — using built-in)</span>'); }
+}
+
+/* ---- camera + input ----
+   left-drag = PAN · right/Shift/Alt-drag = ROTATE · wheel/pinch = ZOOM · arrows = ROTATE
+   The camera orbits a movable pivot (panPivot); panning slides that pivot in the view plane. */
+let camR=12,camTheta=0.9,camPhi=1.0,drag=0,lx=0,ly=0,downX=0,downY=0; let warp=1;
+const panPivot=new THREE.Vector3(0,0,0);
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('mousedown',e=>{drag=(e.button===2||e.button===1||e.shiftKey||e.altKey)?2:1;
+  lx=downX=e.clientX;ly=downY=e.clientY;e.preventDefault();});
+addEventListener('mouseup',()=>drag=0);
+addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
+  if(drag===2){ // ROTATE
+    camTheta-=dx*0.005;camPhi=Math.max(0.05,Math.min(Math.PI-0.05,camPhi-dy*0.005));
+  }else{ // PAN — move pivot along the camera's right/up axes
+    const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0);
+    const up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
+    const k=camR*0.0016; panPivot.addScaledVector(right,-dx*k); panPivot.addScaledVector(up,dy*k);
+  }});
+canvas.addEventListener('wheel',e=>{e.preventDefault();
+  const wheelMouse=e.deltaMode!==0||(e.deltaX===0&&Math.abs(e.deltaY)>=50);
+  if(e.ctrlKey||wheelMouse){camR=Math.max(1.5,Math.min(200,camR*(1+(e.ctrlKey?e.deltaY*0.01:Math.sign(e.deltaY)*0.1))));}
+  else{const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
+    const k=camR*0.0012;panPivot.addScaledVector(right,e.deltaX*k);panPivot.addScaledVector(up,e.deltaY*k);}
+},{passive:false});
+// touch: 1 finger pan, 2 finger pinch-zoom
+let pinchD=0;
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+  else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();
+  if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;
+    const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);
+    const k=camR*0.0016;panPivot.addScaledVector(right,-dx*k);panPivot.addScaledVector(up,dy*k);}
+  else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    if(pinchD)camR=Math.max(1.5,Math.min(200,camR*(pinchD/d)));pinchD=d;}},{passive:false});
+canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
+const keys={};
+addEventListener('keydown',e=>{keys[e.key]=true;
+  if(e.key===',')warp=Math.max(0.03125,warp/2); if(e.key==='.')warp=Math.min(64,warp*2);
+  if(e.key.toLowerCase()==='r'&&!e.metaKey&&!e.ctrlKey){camTheta=0.9;camPhi=1.0;camR=12;panPivot.set(0,0,0);}
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();});
+addEventListener('keyup',e=>{keys[e.key]=false;});
+// raycast pick — only on a clean click (negligible drag distance)
+const rc=new THREE.Raycaster(),ndc=new THREE.Vector2();
+canvas.addEventListener('click',e=>{ if(Math.hypot(e.clientX-downX,e.clientY-downY)>5) return;
+  const r=canvas.getBoundingClientRect();
+  ndc.x=(e.clientX-r.left)/r.width*2-1;ndc.y=-(e.clientY-r.top)/r.height*2+1;rc.setFromCamera(ndc,camera);
+  const hit=rc.intersectObjects(injected.map(o=>o.mk),false); if(hit.length){const o=injected.find(x=>x.mk===hit[0].object);if(o)selectObj(o);}});
+
+const stageEl=document.getElementById('stage');
+function resize(){const w=stageEl.clientWidth,h=stageEl.clientHeight;
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+addEventListener('resize',resize);
+if(window.ResizeObserver)new ResizeObserver(resize).observe(stageEl);
+resize();
+
+let last=performance.now(), simT=0;
+function loop(){const now=performance.now();let wall=Math.min((now-last)/1000,0.05);last=now;
+  simT += wall*warp;                       // warp-scaled simulation clock (drives everything)
+  const dt=wall*warp*TIMESCALE;            // injected-object time step (seconds), SAME base as sats
+  // arrow keys rotate the view
+  const rot=2.2*wall;
+  if(keys['ArrowLeft'])camTheta+=rot; if(keys['ArrowRight'])camTheta-=rot;
+  if(keys['ArrowUp'])camPhi=Math.max(0.05,camPhi-rot); if(keys['ArrowDown'])camPhi=Math.min(Math.PI-0.05,camPhi+rot);
+  // ONE time base for everything: TIMESCALE seconds of real orbit per unit simT.
+  // Earth's sidereal spin (86164 s) uses the same base, so a GEO satellite (same period)
+  // stays LOCKED over its ground point — genuinely geostationary.
+  const EARTH_DAY=86164;                    // sidereal day (s)
+  earth.rotation.y = simT*TIMESCALE*(2*Math.PI/EARTH_DAY);   // PROGRADE (CCW from North)
+  // reference sats: each rides its own (possibly inclined) plane, prograde
+  for(const ro of refObjs){const rate=simT*TIMESCALE*(2*Math.PI/ro.period);
+    for(const st of ro.sats) st.mesh.position.copy(planeVec(st.rad,st.ph+rate,st.inc,st.raan));}
+  // Starlink shell (sphere meshes, like GPS)
+  if(SL.group.visible){for(const st of SL.sats){const a=st.ph+simT*TIMESCALE*(2*Math.PI/st.period);
+    st.mesh.position.copy(planeVec(st.rad,a,st.inc,st.raan));}}
+  // GEO demo: equatorial sat sharing Colorado's LONGITUDE, locked to Earth's spin.
+  // Earth's surface longitude phase at time t is earth.rotation.y; the CO station sits at CO_LON
+  // within the texture, so the sat's scene angle = earth.rotation.y + CO_LON keeps it over CO's meridian.
+  if(showGeoDemo){const a=earth.rotation.y + CO_LON;
+    const gx=geoDemoRad*Math.cos(a), gz=-geoDemoRad*Math.sin(a);
+    geoDemoSat.position.set(gx,0,gz);
+    const st=groundStation.getWorldPosition(new THREE.Vector3());
+    geoTetherGeo.setFromPoints([st,new THREE.Vector3(gx,0,gz)]); geoTether.computeLineDistances();}
+  // show TRUE speed-up over wall-clock: sim orbital-seconds elapsed per real second = warp*TIMESCALE
+  const wi=document.getElementById('warpInd'); if(wi){ const speedup=warp*TIMESCALE;
+    let s; if(speedup>=86400) s=(speedup/86400).toFixed(speedup/86400<10?1:0)+' days/sec';
+    else if(speedup>=3600) s=(speedup/3600).toFixed(speedup/3600<10?1:0)+' hr/sec';
+    else if(speedup>=60) s=(speedup/60).toFixed(0)+' min/sec';
+    else s=speedup.toFixed(0)+' sec/sec';
+    wi.textContent='⏱ '+s+' (×'+Math.round(speedup).toLocaleString()+' real time)'; }
+  // injected objects animate along their analytic orbits (Kepler)
+  for(const o of injected){o.t+=dt; const p=posAtTime(o.orb,o.t); o.mk.position.copy(p);
+    o.arrow.visible=$('showVel').checked;}
+  if(selected)updateReadout();
+  // camera orbits the (pannable) pivot
+  camera.position.set(panPivot.x+camR*Math.sin(camPhi)*Math.cos(camTheta),
+    panPivot.y+camR*Math.cos(camPhi), panPivot.z+camR*Math.sin(camPhi)*Math.sin(camTheta));
+  camera.lookAt(panPivot);
+  renderer.render(scene,camera); requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
