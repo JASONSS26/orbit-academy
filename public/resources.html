@@ -37,8 +37,9 @@
 
 <script>
 "use strict";
-// Module metadata (order + titles). Data files are loaded sequentially; each defines a global
-// WORKSHEET, so we snapshot its .resources after each loads.
+// Module metadata (order + titles). Each data file declares `const WORKSHEET = {…}`; a top-level
+// const is NOT a window property (and re-loading would collide), so we FETCH each file as text and
+// evaluate it in an isolated function scope to read its `resources` array.
 const MODS=[
   {id:'t1', num:1, title:'How Orbits Work',            file:'worksheet1.data.js'},
   {id:'t2', num:2, title:'Angular Rates & Geosync',    file:'worksheet2.data.js'},
@@ -47,12 +48,19 @@ const MODS=[
   {id:'t5', num:5, title:'xGEO & Cislunar Space',      file:'worksheet5.data.js'},
 ];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function loadSeq(i,acc){
-  if(i>=MODS.length){ render(acc); return; }
-  const s=document.createElement('script'); s.src=MODS[i].file;
-  s.onload=()=>{ acc.push({...MODS[i], resources:(window.WORKSHEET&&WORKSHEET.resources)||[]}); window.WORKSHEET=undefined; loadSeq(i+1,acc); };
-  s.onerror=()=>{ acc.push({...MODS[i], resources:[]}); loadSeq(i+1,acc); };
-  document.body.appendChild(s);
+async function loadAll(){
+  const acc=[];
+  for(const m of MODS){
+    let resources=[];
+    try{
+      const txt=await (await fetch(m.file,{cache:'no-store'})).text();
+      // run the file body in a fresh scope and return its WORKSHEET.resources
+      const W=Function(txt+'; return typeof WORKSHEET!=="undefined"?WORKSHEET:null;')();
+      resources=(W&&W.resources)||[];
+    }catch(e){ resources=[]; }
+    acc.push({...m, resources});
+  }
+  render(acc);
 }
 function render(mods){
   $('nav').innerHTML=mods.map(m=>'<a href="#'+m.id+'">'+m.num+'. '+esc(m.title)+'</a>').join('');
@@ -65,7 +73,7 @@ function render(mods){
   if(location.hash){ const el=document.getElementById(location.hash.slice(1)); if(el) el.scrollIntoView(); }
 }
 function $(id){return document.getElementById(id);}
-loadSeq(0,[]);
+loadAll();
 </script>
 </body>
 </html>

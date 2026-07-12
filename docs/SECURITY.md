@@ -4,6 +4,21 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v2.2 — audit result: **PASS** (re-run)
+Client-side only; **`server.js` has a zero diff** from v2.1, so the audited auth/gating/DoS surface
+is unchanged and re-verified by the suite. Reviewed the touched files:
+- **`resources.html`** — now `fetch`es the same-origin `worksheetN.data.js` files and runs each via
+  `Function(text)` to read its `resources` array. This evaluates **same-origin, author-authored**
+  code — the same trust boundary as the `<script src>` it replaced — with no user input and no
+  cross-origin fetch. (An attacker who could alter those files could already alter the site.)
+- **`worksheet-engine.js`** — added rendering of the new `teach`/`predict`/`think`/`do` fields, all
+  author-authored worksheet content rendered as HTML by design (unchanged trusted-author model).
+  The only dynamic value, `ME.name`/`ME.role`, is still `esc()`-escaped before DOM insertion.
+- **`worksheet-engine.css` / `worksheet1.data.js`** — styling and author content only.
+No new endpoints, secrets, external calls, or user-input sinks. Re-ran the full suite — **34
+functional + 22 security checks + DoS guard, all passing**. `academy_data.json` confirmed
+gitignored. Cleared to ship v2.2.
+
 ## v2.1 — audit result: **PASS** (re-run)
 v2.1 is client-side only; **`server.js` has a zero diff** from v2.0, so the audited auth/gating/DoS
 surface is unchanged and re-verified by the suite. Reviewed the touched files:

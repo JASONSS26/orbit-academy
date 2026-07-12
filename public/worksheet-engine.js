@@ -105,11 +105,22 @@ function renderTasks(){
       const t=WORKSHEET.tasks.find(x=>x.id===tid); const done=state[tid];
       const card=document.createElement('div'); card.className='task'+(done?' done':''); card.id='card_'+tid;
       let html='<div class="n">EXERCISE '+n+(done?' ✓':'')+'</div><h3>'+esc(t.title)+'</h3>';
-      if(t.do) html+='<p class="do">▶ In the tool: '+t.do+'</p>';
-      if(t.observe) html+='<p style="color:var(--dim)">👁 Notice: '+t.observe+'</p>';
-      if(t.body) html+=t.body;
-      if(t.quiz){ html+=quizHtml(tid,t.quiz,done); }
-      else if(!done){ html+='<div class="markdone"><button class="btn ghost" onclick="markDone(\''+tid+'\')">✓ Mark this exercise done</button></div>'; }
+      // teaching prose first — the "why", read before doing anything. Accepts a string or array of paragraphs.
+      if(t.teach){ const paras=Array.isArray(t.teach)?t.teach:[t.teach];
+        html+='<div class="teach">'+paras.map(p=>'<p>'+p+'</p>').join('')+'</div>'; }
+      if(t.body) html+=t.body;   // optional rich HTML (sample TLE, extra diagram, etc.)
+      // PREDICT before acting — a hypothesis to test (predict → act → analyze → iterate)
+      if(t.predict) html+='<div class="predict"><b>🔮 Predict first:</b> '+t.predict+'</div>';
+      // the hands-on step(s) — a prominent "Try it" box. `do` may be a string or an array of steps.
+      if(t.do){ const steps=Array.isArray(t.do)?t.do:[t.do];
+        html+='<div class="tryit"><div class="tryit-h">▶ Try it in the simulator</div>'+
+          (steps.length>1?'<ol>'+steps.map(s=>'<li>'+s+'</li>').join('')+'</ol>':'<p>'+steps[0]+'</p>')+'</div>'; }
+      if(t.observe) html+='<p class="observe">👁 <b>What to look for:</b> '+t.observe+'</p>';
+      // ungraded reflection prompts to keep them engaged with the sim, not racing to the quiz
+      if(t.think){ html+='<div class="think"><b>🤔 While you watch, think about:</b><ul>'+
+        t.think.map(q=>'<li>'+q+'</li>').join('')+'</ul></div>'; }
+      if(t.quiz){ html+='<div class="checklabel">✓ Check your understanding</div>'+quizHtml(tid,t.quiz,done); }
+      else if(!done){ html+='<div class="markdone"><button class="btn ghost" onclick="markDone(\''+tid+'\')">✓ I did this — mark the exercise done</button></div>'; }
       card.innerHTML=html; host.appendChild(card);
       if(t.quiz && !done) wireQuiz(card,tid,t.quiz);
     }

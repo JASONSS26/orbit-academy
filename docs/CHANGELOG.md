@@ -2,6 +2,31 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.2 — 2026-07-12
+Makes exercises genuinely instructional (predict → act → analyze → iterate), fixes the resources
+page, and corrects the Module 1 tutorial diagram.
+
+**Worksheet engine — richer exercise structure:**
+- Each exercise now renders in a teaching order: **`teach`** prose (the "why", read first) →
+  **🔮 Predict first** (a hypothesis prompt before acting) → **▶ Try it** steps (which invite
+  iteration) → **👁 What to look for** → **🤔 think** (ungraded reflection) → **✓ Check your
+  understanding** (the quiz). New CSS styles for each section. Fields are optional/back-compatible.
+
+**Module 1 rewritten to this shape:**
+- All 20 exercises gained real `teach` prose and `think` prompts; the 17 physics/observation
+  exercises gained a `predict` prompt and iteration-inviting `do` steps. It reads as an interactive
+  lab, not a quiz. (Modules 2–5 to follow in a later release.)
+- Fixed the tutorial's orbit diagram: small centered Earth, all three orbits sharing the release
+  point, no overlap between the circle and ellipses.
+
+**Resources page fix:**
+- `resources.html` was empty because a data file's top-level `const WORKSHEET` is not a `window`
+  property (and re-loading collided). It now fetches each data file and evaluates it in an isolated
+  scope to read `.resources` — every module's links populate correctly.
+
+**Server:** unchanged (zero diff). Security audit re-run — **PASS**. Tests: 34 functional + 22
+security + DoS, all passing.
+
 ## v2.1 — 2026-07-12
 Reviewer gallery, Module 1 overhaul, and unbound-orbit physics fixes.
 

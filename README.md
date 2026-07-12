@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v2.1
+# 🛰 ORBIT ACADEMY — v2.2
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -23,7 +23,7 @@ your browser; use the main hub at `http://localhost:8080/` if you want to create
 **Even simpler, no Node at all:** open `academy/public/gallery.html` directly in a browser — every
 page works, progress saves locally. (A couple of features degrade without the server; see below.)
 
-## What's here (v2.1)
+## What's here (v2.2)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
@@ -39,10 +39,11 @@ page works, progress saves locally. (A couple of features degrade without the se
   & Lagrange points, the potential surface, xGEO defined, and "lead-the-Moon" lunar transfers.
 - The **live simulators** (`tut1.html`–`tut5.html`) with matching camera/time controls.
 - **Interactive worksheets** (shared engine): each opens beside its simulator with learning
-  **objectives**, a one-page **tutorial** (analogy + diagram), **numbered exercises** with check
-  questions, a **final quiz**, a **key-points summary**, and **resources**. Progress saves to the
-  server, or — with no server — to the browser (**standalone mode**, so the static files run
-  anywhere, even opened directly).
+  **objectives**, a one-page **tutorial** (analogy + diagram), and **numbered exercises** built on a
+  **predict → act → analyze** loop — teaching prose, a "predict first" prompt, hands-on steps that
+  invite iteration, things to look for, reflection questions, then a check question — ending with a
+  **final quiz**, **key-points summary**, and **resources**. Progress saves to the server, or — with
+  no server — to the browser (**standalone mode**, so the static files run anywhere).
 - A printable **controls cheat sheet** (`cheatsheet.html`) and a **resources index** by module
   (`resources.html`), linked from every worksheet and the hub.
 - **Backend** (`server.js`, optional): accounts, login/sessions, per-task progress, prerequisite
@@ -102,7 +103,7 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.1: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.2: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. All modules and the v2.x worksheet engine are
 static client-side files (no new server surface). For internet-facing use, front it with HTTPS +
