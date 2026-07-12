@@ -4,6 +4,15 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v2.3 — audit result: **PASS** (re-run)
+The v2.3 change set is **four worksheet data files** (`worksheet2/3a/4/5.data.js`) only — enriched
+author-authored exercise content (`teach`/`predict`/`think`/`do` prose), rendered by the already-
+audited engine through the same trusted-author HTML path used since v1.0. **`server.js` has a zero
+diff**, so the entire auth/gating/DoS surface is unchanged. No new files, endpoints, inputs, user
+or network data, or DOM sinks fed by untrusted data. Re-ran the full suite — **34 functional + 22
+security checks + DoS guard, all passing**. `academy_data.json` confirmed gitignored. Cleared to
+ship v2.3.
+
 ## v2.2 — audit result: **PASS** (re-run)
 Client-side only; **`server.js` has a zero diff** from v2.1, so the audited auth/gating/DoS surface
 is unchanged and re-verified by the suite. Reviewed the touched files:

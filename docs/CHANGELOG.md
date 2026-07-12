@@ -2,6 +2,20 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.3 — 2026-07-12
+Brings the whole course to the Module-1 gold standard.
+
+- **Modules 2, 3, 4, and 5 rewritten** to the same instructional shape Module 1 got in v2.2:
+  every exercise now has **`teach`** prose (the "why", read first) and **`think`** reflection
+  prompts, and every simulator-action exercise has a **🔮 predict-first** prompt, with `do` steps
+  that invite iteration — the predict → act → analyze → iterate loop, course-wide.
+- Coverage: all 85 exercises across the five modules have teach + think; 77 have predict (the 8
+  pure think-through tasks correctly omit it). Every module's `elements` table, `body` fields,
+  quizzes, `exam`, `objectives`, `tutorial`, `summary`, and `resources` preserved unchanged.
+- **Server:** unchanged (zero diff). Security audit re-run — **PASS** (worksheet-content-only
+  change through the existing trusted-author render path). Tests: 34 functional + 22 security +
+  DoS, all passing.
+
 ## v2.2 — 2026-07-12
 Makes exercises genuinely instructional (predict → act → analyze → iterate), fixes the resources
 page, and corrects the Module 1 tutorial diagram.

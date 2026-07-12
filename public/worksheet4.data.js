@@ -99,8 +99,19 @@ const WORKSHEET = {
   tasks: [
     // ---- PART A: why prediction breaks down (opens with the moved TLE-limits question) ----
     { id:'a1', title:'The limits of a TLE (and continuously-thrusting satellites)',
+      teach:[
+        'In the last module you learned to read a <b>TLE</b> — a tidy little packet of six numbers that pins down one exact ellipse at one exact instant. It’s a snapshot. And like any snapshot, it’s frozen: it captures where the satellite was and where it was headed <i>at that moment</i>, on the assumption that nothing but plain Earth gravity is acting on it.',
+        'The trouble is that the real world never leaves an orbit alone. Air, sunlight, Earth’s own lumpy shape, and the satellite’s own thrusters all keep nudging it off that ideal ellipse. So the snapshot starts drifting out of date the instant it’s taken — and that “going stale” is the thread running through this entire module.',
+        'There’s one case where the snapshot fails almost immediately: a satellite that is <b>thrusting continuously</b>. If a spacecraft is gently pushing the whole time (as the <b>Starlink</b> satellites do with their electric thrusters), it’s never actually <i>on</i> any single fixed ellipse — so no single TLE can honestly describe it for long.',
+      ],
       do:'Recall from the last module that a TLE is a snapshot of one ideal ellipse at one instant. Read the propulsion note below, then consider where that promise breaks.',
       body:'<p><b>Two kinds of engine.</b> <b>Chemical thrusters</b> burn propellant for a short, powerful shove — a brief burn, then coast; the orbit jumps from one ellipse to another and a fresh TLE describes it well. <b>Electric (ion) thrusters</b> use solar-panel electricity to fling ions out the back: the push is gentle but runs for <i>days or weeks continuously</i>, so the orbit is always slowly changing. <b>Starlink</b> satellites raise themselves this way.</p>',
+      observe:'a TLE only ever describes one frozen ellipse — so anything that keeps changing the orbit (a perturbation, or a continuously-firing thruster) is exactly what a TLE can’t keep up with.',
+      think:[
+        'A TLE stores the inclination and eccentricity just fine — so what is it fundamentally <i>unable</i> to capture?',
+        'Why would a satellite that fires its thruster for weeks on end be almost impossible to pin to a single TLE?',
+        'If you had to track a Starlink that’s slowly raising its orbit, how often do you think you’d need a fresh snapshot?',
+      ],
       quiz:{ q:'What is a fundamental limitation of representing an orbit as a TLE (six fixed elements at one epoch)?',
         opts:['It can only describe circular orbits',
               'It captures a single unperturbed ellipse — so it can’t represent ongoing perturbations, or a satellite (like Starlink on its ion thrusters) that is continuously changing its orbit',
@@ -108,8 +119,18 @@ const WORKSHEET = {
         a:1, why:'Correct — a TLE freezes one ideal ellipse at one moment. Perturbations (J2, drag, radiation pressure) and continuous low-thrust maneuvering (ion-powered Starlinks) mean the real path never stays on that fixed ellipse, so the TLE is only a short-lived approximation.',
         feedback:['TLEs handle eccentric orbits fine — Molniya has a TLE. The deeper limit is that the orbit itself keeps changing.','','Inclination is one of the fields it stores.','TLEs are published for all altitudes, including LEO.'] } },
     { id:'a2', title:'Impulsive vs. continuous thrust',
-      do:'Compare the two engines described in the intro and the perturbations table.',
+      teach:[
+        'There are two very different ways to push a spacecraft, and the difference decides how predictable it is. A <b>chemical thruster</b> gives a short, hard kick — a burn lasting seconds or minutes — and then the engine is off. Before and after that kick, the satellite simply <b>coasts on gravity alone</b>, tracing a clean, predictable ellipse. We call such a brief, powerful shove an <b>impulsive</b> burn.',
+        'An <b>electric (ion) thruster</b> works the opposite way. It sips electricity from solar panels and puts out a whisper of thrust — but it keeps pushing for <i>days or weeks without stopping</i>. That’s wonderfully fuel-efficient, but it means the orbit is <b>always changing</b>: there’s never a long stretch of pure coasting to lock a prediction onto. A non-gravity force is acting the entire time.',
+        'So a big chemical satellite way out in high orbit is easy to forecast — long, quiet coasts between rare burns. A continuously-thrusting ion craft like a <b>Starlink</b> is genuinely hard to forecast, not because it’s hiding, but because it never holds still on one orbit.',
+      ],
+      do:'Compare the two engines described in the intro and the perturbations table. Picture the difference as motion: a chemical burn is one sharp step from one orbit to another; an ion burn is a slow, endless drift.',
       observe:'a chemical burn is brief — the satellite coasts predictably before and after. An ion thruster pushes the whole time, so the orbit is never on a single fixed ellipse.',
+      think:[
+        'Between two chemical burns, what is the satellite doing — and why does that make it easy to predict?',
+        'Why does an efficiency win (the gentle ion thruster) come with a prediction cost?',
+        'Which would you rather track with a once-a-day observation: a chemical satellite in high orbit, or a thrusting Starlink? Why?',
+      ],
       quiz:{ q:'Why is a big chemical-thruster satellite in high orbit easier to predict than an ion-powered Starlink?',
         opts:['Chemical satellites don’t obey gravity',
               'The chemical satellite coasts on a predictable Keplerian orbit between brief impulsive burns, while the Starlink is under continuous thrust, so a non-gravitational force acts the entire time',
@@ -120,8 +141,22 @@ const WORKSHEET = {
 
     // ---- PART B: delta-v, tangential vs radial, kill-tangential ----
     { id:'b1', title:'Delta-v and prograde/retrograde burns',
-      do:'Open the simulator, launch a circular orbit, set a burn of ~200 m/s and click <b>prograde</b>. Then reset and try the same Δv <b>retrograde</b>. Watch apogee/perigee — and watch the <b>⛽ Δv budget gauge</b> at the top of the readout panel tick down with every burn.',
+      teach:[
+        'To change an orbit, you fire a thruster — and the thing you’re really spending is <b>delta-v</b>, a plain change in speed measured in m/s or km/s. Think of it as the <b>cash in the satellite’s wallet</b>: it launches with a fixed tank of delta-v, every maneuver has a price, you pay it once, and you can never earn it back. When the delta-v runs out, the mission is over, even if every other system still works.',
+        'Where you point that burn matters. A <b>prograde</b> burn fires along your direction of travel and <b>speeds you up</b>; a <b>retrograde</b> burn fires backward and <b>slows you down</b>. Here’s the part that trips people up: the burn doesn’t move the point you’re standing at. Instead, it changes the <b>opposite side</b> of the orbit. Speed up, and the far side climbs higher; slow down, and the far side drops.',
+      ],
+      predict:'Before you fire: you’re in a circular orbit and you burn <b>prograde</b> (speed up) at one point. Do you think the whole ring grows evenly, or does one particular side of the orbit move? If one side moves, which one — the point you burned at, or the far side?',
+      do:[
+        'Open the simulator, launch a circular orbit, set a burn of ~200 m/s and click <b>prograde</b>. Watch what happens to apogee and perigee.',
+        'Reset, then apply the same ~200 m/s burn <b>retrograde</b> and compare which side of the orbit moves this time.',
+        'Fire a couple more burns in a row and watch the <b>⛽ Δv budget gauge</b> at the top of the readout panel tick down each time — notice you can’t get that fuel back.',
+      ],
       observe:'a prograde burn raises the far side of the orbit (apogee climbs); a retrograde burn lowers it. Your burn point stays put — the opposite side moves. Each burn draws down the fuel gauge: a satellite launches with a fixed tank of Δv, and when it’s empty, the mission is over.',
+      think:[
+        'After a prograde burn, which point of the new orbit is your burn location — the high point or the low point?',
+        'Did the gauge refund any fuel when you burned the other direction, or did every burn cost you?',
+        'If your whole mission had to fit inside one small tank of Δv, how would that change the way you’d plan maneuvers?',
+      ],
       quiz:{ q:'You are in a circular orbit and fire a prograde (speed-up) burn. What happens?',
         opts:['The whole orbit expands uniformly, staying circular',
               'Your burn point becomes the perigee and the opposite side rises — apogee climbs',
@@ -129,8 +164,21 @@ const WORKSHEET = {
         a:1, why:'Correct — adding speed at a point makes that point the low point (perigee) and lifts the far side to a higher apogee. That’s the first half of a transfer orbit.',
         feedback:['A single burn changes the opposite side, not the whole ring uniformly.','','Speeding up raises the orbit, not shrinks it.','The change is immediate — the far side rises right away.'] } },
     { id:'b2', title:'Radial vs. tangential: which holds an orbit up?',
-      do:'Use the <b>Station-keeping</b> scenario. With a fixed Δv, compare a <b>radial</b> burn (toward/away from Earth) against a <b>tangential prograde</b> burn. Watch which one actually raises apogee/perigee.',
+      teach:[
+        'A burn can point two very different ways. A <b>tangential</b> burn fires along your direction of travel (prograde or retrograde) — the same direction you’re already moving. A <b>radial</b> burn fires straight toward or straight away from Earth, sideways to your motion. It seems like pushing “up,” away from Earth, ought to be the natural way to climb to a higher orbit. It isn’t.',
+        'The reason comes down to <b>work</b>. A burn adds energy to your orbit most effectively when it pushes in the same direction you’re already going — so a tangential (prograde) burn does real work and efficiently lifts the orbit. A radial burn is aimed roughly <i>across</i> your motion, so it does almost no work on the orbit’s energy. It mostly just tips and reshapes the ellipse without making it meaningfully bigger. To raise an orbit, burn tangential; radial thrust is a fuel-waster.',
+      ],
+      predict:'Before you burn: you have a fixed amount of Δv to spend. Which do you think will lift your orbit more — a <b>radial</b> burn pointed straight away from Earth, or a <b>tangential prograde</b> burn along your direction of travel?',
+      do:[
+        'Open the <b>Station-keeping</b> scenario. With a fixed Δv, apply a <b>radial</b> burn (toward/away from Earth) and note how much apogee and perigee actually change.',
+        'Reset and spend that same Δv on a <b>tangential prograde</b> burn instead, and compare — watch which one genuinely raises the orbit and which just reshapes it.',
+      ],
       observe:'the tangential (prograde) burn efficiently raises the orbit; the radial burn mostly just rotates/reshapes the ellipse and barely changes its size. Tangential thrust does real work on the orbit’s energy; radial thrust does almost none.',
+      think:[
+        'For the same fuel spent, which burn direction gave you the bigger, higher orbit?',
+        'The radial burn changed the orbit’s <i>shape</i> but not its size much — where did all that fuel’s energy go?',
+        'Why does a burn “along your motion” do more useful work than one aimed across it?',
+      ],
       quiz:{ q:'To efficiently raise a decaying orbit, in which direction should you burn?',
         opts:['Radially outward (straight away from Earth)',
               'Tangentially, in the prograde direction (along the direction of travel)',
@@ -139,8 +187,18 @@ const WORKSHEET = {
         a:1, why:'Correct — orbital energy changes as force × velocity, so a burn aligned with the velocity (tangential/prograde) does the most work and most efficiently raises the orbit. A radial burn is nearly perpendicular to the motion and does almost no work.',
         feedback:['Radial-out mostly reshapes the ellipse; it’s an inefficient way to add energy.','','That would lower the orbit, and inefficiently at that.','It matters a lot — direction determines how much work the burn does.'] } },
     { id:'b3', title:'What if you kill the tangential speed entirely?',
-      do:'Thought experiment (you can approximate it: in a circular orbit, apply a big retrograde burn equal to your speed). Imagine a burn that brings the sideways (tangential) speed all the way to zero.',
+      teach:[
+        'Back in Module 1 you learned the one-sentence definition of an orbit: it’s <b>falling sideways fast enough to keep missing the ground</b>. The whole trick is the sideways speed — the ground curves away beneath you exactly as fast as you fall, so you never quite hit it.',
+        'So here’s a sharp question. What if you took away that sideways speed entirely? Fire a retrograde burn big enough to cancel <i>all</i> of your tangential motion, bringing it to a dead stop relative to the ground below. There’s nothing left carrying you “around” the Earth. You’re not in an orbit anymore — you’re just an object hanging in space with gravity pulling on it. And gravity always wins that argument: you fall straight down.',
+      ],
+      predict:'Before you try it: if you cancel your sideways speed completely, do you think you’ll hover in place at that altitude, drift gently outward, or fall straight toward Earth?',
+      do:'Thought experiment (you can approximate it: in a circular orbit, apply a big retrograde burn equal to your speed). Imagine a burn that brings the sideways (tangential) speed all the way to zero, then watch which way the object goes.',
       observe:'with no sideways motion, nothing carries you “around” the Earth anymore — there’s no orbit left. You simply fall.',
+      think:[
+        'Once the sideways speed is gone, what force is left acting on the object — and which way does it point?',
+        'Why can’t the object just “hover” at its altitude with zero sideways speed?',
+        'How is this the same idea as an orbit, just with the one ingredient (sideways speed) removed?',
+      ],
       quiz:{ q:'From a circular orbit, you make a burn that brings your tangential (sideways) speed to exactly zero. What happens?',
         opts:['You stay at the same altitude, just not moving',
               'You fall straight down, radially inward toward Earth',
@@ -149,8 +207,22 @@ const WORKSHEET = {
         feedback:['Nothing holds you up without sideways speed — you can’t hover.','','Losing speed drops you inward, not outward.','Zero tangential speed is no orbit at all — it’s a vertical drop.'] } },
 
     { id:'b4', title:'The radial-burn paradox: pushing “up” crashes you down',
-      do:'Open the <b>Radial-burn paradox</b> scenario (a 1,500 km circular orbit). Set a burn of about <b>2,000 m/s</b> and press <b>⇱ radial out</b> — straight away from Earth. Watch the <b>perigee</b> readout and the altitude-vs-time plot.',
+      teach:[
+        'This is one of the most counterintuitive results in all of orbital mechanics, so it’s worth meeting head-on. Your gut says: to get higher, push up. Fire your thruster straight away from Earth and you should climb to a higher orbit. It feels obvious. It’s also wrong — and dangerously so.',
+        'Remember two things you just learned: a radial burn does <b>almost no work</b> on the orbit’s energy, and a burn changes the <b>opposite side</b> of the orbit, not the point you’re at. Put them together. Pushing “up” leaves your burn point about where it is but makes the ellipse more lopsided, swinging the <b>far side (perigee) downward</b>. Push hard enough and that far side drops <i>below the surface</i> — so half an orbit later, the satellite you tried to lift comes plunging into the Earth.',
+      ],
+      predict:'Before you fire: you’re in a 1,500 km circular orbit and you shove hard <b>straight up</b>, away from Earth. Do you think you’ll climb into a higher circular orbit — or could pushing “up” actually send you crashing down? Where do you predict the far side of the orbit will end up?',
+      do:[
+        'Open the <b>Radial-burn paradox</b> scenario (a 1,500 km circular orbit). Set a burn of about <b>2,000 m/s</b> and press <b>⇱ radial out</b> — straight away from Earth.',
+        'Watch the <b>perigee</b> readout and the altitude-vs-time plot as the orbit evolves.',
+        'For contrast, reset and spend a similar Δv <b>prograde</b> instead, and compare: the prograde burn lifts the far side, the radial burn drops it.',
+      ],
       observe:'pushing straight “up” does <i>not</i> raise your orbit. It leaves your burn point roughly where it is but swings the opposite side (perigee) far <b>lower</b> — below the surface — so half an orbit later the satellite plunges into the Earth.',
+      think:[
+        'You pushed away from Earth, yet the far side of the orbit moved <i>toward</i> Earth. Why does the opposite side respond, not the point you burned at?',
+        'How does the radial result compare to spending the same fuel on a prograde burn?',
+        'What does this tell you about trusting your everyday “push up to go up” intuition in orbit?',
+      ],
       quiz:{ q:'From a circular orbit, you make a large burn pointed radially outward (straight away from Earth). What happens?',
         opts:['You climb smoothly into a higher circular orbit',
               'The far side of your orbit (perigee) drops sharply — with a big enough burn it dips below the surface and you crash half an orbit later',
@@ -161,8 +233,23 @@ const WORKSHEET = {
 
     // ---- PART C: the two-step macro-maneuver (GTO → GEO) ----
     { id:'c1', title:'The two-step recipe: raise apogee, then match circular speed',
-      do:'Use the <b>GTO transfer</b> scenario (starts at 400 km LEO). <b>Step 1 — get to the apogee you want:</b> apply a <b>prograde</b> burn (~2,400 m/s) to stretch your orbit until apogee reaches the dashed GEO ring. <b>Step 2 — match the circular speed there:</b> coast (speed up time) to apogee, then apply a second <b>prograde</b> burn (~1,460 m/s) until the orbit circularizes — watch for the “✓ Circular GEO reached” banner.',
+      teach:[
+        'Now put the burns to work on a real job: moving from a low orbit all the way up to GEO. You can’t do it in one shove — and you already know why. A single prograde burn at LEO just lifts the <i>far side</i> of the orbit; the point you burned at stays low. So one burn can’t give you a nice round high orbit. It takes <b>two steps</b>.',
+        '<b>Step 1 — get to the apogee you want.</b> Fire prograde at LEO to stretch your orbit into a tall ellipse whose far side (apogee) reaches all the way out to GEO altitude. You’re now on a <b>transfer orbit</b>: high on one end, still low on the other. <b>Step 2 — match the circular speed there.</b> Coast up to that apogee and fire prograde <i>again</i>, this time to raise the low side up to meet it. That rounds the ellipse off into a circle at GEO.',
+        'This same two-step recipe — raise your high point, then circularize at it — works for <i>any</i> orbit-raising move, not just LEO→GEO. It’s the fundamental pattern. (The whole LEO→GEO trip costs about <b>3.9 km/s</b> of your precious Δv.)',
+      ],
+      predict:'Before you burn: you’re at 400 km and you want a round orbit way out at GEO. Do you think one big burn can do it, or will it take two? If the first burn stretches your orbit out to GEO, what shape do you predict the orbit will be — a circle, or a lopsided ellipse that falls back to 400 km?',
+      do:[
+        'Use the <b>GTO transfer</b> scenario (starts at 400 km LEO). <b>Step 1 — get to the apogee you want:</b> apply a <b>prograde</b> burn (~2,400 m/s) to stretch your orbit until apogee reaches the dashed GEO ring.',
+        '<b>Step 2 — match the circular speed there:</b> coast (speed up time) to apogee, then apply a second <b>prograde</b> burn (~1,460 m/s) until the orbit circularizes — watch for the “✓ Circular GEO reached” banner.',
+        'Try stopping after step 1 and letting it coast a full lap first — watch it fall right back to 400 km — so you can feel why the second burn is needed.',
+      ],
       observe:'this is the universal recipe for a big orbit change: (1) burn to put your apogee at the target distance, then (2) at that apogee, change your speed to match the circular speed there. The first burn stretches LEO into the tall transfer ellipse; the second rounds it off at GEO. LEO→GEO costs ~3.9 km/s total.',
+      think:[
+        'After step 1 alone, what happens if you just coast — does the satellite stay at GEO, or fall back to 400 km? Why?',
+        'Why does the circularizing burn have to happen up at apogee, rather than back down at LEO?',
+        'Both burns were prograde — so why did the first one stretch the orbit while the second one rounded it out?',
+      ],
       quiz:{ q:'In a GTO transfer, why is the second (circularizing) burn done at apogee — the highest point?',
         opts:['Because thrusters only work far from Earth',
               'Because apogee is already at GEO altitude; a prograde burn there raises the low perigee up to match, circularizing the orbit at GEO',
@@ -170,7 +257,12 @@ const WORKSHEET = {
         a:1, why:'Correct — the transfer ellipse already reaches GEO at apogee; you just need to raise the perigee up to that same altitude, so you add speed at apogee to circularize there.',
         feedback:['Thrusters work anywhere; the choice of apogee is geometric.','','The satellite moves slowest at apogee, not fastest.','It’s about geometry (raising perigee to apogee), not gravity strength.'] } },
     { id:'c2', title:'Which burn sequence actually reaches circular GEO?',
-      do:'Think through (and test in the sim) these candidate procedures for getting from a 400 km circular LEO to a circular GEO orbit.',
+      teach:[
+        'You’ve got the recipe — now let’s pressure-test it. Below are four plausible-sounding plans for getting from a circular 400 km LEO to a circular GEO. Only one actually works, and the wrong three each fail in an instructive way you can now predict.',
+        'Before you check the sim, reason each one through with what you know: one burn only moves the opposite side of the orbit; radial burns do almost no work; and a retrograde burn at apogee <i>lowers</i> perigee rather than raising it. Then run them in the simulator and watch each candidate either round out at GEO — or betray its flaw.',
+      ],
+      predict:'Before you test: read the four sequences below and place your bet. Which single sequence do you think delivers a truly <b>circular</b> orbit at GEO — and can you already name why each of the other three falls short?',
+      do:'Think through (and test in the sim) these candidate procedures for getting from a 400 km circular LEO to a circular GEO orbit. Run each one and watch whether it ends round at GEO or reveals its flaw.',
       body:'<p>Consider four proposed sequences:</p>'+
            '<ol>'+
            '<li><b>Sequence A:</b> One big prograde burn at LEO large enough to reach GEO altitude in a single shot, and stop.</li>'+
@@ -178,6 +270,12 @@ const WORKSHEET = {
            '<li><b>Sequence C:</b> Radial-outward burn at LEO, pointed straight at the GEO ring, until you drift out to it.</li>'+
            '<li><b>Sequence D:</b> Prograde burn at LEO to raise apogee to GEO → coast to apogee → <i>retrograde</i> burn at apogee.</li>'+
            '</ol>',
+      observe:'only the two-burn sequence (B) leaves you round at GEO — the others each fall back to LEO, barely move, or drop perigee even lower.',
+      think:[
+        'For Sequence A, where is perigee after the single burn — and what does that mean the satellite does twice per orbit?',
+        'Sequence D uses the right timing (a burn at apogee) but the wrong direction. Why does retrograde there make things worse, not better?',
+        'What do the three failures have in common with the mistakes you saw in Part B?',
+      ],
       quiz:{ q:'Which sequence correctly delivers a circular orbit at GEO?',
         opts:['Sequence A — one big prograde burn at LEO',
               'Sequence B — raise apogee to GEO, coast, then prograde burn at apogee to circularize',
@@ -187,8 +285,17 @@ const WORKSHEET = {
         feedback:['A leaves perigee at 400 km — you’d fall back to LEO twice per orbit, not circular GEO.','',
                   'A radial burn does little work and won’t circularize you at GEO.','A retrograde burn at apogee lowers perigee — you need prograde to raise it.'] } },
     { id:'c3', title:'The two-step idea, in one sentence',
-      do:'Step back from the specific numbers. Whether you’re going LEO→GEO, or raising any orbit to a new circular altitude, the procedure is the same two steps.',
+      teach:[
+        'Strip away the specific numbers and the whole macro-maneuver collapses into one clean sentence: <b>raise your high point out to where you want it, then, once you’re there, change your speed to match the circle at that distance.</b> That’s it. Step one sets <i>how far out</i> you go; step two sets the <i>shape</i> once you arrive.',
+        'What makes this worth memorizing is how universal it is. Going from LEO to GEO? Two steps. Raising a satellite a few hundred kilometers for station-keeping? Same two steps, smaller burns. Sending a probe all the way out to the Moon? Still the same recipe — raise apogee to the Moon’s distance, then manage your speed on arrival. The scale changes; the logic never does.',
+      ],
+      do:'Step back from the specific numbers. Whether you’re going LEO→GEO, or raising any orbit to a new circular altitude, restate the procedure to yourself as the same two steps — then imagine applying it to a totally different distance (say, out to the Moon) and check that it still holds.',
       observe:'step 1 sets <i>how far out</i> your high point is; step 2, done at that high point, sets the <i>shape</i> — matching circular speed turns the transfer ellipse into a circle.',
+      think:[
+        'Can you say the whole maneuver in one sentence, without any numbers?',
+        'Which step controls the <i>distance</i> you reach, and which controls the <i>shape</i> of the final orbit?',
+        'Why does the exact same recipe work whether the target is 300 km higher or all the way at the Moon?',
+      ],
       quiz:{ q:'What are the two steps of a standard orbit-raising (macro) maneuver?',
         opts:['Point at the target, then thrust continuously until you arrive',
               '(1) Burn to raise your apogee out to the desired distance; (2) at that apogee, change speed to match the circular speed there',
@@ -200,15 +307,40 @@ const WORKSHEET = {
 
     // ---- PART D: escape velocity, unbound orbits, infall ----
     { id:'x1', title:'Escape velocity',
-      do:'Open the <b>Escape & unbound</b> scenario. Note the <b>escape speed</b> readout in the right panel and compare it to your current speed.',
+      teach:[
+        'So far every burn has left you <b>bound</b> — going around and around on a closed loop, always coming back. But there’s a threshold. Push your speed high enough and you gain more energy than Earth’s gravity can ever claw back, and you coast away for good. That threshold speed is <b>escape velocity</b>.',
+        'The number is worth carrying in your head: about <b>11.2 km/s</b> right at Earth’s surface — roughly 25,000 mph. It isn’t a magic constant; it’s always exactly <b>√2 (about 1.41) times the local circular speed</b>. And because gravity is weaker the higher you go, escape velocity <i>drops</i> with altitude — from the 1,500 km orbit in this scenario it’s only about 10.1 km/s. Below escape speed you stay in a closed loop; reach it and the loop springs open.',
+      ],
+      predict:'Before you check the readout: how fast do you think you have to be going to leave Earth for good from the surface — a few km/s, around 11 km/s, or something enormous like 100 km/s?',
+      do:'Open the <b>Escape & unbound</b> scenario. Note the <b>escape speed</b> readout in the right panel and compare it to your current orbital speed — see how much more you’d need to add. Then imagine (or try) nudging your altitude higher and watch the escape-speed figure drop.',
       body:'<p><b>Escape velocity</b> is the speed at which an object’s kinetic energy exactly balances the depth of Earth’s gravity well, so it can coast away forever. It equals √2 × the local circular speed. From Earth’s <b>surface</b> it’s the famous <b>11.2 km/s</b>; it decreases with altitude (about <b>10.1 km/s</b> from the 1,500 km orbit in this scenario). Reach it and your orbit is no longer a closed ellipse — it’s open.</p>',
+      observe:'escape speed is only about 1.4× your circular speed — closer than you might expect — and it gets smaller the higher up you already are.',
+      think:[
+        'How much faster than your current circular speed do you actually need to go to escape — a little, or a lot?',
+        'Why does escape velocity get <i>smaller</i> the farther you are from Earth?',
+        'If escape is √2 times circular speed, roughly what would escape speed be from an orbit where circular speed is 7 km/s?',
+      ],
       quiz:{ q:'Roughly what is escape velocity from the surface of the Earth?',
         opts:['About 1 km/s','About 11 km/s (≈ 25,000 mph)','About 100 km/s','About 300,000 km/s'],
         a:1, why:'Correct — about 11.2 km/s from the surface (~25,000 mph). It’s √2 times the ~7.9 km/s surface circular speed, and it drops with altitude. Below it you stay bound; at or above it you escape.',
         feedback:['Far too slow — that wouldn’t even reach orbit.','','That’s much faster than needed — escape is ~11 km/s.','That’s the speed of light — vastly larger than escape velocity.'] } },
     { id:'x2', title:'Crossing escape: the orbit opens into a hyperbola',
-      do:'In the <b>Escape & unbound</b> scenario, escape two ways and compare the Δv spent: a <b>prograde</b> burn (~2,950 m/s) vs. a <b>radial-out</b> burn (~7,100 m/s). Watch the eccentricity readout cross 1.0 and the orbit open up.',
+      teach:[
+        'What actually happens to the <i>shape</i> of an orbit as you cross the escape threshold? The answer is a clean, dramatic switch. A bound orbit is a closed loop — a circle or an ellipse — with an <b>eccentricity below 1.0</b>. As you add speed, that ellipse stretches longer and longer, its eccentricity creeping up toward 1.',
+        'At exactly escape speed, eccentricity hits <b>1.0</b> and the loop stops closing — it becomes an open <b>parabola</b>. Push past that and eccentricity climbs above 1, giving a <b>hyperbola</b>: a one-way curve that swings past Earth once and heads out, never to return. That open curve isn’t just a spaceflight thing — it’s the exact geometry of a comet or spacecraft <b>flying by</b> a planet, or any object “scattering” past a body it doesn’t quite get captured by.',
+      ],
+      predict:'Before you burn: you’ve watched faster burns make bigger and bigger ellipses that always come back. Do you think there’s a speed past which the orbit stops being a closed loop entirely? What do you predict the eccentricity readout will do as you cross escape speed?',
+      do:[
+        'In the <b>Escape & unbound</b> scenario, escape with a <b>prograde</b> burn (~2,950 m/s) and watch the eccentricity readout climb past 1.0 as the orbit opens.',
+        'Reset and escape instead with a <b>radial-out</b> burn (~7,100 m/s), and compare the Δv the two cost for the same result.',
+        'Try a burn just <i>below</i> escape and one just <i>above</i> it, and compare — one stays a closed loop, the other opens and never returns.',
+      ],
       observe:'a prograde burn is far cheaper because it adds directly to your existing speed; a radial burn must supply the whole escape speed from scratch. Either way, once speed ≥ escape speed the eccentricity reaches 1.0 and the path becomes an open <b>hyperbola</b> — the object leaves and never returns. This open flyby geometry is exactly what “scattering” past a body looks like.',
+      think:[
+        'What value does the eccentricity readout cross at the exact moment the orbit stops closing?',
+        'Once the path is a hyperbola, does the object ever come back to its starting point?',
+        'How is this open curve related to what a comet does when it swings past a planet and leaves?',
+      ],
       quiz:{ q:'When a satellite’s speed reaches escape velocity, its eccentricity reaches 1.0 and its orbit…',
         opts:['Becomes a tighter circle',
               'Opens from a closed ellipse into an unbound path (parabola/hyperbola) — it leaves and never returns',
@@ -216,16 +348,39 @@ const WORKSHEET = {
         a:1, why:'Correct — bound orbits are ellipses (e < 1). At escape speed e = 1 (parabola); above it e > 1 (hyperbola), an open trajectory that carries the object away forever. That open path is the geometry of a gravitational flyby / scattering event.',
         feedback:['Adding energy opens the orbit; it doesn’t tighten it.','','Reaching escape fundamentally changes the orbit from closed to open.','It keeps moving — in fact it coasts away forever.'] } },
     { id:'x4', title:'Escaping is far cheaper prograde than radial',
-      do:'Still in the <b>Escape & unbound</b> scenario, watch the <b>⛽ Δv budget gauge</b> as you escape each way: once with a <b>prograde</b> burn (~2,950 m/s), once (after refuelling) with a <b>radial-out</b> burn (~7,100 m/s).',
+      teach:[
+        'You just escaped Earth two different ways — and if you watched the fuel gauge, one of them was a bargain and the other nearly emptied the tank. Both reached the same open hyperbola. So why the enormous difference in cost?',
+        'It’s the same lesson as the tangential-vs-radial burn, now with real stakes. A <b>prograde</b> burn adds directly on top of the speed you already have, so you only need to make up the gap — about 0.41× your circular speed — to reach escape. A <b>radial</b> burn is aimed sideways to your motion; it can’t borrow any of your existing speed, so it has to supply almost the <i>entire</i> escape speed from scratch. Same precious Δv, wildly different mileage. The rule of thumb writes itself: <b>when you can, burn along your velocity.</b>',
+      ],
+      predict:'Before you watch the gauge: you’ll escape once prograde and once radial-out. Which do you think will drain more of your Δv budget — and by a little, or by a lot?',
+      do:[
+        'Still in the <b>Escape & unbound</b> scenario, watch the <b>⛽ Δv budget gauge</b> as you escape with a <b>prograde</b> burn (~2,950 m/s) and note how much fuel it took.',
+        'Refuel (reset), then escape with a <b>radial-out</b> burn (~7,100 m/s) and compare the two gauge readings side by side for the identical outcome.',
+      ],
       observe:'the prograde escape barely dents the fuel gauge, while the radial escape drains most of the tank for the same result. Adding speed along the direction you’re already moving is far more fuel-efficient than throwing it sideways.',
+      think:[
+        'Both burns escaped Earth — so why did one cost more than twice as much Δv as the other?',
+        'Why can a prograde burn “borrow” your existing speed while a radial burn can’t?',
+        'How does this reinforce the rule you met earlier about which direction to point a burn?',
+      ],
       quiz:{ q:'From a circular orbit, which takes far less Δv (fuel): escaping with a prograde burn, or a radial-outward burn?',
         opts:['Radial is cheaper','Prograde is much cheaper — it adds to the speed you already have; a radial burn must supply the whole escape speed from scratch',
               'They cost exactly the same','Neither can escape'],
         a:1, why:'Correct — a prograde burn builds on your existing orbital speed (you need only ~0.41× circular speed extra to reach escape), whereas a radial burn is perpendicular to your motion and must provide essentially the entire escape speed itself. Same "precious" Δv, very different mileage — always burn along your velocity when you can.',
         feedback:['It’s the reverse — radial is the expensive way.','','They differ a lot: ~2,950 m/s prograde vs ~7,100 m/s radial in this scenario.','Both can escape — the question is the fuel cost.'] } },
     { id:'x3', title:'Radial infall: cancel the sideways speed',
-      do:'Open the <b>Radial infall</b> scenario (starts far out at 20,000 km). Apply a big <b>retrograde</b> burn (~3,900 m/s) to cancel the orbital speed entirely, and watch what happens.',
+      teach:[
+        'You saw this idea as a thought experiment back in Part B — kill the sideways speed and you fall straight in. Now watch it play out for real, and from way up high, where the drop is spectacular.',
+        'Start far out at 20,000 km and fire a big retrograde burn to cancel your orbital speed completely. With nothing left carrying you sideways, gravity simply takes over and pulls you straight down. And because you fall through a huge distance, you keep <b>accelerating the whole way in</b>, arriving at the surface at tremendous speed. The higher you start the plunge, the faster you’re moving when you arrive — all that height converts into speed on the way down.',
+      ],
+      predict:'Before you burn: you’re parked far out at 20,000 km and you cancel all your sideways speed. Do you think you’ll stay parked out there, drift outward, or fall straight in — and if you fall, will you arrive slowly or fast?',
+      do:'Open the <b>Radial infall</b> scenario (starts far out at 20,000 km). Apply a big <b>retrograde</b> burn (~3,900 m/s) to cancel the orbital speed entirely, and watch the descent and the speed readout all the way to impact.',
       observe:'with the sideways speed gone, there’s nothing to “keep missing” the Earth with. The object falls radially straight in, accelerating the whole way, and slams into the surface at high speed — the higher you start, the faster it arrives.',
+      think:[
+        'As the object falls, does the speed readout climb, hold steady, or drop? Why?',
+        'This is the same “kill the sideways speed” idea from Part B — how does starting from way out at 20,000 km change how fast it arrives?',
+        'Where did the enormous impact speed come from, if you only spent Δv to <i>slow down</i>?',
+      ],
       quiz:{ q:'You are far out at 20,000 km and cancel your orbital (sideways) speed to zero. What happens?',
         opts:['You stay parked at 20,000 km',
               'You fall radially straight down toward Earth, speeding up all the way to impact',
@@ -235,16 +390,39 @@ const WORKSHEET = {
 
     // ---- PART E: drag & disposal ----
     { id:'d1', title:'Watch an orbit decay and re-enter',
-      do:'Use the <b>Drag decay</b> scenario. Place a circular orbit at ~300 km and speed up time warp. Watch the spiral. Then try 250 km and 400 km and compare how long each survives.',
+      teach:[
+        'Down in low orbit, space isn’t perfectly empty. There’s a wisp of upper atmosphere — thin, but not nothing — and a satellite plowing through it at 7.8 km/s feels a steady <b>drag</b>, exactly like the wind resistance on a car. That drag saps orbital energy little by little, shrinking the orbit until, eventually, the satellite spirals down and re-enters.',
+        'The crucial fact is <i>how</i> the air thickens as you descend: not gradually, but <b>exponentially</b>. Drop a hundred kilometers and you can be flying through many times more air. So altitude makes an enormous difference to survival time — a satellite at 400 km can last months, while one at 250 km may last only days. It’s why the ISS at about 420 km needs a periodic reboost, or it too would come down.',
+      ],
+      predict:'Before you speed up time: you’ll watch orbits decay from three starting heights — 300 km, then 250 km, then 400 km. Rank them: which do you predict will spiral in fastest, and which will hang on longest?',
+      do:[
+        'Use the <b>Drag decay</b> scenario. Place a circular orbit at ~300 km and speed up time warp. Watch the spiral tighten and plunge.',
+        'Reset and try ~250 km, then ~400 km, comparing how long each one survives before re-entry.',
+      ],
       observe:'the orbit slowly shrinks into a tighter spiral, then plunges. Lower starting altitudes decay dramatically faster (250 km in days; 400 km in months). At re-entry the speed is ~7.8 km/s — about 15,000 mph.',
+      think:[
+        'Did the survival times scale gently with altitude, or did a small drop in height make a huge difference?',
+        'Why does the air get so much thicker over just a few hundred kilometers of descent?',
+        'Given all this, why does the ISS need regular reboosts to stay at ~420 km?',
+      ],
       quiz:{ q:'How does the starting altitude affect how quickly a LEO orbit decays from drag?',
         opts:['Higher orbits decay faster','Lower orbits decay much faster, because the air is exponentially denser down low',
               'All altitudes decay at the same rate','Altitude has no effect on drag'],
         a:1, why:'Correct — atmospheric density falls off exponentially with altitude, so a lower orbit plows through much thicker air and decays far faster. That’s why the ISS (~420 km) must be reboosted regularly.',
         feedback:['It’s the opposite — higher means thinner air and slower decay.','','They differ enormously — density changes exponentially with height.','Drag depends strongly on altitude through air density.'] } },
     { id:'d2', title:'The drag paradox: friction speeds you up',
-      do:'While watching the decay, keep an eye on the <b>speed</b> readout as the altitude drops.',
+      teach:[
+        'Here’s a genuine head-scratcher. Drag is a friction force — it opposes motion, it takes energy away. Every instinct says a satellite fighting through air should <b>slow down</b>. Watch the simulator, though, and you’ll see the speed readout doing the opposite: as the orbit decays, the satellite gets <b>faster</b>.',
+        'The resolution is that pattern from Module 1: <b>a lower orbit is a faster orbit.</b> Drag steals orbital energy, which drops the satellite to a lower altitude — and down there, the speed required to stay in orbit is <i>higher</i>. So the satellite trades altitude for speed and ends up moving faster than before, even though friction is “slowing” it. The friction genuinely removed energy; it’s just that lower orbits demand more speed, not less.',
+      ],
+      predict:'Before you watch the readout: as drag drags a satellite down to a lower orbit, do you think its speed will drop (it is friction, after all), stay the same, or actually climb?',
+      do:'While watching the decay in the <b>Drag decay</b> scenario, keep an eye on the <b>speed</b> readout as the altitude falls, and note which way it moves as the orbit shrinks.',
       observe:'even though drag is a friction force, the satellite’s speed <i>increases</i> as it spirals down — because a lower orbit is a faster orbit.',
+      think:[
+        'The speed went <i>up</i> while friction was acting — so what exactly did the drag take away, if not speed?',
+        'How does “lower orbit = faster orbit” from Module 1 resolve the apparent contradiction?',
+        'Is the satellite really gaining energy overall, or is it trading one kind for another?',
+      ],
       quiz:{ q:'As drag pulls a satellite to a lower orbit, its orbital speed…',
         opts:['Decreases, because friction slows it down',
               'Increases, because a lower orbit is a faster orbit — drag saps energy, dropping it to where it must move faster',
@@ -252,8 +430,18 @@ const WORKSHEET = {
         a:1, why:'Correct — this is the drag paradox. Drag removes orbital energy, which lowers the orbit, and lower orbits have higher speeds. So the “friction” force ends up speeding the satellite up.',
         feedback:['Counterintuitively, no — watch the speed readout climb as it descends.','','It clearly changes — the readout rises as altitude falls.','It speeds up gradually, it doesn’t stop.'] } },
     { id:'d3', title:'Disposal: burning up vs. boosting away',
-      do:'Consider end-of-life disposal. For a LEO satellite, a small retrograde burn lowers perigee into the atmosphere and drag finishes the job. For a GEO satellite, deorbiting is prohibitively expensive.',
+      teach:[
+        'Every satellite eventually dies, and leaving a dead one in a busy orbit is a collision hazard for everyone else. So end-of-life <b>disposal</b> is part of the plan — and the smart way to do it depends entirely on where the satellite lives, because it comes down to Δv economics.',
+        'For a satellite in <b>LEO</b>, disposal is cheap. A small <b>retrograde</b> burn dips your perigee down into the thicker atmosphere, and from there drag does all the rest of the work for free — it drags you down to burn up on re-entry. For a satellite way out at <b>GEO</b>, there’s no useful air to help, and deorbiting all the way to Earth would cost a prohibitive ~1.5 km/s of Δv you don’t have to spare. So GEO satellites do the opposite: a tiny (~11 m/s) prograde nudge lifts them into a <b>“graveyard” orbit</b> just above the belt, safely out of everyone’s way.',
+      ],
+      predict:'Before you reason it out: a dead LEO satellite and a dead GEO satellite both need disposing of. Do you think you’d get rid of them the same way — and if not, which one is cheap to drop out of the sky and which one is cheaper to push <i>up</i> and away?',
+      do:'Consider end-of-life disposal. For a LEO satellite, picture a small retrograde burn lowering perigee into the atmosphere so drag finishes the job. For a GEO satellite, weigh the ~1.5 km/s to deorbit against a ~11 m/s nudge to a graveyard orbit, and decide which makes sense.',
       observe:'dropping out of LEO takes little Δv — drag does the rest. Dropping from GEO all the way down would take ~1.5 km/s, so instead GEO satellites make a tiny (~11 m/s) boost to a “graveyard” orbit above the belt.',
+      think:[
+        'Why is drag a disposal <i>helper</i> in LEO but no help at all at GEO?',
+        'Deorbiting from GEO costs ~1.5 km/s but a graveyard boost costs only ~11 m/s — why is “up and away” the sensible choice there?',
+        'Why is it worth reserving a little fuel at the very end of a mission just for this final burn?',
+      ],
       quiz:{ q:'Why are LEO satellites disposed of by re-entry, but GEO satellites are boosted to a “graveyard” orbit instead?',
         opts:['GEO satellites are too heavy to move',
               'From LEO, a small burn lets drag pull the satellite down to burn up; from GEO, deorbiting would cost enormous Δv, so a tiny boost to a graveyard orbit is far cheaper',
@@ -264,16 +452,39 @@ const WORKSHEET = {
 
     // ---- PART E: radiation pressure, HAMR, solar sails ----
     { id:'e1', title:'Radiation pressure and area-to-mass',
-      do:'Set a high orbit (well above 1,000 km) so drag is negligible. Then raise the <b>area-to-mass</b> slider from a compact satellite toward “HAMR debris” and think about the photon wind.',
+      teach:[
+        'Sunlight doesn’t just light things up — it gently <b>pushes</b> on them. Light carries momentum, so a stream of photons hitting a satellite acts like an incredibly faint, steady wind. It’s far too weak to matter down low where drag dominates, but above about 1,000 km, where the air is gone, this <b>radiation pressure</b> becomes a real perturbation that nudges orbits over time.',
+        'How hard an object gets shoved depends on its <b>area-to-mass ratio</b> — its illuminated area divided by its mass. The push comes from area (more surface catches more photons), but the resulting acceleration is that force divided by mass (a = F/m). So a dense, compact satellite barely budges, while a big, light, floppy object gets thrown around. It’s the exact same area÷mass dependence that governs drag — light, spread-out things feel these forces the most.',
+      ],
+      predict:'Before you move the slider: two objects sit at the same high altitude in the same sunlight — one a heavy, compact satellite, the other light and spread-out. Which do you predict gets pushed off course more by sunlight, and why?',
+      do:[
+        'Set a high orbit (well above 1,000 km) so drag is negligible.',
+        'Raise the <b>area-to-mass</b> slider from a compact satellite up toward “HAMR debris” and watch how much more the sunlight perturbs the orbit as the ratio climbs.',
+      ],
       observe:'sunlight pushes on everything, but the acceleration depends on area ÷ mass. A big, light object (high area-to-mass) is shoved far more than a dense compact one.',
+      think:[
+        'Both objects feel the same sunlight — so why does the lighter one move off course more?',
+        'Where have you seen this same area÷mass dependence before in this module?',
+        'Why does radiation pressure only start to matter up high, above about 1,000 km?',
+      ],
       quiz:{ q:'Two objects at the same high altitude feel the same sunlight. Which one has its orbit perturbed more by radiation pressure?',
         opts:['The heavier, compact one','The lighter one with more area per unit mass (higher area-to-mass ratio)',
               'They are perturbed equally','Radiation pressure doesn’t affect orbits'],
         a:1, why:'Correct — force scales with illuminated area, and for a given force a lighter object accelerates more (a = F/m). So high area-to-mass objects are perturbed the most. It’s the same area÷mass dependence as drag.',
         feedback:['The heavy compact one resists the push — less acceleration.','','Equal force but unequal mass means unequal acceleration.','It does — especially above ~1,000 km where drag is gone.'] } },
     { id:'e2', title:'HAMR objects and solar sails',
-      do:'Consider extreme high-area, low-mass objects: shredded insulation, foil, or “trash-bag” debris tumbling in orbit.',
+      teach:[
+        'Now take that area-to-mass idea to its extreme. Picture the flimsiest junk in orbit: a scrap of foil, a torn thermal blanket, a floppy “trash-bag” of debris. These are <b>HAMR</b> objects — High Area-to-Mass Ratio — and sunlight blows them around like leaves in a breeze.',
+        'That makes them a nightmare to track, and for a subtle reason. It’s not just that the push is strong; it’s that a floppy, <b>tumbling</b> object keeps turning different amounts of area toward the Sun. So the force on it is constantly changing in ways that are nearly impossible to model — its orbit wanders unpredictably. The flip side is beautiful: harness that same steady photon push on purpose, with a big reflective sheet, and you get a <b>solar sail</b> — a spacecraft that “sails” on sunlight alone, carrying no propellant at all.',
+      ],
+      do:'Consider extreme high-area, low-mass objects: shredded insulation, foil, or “trash-bag” debris tumbling in orbit. Picture how the force on them changes as they turn — then picture the same push used deliberately by a broad, flat solar sail.',
       body:'<p><b>HAMR</b> = <b>High Area-to-Mass Ratio</b> objects (bits of foil, thermal blankets, non-rigid “trash bags”). Radiation pressure blows them around like leaves in a wind. Worse, because they’re <b>flimsy and tumbling, their exposed area keeps changing</b>, so the force on them changes unpredictably — making their orbits notoriously hard to forecast. The very same photon-pressure force, harnessed on purpose with a large reflective sheet, is the principle behind a <b>solar sail</b> — a spacecraft that “sails” on sunlight with no propellant at all.</p>',
+      observe:'a HAMR object’s trouble isn’t just a big push — it’s that its tumbling, changing area makes that push vary unpredictably, so its future orbit is hard to pin down.',
+      think:[
+        'Why is a <i>tumbling</i> scrap of foil even harder to predict than a rigid one with the same area-to-mass?',
+        'If the push varied predictably, would the orbit be so hard to forecast? What’s the real culprit?',
+        'A solar sail and a piece of HAMR junk feel the very same force — so what makes one useful and the other a headache?',
+      ],
       quiz:{ q:'Why are HAMR objects (like tumbling foil debris) so hard to predict?',
         opts:['They are invisible to radar',
               'Radiation pressure strongly perturbs them, and because they are flimsy and tumbling their exposed area keeps changing, so the force on them varies unpredictably',
@@ -283,16 +494,41 @@ const WORKSHEET = {
 
     // ---- PART F: J2 & sun-synchronous ----
     { id:'f1', title:'Earth’s bulge swivels the orbit plane',
-      do:'Recall that Earth is not a perfect sphere — it bulges at the equator. Read the note, then open the <b>Sun-synchronous</b> scenario to see the plane precess.',
+      teach:[
+        'Every orbit so far has quietly assumed Earth is a perfect sphere. It isn’t. Earth spins, and that spin makes it bulge outward at the equator — it’s a few dozen kilometers fatter around the middle than pole-to-pole. That bulge means gravity doesn’t pull quite straight toward the center for a tilted orbit.',
+        'Instead, the extra pull from the bulge gives a tilted orbit a sideways <b>torque</b>. Rather than yanking the satellite down, this torque slowly <b>swivels the entire orbit plane</b> around Earth’s axis — the spot where the orbit crosses the equator (its node) creeps around, degree by degree, over days and weeks. This steady swiveling is the <b>J2 effect</b>, and for most satellites it’s the single biggest departure from a clean, ideal Keplerian orbit. (“J2” is just physicists’ label for the bulge term in Earth’s gravity.)',
+      ],
+      predict:'Before you run it: Earth’s equatorial bulge tugs on a tilted orbit. Do you think that tug mainly speeds the satellite up, rounds out its shape, or slowly rotates the whole orbit plane around Earth’s axis?',
+      do:'Recall that Earth is not a perfect sphere — it bulges at the equator. Read the note, then open the <b>Sun-synchronous</b> scenario and speed up time to watch the orbit plane precess (swivel) over days and weeks.',
       body:'<p>Because Earth’s mass isn’t a perfect sphere, its equatorial <b>bulge</b> exerts a sideways <b>torque</b> on a tilted orbit. Rather than pulling the satellite straight down, this slowly <b>swivels the whole orbit plane</b> around Earth’s axis — the orbit’s node (where it crosses the equator) creeps around over days and weeks. This is the <b>J2 effect</b>, the single biggest departure from ideal Keplerian motion for most satellites.</p>',
+      observe:'the orbit plane itself slowly rotates around Earth’s axis — the orbit isn’t changing size or speed, its whole plane is swiveling.',
+      think:[
+        'What is actually changing as the orbit precesses — its size, its speed, or its orientation in space?',
+        'Why does a lumpy, bulging Earth push the plane sideways rather than just pulling the satellite straight down?',
+        'This perturbation is continuous but very <i>predictable</i> — how might a clever engineer turn that to their advantage?',
+      ],
       quiz:{ q:'What does Earth’s equatorial bulge (the J2 effect) do to a tilted orbit?',
         opts:['It speeds the satellite up','It slowly swivels the orbit plane around Earth’s axis (the node precesses)',
               'It circularizes the orbit','It has no effect unless the satellite thrusts'],
         a:1, why:'Correct — the bulge’s torque makes the orbit plane precess (its RAAN drifts) by degrees per day for typical LEO orbits. It’s a continuous, predictable perturbation that designers can exploit.',
         feedback:['It changes orientation, not primarily speed.','','It swivels the plane; it doesn’t round out the shape.','It acts through gravity alone — no thrust needed.'] } },
     { id:'f2', title:'Sun-synchronous orbits: a perturbation as a feature',
-      do:'In the <b>Sun-synchronous</b> scenario, watch a full year go by. Two sun-sync orbits are drawn — a <b>circular</b> one (cyan) and an <b>elliptical</b> one (gold) — and the arriving-sunlight arrow shows the Sun’s direction. Notice both orbit planes precess together, always keeping the same angle to the Sun.',
+      teach:[
+        'Most perturbations are nuisances to fight. J2 is the rare one engineers <b>welcome</b> — because if you can’t beat the swivel, you can aim it. The trick is to make the orbit plane precess at exactly the right rate to stay locked to the Sun.',
+        'Earth goes once around the Sun per year, so the Sun’s direction shifts by about <b>0.9856° per day</b>. Pick your orbit’s inclination just right (near <b>98°</b>, a slightly-past-polar orbit) and J2 will swivel your plane by that exact amount — <b>one full turn per year</b>. Now your orbit keeps a constant angle to the Sun as the year goes by. That’s a <b>sun-synchronous</b> orbit, and it works for circular and elliptical orbits alike — what matters is the inclination, not the shape.',
+        'The payoff: the satellite crosses over every location at the <b>same local sun time</b> on every pass. Same sun angle, same shadow lengths, every single time. For imaging, weather, and change-detection that consistency is gold — you can lay two images side by side and trust that differences are real changes on the ground, not just the Sun having moved.',
+      ],
+      predict:'Before you run the year: two sun-sync orbits (a cyan circular one and a gold elliptical one) are tilted near 98°. As a full year of J2 precession plays out, do you predict their planes will drift away from the Sun, or stay locked at the same angle to it?',
+      do:[
+        'In the <b>Sun-synchronous</b> scenario, speed up time and watch a full year go by. Two sun-sync orbits are drawn — a <b>circular</b> one (cyan) and an <b>elliptical</b> one (gold) — and the arriving-sunlight arrow shows the Sun’s direction.',
+        'Watch whether both planes keep the same angle to the Sun as the year turns, and note that shape (circular vs. elliptical) doesn’t change the effect — only the inclination does.',
+      ],
       observe:'if the plane swivels 0.9856°/day (one full turn per year), the orbit keeps a constant orientation to the Sun. This works for both circular and elliptical sun-sync orbits — what matters is the inclination (~98°), not the shape. The satellite crosses every location at the same local sun time, so lighting and shadows are consistent every pass.',
+      think:[
+        'Did the circular and elliptical orbits both stay Sun-locked? What does that tell you about which orbital element actually sets sun-synchronicity?',
+        'Why is crossing each place at the same local sun time so valuable for comparing images taken weeks apart?',
+        'This uses J2 as a feature instead of fighting it — what other “nuisance” forces might be turned into tools the same way?',
+      ],
       quiz:{ q:'Why might a sun-synchronous orbit (constant local sun time) be advantageous?',
         opts:['It lets the satellite hover over one spot like GEO',
               'It images every location under consistent, repeatable lighting — same sun angle and shadows each pass — which is ideal for imagery and change-detection',
@@ -303,9 +539,19 @@ const WORKSHEET = {
 
     // ---- PART G: custody & targeted observations (moved from Module 3) ----
     { id:'g1', title:'Keeping “custody” of an object',
-      do:'Put the pieces together: perturbations make orbits drift, so a set of elements is only good for a while. What has to happen to keep knowing where an object is?',
+      teach:[
+        'Here’s where this whole module lands. You’ve now seen a long list of forces — drag, J2, radiation pressure, thruster burns — that all keep nudging an orbit off its ideal ellipse. The practical consequence is blunt: a set of orbital elements is only good for a while. It goes stale. So tracking a satellite can’t be a one-and-done measurement.',
+        'It has to be an <b>ongoing job</b>. Operators re-observe an object again and again, updating its elements each time to keep pace with the drift. Maintaining that unbroken chain of “we still know which object this is and where it is right now” is called keeping <b>custody</b>. Break the chain — wait too long between looks, or mix up two objects that passed close together — and you may lose custody and have to <b>re-acquire</b>: search a patch of sky, find the object again, and sort out which track is which. Doing this across everything in orbit is a core task of <b>Space Domain Awareness (SDA)</b>.',
+      ],
+      do:'Put the pieces together: perturbations make orbits drift, so a set of elements is only good for a while. Read the note, then think through what has to happen, over and over, to keep knowing where an object is.',
       body:'<p>Tracking a satellite isn’t a one-time measurement — it’s an ongoing job. Because the orbit slowly drifts (drag, J2, radiation pressure, maneuvers), an operator has to <b>re-observe the object again and again</b> and update its elements. Keeping an unbroken chain of “we still know which object this is and where it is” is called maintaining <b>custody</b>.</p>'+
            '<p>Lose custody — go too long without an observation, or confuse two objects that passed close together — and you may have to <b>re-acquire</b> the object: search a patch of sky to find it and re-establish which track is which. This is a core task of <b>Space Domain Awareness (SDA)</b>.</p>',
+      observe:'custody isn’t a fact you file away once — it’s a chain of fresh observations you have to keep renewing as the orbit drifts.',
+      think:[
+        'Why can’t you just measure an orbit once, store the elements, and be done with it?',
+        'What are two ways you might <i>lose</i> custody of an object?',
+        'Which perturbations from this module are the reason custody has to be actively maintained?',
+      ],
       quiz:{ q:'What does it mean to maintain “custody” of a space object?',
         opts:['Physically capturing it with another spacecraft',
               'Keeping an up-to-date, unbroken track of which object it is and where it is, by re-observing it as its orbit drifts',
@@ -315,8 +561,18 @@ const WORKSHEET = {
         feedback:['Custody is about knowledge/tracking, not physically grabbing it.','',
                   'It’s about tracking knowledge, not legal ownership.','One TLE goes stale as the orbit drifts — custody requires continual updates.'] } },
     { id:'g2', title:'Why observations must be targeted',
-      do:'Think about a sensor (a telescope or radar) that can only look at a small patch of sky at a time, and thousands of objects to watch. How does it decide where to point?',
+      teach:[
+        'A telescope or a radar can only stare at a <b>small patch of sky</b> at any one moment — think of peering through a soda straw. Meanwhile there are tens of thousands of objects up there to keep track of. You can’t sweep the whole sky hoping to stumble across the one you want; you’d almost always be pointed at emptiness.',
+        'So observations are <b>targeted</b>. You take the object’s known elements, use them to predict exactly <i>where</i> in the sky it should appear and <i>when</i>, and then slew the sensor to that spot at that moment. A good prediction turns an impossible “search everywhere” into a simple “look right here, now.” And this is exactly why custody matters: the prediction is only as good as the elements it’s built from. Thanks to all the perturbations in this module, stale elements point the sensor at empty sky — you have to keep them fresh to keep hitting your target.',
+      ],
+      predict:'Before you reason it out: a single telescope sees only a tiny sliver of sky, and there are tens of thousands of objects. Do you think it’s better to sweep the sky at random, or to predict where a specific object will be and point straight there? What would you need in order to do the latter?',
+      do:'Think about a sensor (a telescope or radar) that can only look at a small patch of sky at a time, and tens of thousands of objects to watch. Work out how it should decide where and when to point — and what information that decision depends on.',
       observe:'you use the object’s known (and freshly updated) elements to predict where it should be, then point the sensor there at the right moment. A good orbit prediction turns “search the whole sky” into “look right here, now.”',
+      think:[
+        'Why is randomly sweeping the sky a hopeless way to find one particular object?',
+        'What piece of information lets you point the sensor at the right place <i>and</i> the right time?',
+        'How does a stale set of elements — from the perturbations you studied — cause a sensor to miss its target entirely?',
+      ],
       quiz:{ q:'Why are space-surveillance observations usually “targeted” rather than just staring at random sky?',
         opts:['Sensors can watch the entire sky at once, so targeting is only a formality',
               'A sensor sees only a small field at a time, so operators use the predicted orbit to point it where and when the object will be — and perturbations mean that prediction must be kept fresh',
@@ -326,6 +582,7 @@ const WORKSHEET = {
         feedback:['No single sensor covers the whole sky continuously — pointing must be planned.','',
                   'Objects reflect sunlight or radar regardless of naming; the challenge is knowing where to look.','It’s driven by sensor physics and object counts, not law.'] } },
   ],
+
   exam: [
     { q:'What is "delta-v," and why does it limit a mission?',
       opts:['The satellite’s distance from Earth, which shrinks over time',
