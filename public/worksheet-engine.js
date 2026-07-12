@@ -21,7 +21,7 @@ function openSim(){ if(SIMWIN&&!SIMWIN.closed){SIMWIN.focus();return;}
 function openControls(){ window.open('cheatsheet.html','orbitcheat','width=560,height=760'); }
 function openResources(){ window.open('resources.html#'+MODULE.id,'orbitresources','width=900,height=800'); }
 function printSheet(){ window.print(); }
-function backToHub(){ window.opener?window.opener.focus():null; window.open('/','_self'); }
+function backToHub(){ window.opener?window.opener.focus():null; window.open('index.html','_self'); }
 
 /* ---- progress store: server if reachable, else localStorage ---- */
 let ME=null, state={}, OFFLINE=false;

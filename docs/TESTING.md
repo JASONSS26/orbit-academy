@@ -32,4 +32,4 @@ malformed-JSON rejection; logout invalidates the session.
 ## Notes
 - Isolated via the `ORBIT_DATA` env var (server reads its data path from it).
 - Default test port is 8099 (override with `PORT=...`).
-- Latest result: **v2.0 — 34 functional + 22 security + DoS, all passing.**
+- Latest result: **v2.1 — 34 functional + 22 security + DoS, all passing.**

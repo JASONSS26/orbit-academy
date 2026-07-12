@@ -60,26 +60,28 @@ cd orbit-academy/academy
 
 Choose based on whether you need **central accounts and a roster**.
 
-### Option 1 — Standalone / GitHub Pages (zero install, no accounts)
+### Option 1 — Standalone (zero install, no accounts)
 
 The worksheets and simulators are static files. If no backend is present, each worksheet
 automatically runs in **standalone mode**: it renders normally and saves the student's progress in
-that browser's own storage (`localStorage`). There are no logins and no central roster, but every
-student can use the course immediately from a URL or even a local file.
+that browser's own storage (`localStorage`). No logins, no central roster — the course just works
+from a local file or any static host.
 
-- **Host on GitHub Pages (free):** In the GitHub repo, go to **Settings → Pages**, set the source
-  to your default branch and the `/ (root)` (or `/academy` — see note) folder, and save. GitHub
-  gives you a public URL like `https://JASONSS26.github.io/orbit-academy/academy/`. Share it and
-  you're done. *(Note: Pages serves whatever folder you point it at; the app lives in `academy/`,
-  so students open `.../academy/index.html`.)*
-- **Or run it locally with no server at all:** open `academy/index.html` directly in a browser,
-  or serve the folder with any static file server (e.g. `python3 -m http.server` from inside
-  `academy/`).
+- **Run it with no server at all:** open `academy/public/gallery.html` (or `index.html`) directly
+  in a browser, or serve the folder with any static server (e.g. `python3 -m http.server` from
+  inside `academy/public/`).
 - **Trade-off:** progress lives in each browser, so it doesn't follow a student between devices,
-  and you get no roster. Best for open access, demos, and self-study.
+  and there's no roster. Best for demos, self-study, and quick reviewer previews.
 
-> A small badge ("● standalone — saved in this browser") appears on the worksheet when it's in
-> this mode, so students know their progress is local.
+> A small badge ("● standalone — saved in this browser") appears on the worksheet in this mode, so
+> students know their progress is local.
+
+> ⚠️ **A note on GitHub Pages.** It's tempting to host the static site on GitHub Pages, but on
+> standard GitHub a **Pages site is readable by anyone with the URL even when the repo is private**
+> — there is no access control. Access-restricted Pages exists only on GitHub Enterprise Cloud. So
+> do **not** use Pages if the material must stay limited to authorized people. For an
+> authorized-only preview, have reviewers **clone the repo and run it locally** (they already have
+> repo access), or use **Codespaces** (private port-forwarding), or a host behind your own SSO.
 
 ### Option 2 — Full server (accounts, saved progress, instructor roster)
 

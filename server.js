@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* ORBIT ACADEMY v2.0 — course-management backend. Zero external dependencies.
+/* ORBIT ACADEMY v2.1 — course-management backend. Zero external dependencies.
    - Accounts (scrypt-hashed passwords), session cookies (random tokens).
    - Per-user progress, prerequisite gating, instructor dashboard.
    - JSON file store (academy_data.json). Suitable for a training cohort, not web-scale.

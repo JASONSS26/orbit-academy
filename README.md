@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v2.0
+# 🛰 ORBIT ACADEMY — v2.1
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -7,7 +7,23 @@ course-management backend (accounts, prerequisite gating, progress tracking, ins
 Built for JASON / US Space Force technical-staff training. Companion to the CISLUNAR PATROL game
 and the xGEO simulator.
 
-## What's here (v2.0)
+## 👀 Reviewers — quickest way to try it
+
+You have repo access, so just run it locally (nothing is exposed on the public internet):
+
+```bash
+git clone https://github.com/JASONSS26/orbit-academy.git
+cd orbit-academy/academy
+node server.js                     # needs Node.js (nodejs.org); no packages to install
+```
+Then open **http://localhost:8080/gallery.html** — a no-login gallery with a link to every
+worksheet and simulator. (Worksheets opened there run in *standalone mode* and save progress in
+your browser; use the main hub at `http://localhost:8080/` if you want to create an account.)
+
+**Even simpler, no Node at all:** open `academy/public/gallery.html` directly in a browser — every
+page works, progress saves locally. (A couple of features degrade without the server; see below.)
+
+## What's here (v2.1)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
@@ -25,7 +41,8 @@ and the xGEO simulator.
 - **Interactive worksheets** (shared engine): each opens beside its simulator with learning
   **objectives**, a one-page **tutorial** (analogy + diagram), **numbered exercises** with check
   questions, a **final quiz**, a **key-points summary**, and **resources**. Progress saves to the
-  server, or — with no server — to the browser (**standalone mode**, so it runs on GitHub Pages).
+  server, or — with no server — to the browser (**standalone mode**, so the static files run
+  anywhere, even opened directly).
 - A printable **controls cheat sheet** (`cheatsheet.html`) and a **resources index** by module
   (`resources.html`), linked from every worksheet and the hub.
 - **Backend** (`server.js`, optional): accounts, login/sessions, per-task progress, prerequisite
@@ -33,7 +50,9 @@ and the xGEO simulator.
 
 Modules 6–8 (Lagrange points & complex orbits; lunar transfers & Artemis; observability) are
 planned — see `docs/MODULE_NOTES.md`. **Instructors:** see `docs/INSTRUCTOR_GUIDE.md` for
-download, install, hosting (GitHub Pages vs. server), and teaching notes.
+download, install, hosting options, and teaching notes. (Note: standard GitHub Pages is
+world-readable even for a private repo — for authorized-only access, have reviewers clone & run
+locally, as above.)
 
 ## Run it
 
@@ -49,7 +68,7 @@ node server.js          # -> http://localhost:8080
 - Change the port with `PORT=9000 node server.js`.
 
 > **No server?** The worksheets and simulators are static files and also run with no backend at
-> all (e.g. hosted on GitHub Pages, or opened locally). In that **standalone mode** there are no
+> all (opened locally, or served by any static host). In that **standalone mode** there are no
 > logins — progress saves in the browser. Run the server (above) for central accounts, saved
 > progress across devices, prerequisite gating, and the instructor roster. See
 > `docs/INSTRUCTOR_GUIDE.md` for all three hosting options.
@@ -83,11 +102,11 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.0: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.1: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
-validated, DoS-guarded, no XSS, no secrets committed. Modules 3 & 4 are static client-side files
-(no new server surface). For internet-facing use, front it with HTTPS + rate-limiting
-(see SECURITY.md "Accepted").
+validated, DoS-guarded, no XSS, no secrets committed. All modules and the v2.x worksheet engine are
+static client-side files (no new server surface). For internet-facing use, front it with HTTPS +
+rate-limiting (see SECURITY.md "Accepted").
 
 ## License
 

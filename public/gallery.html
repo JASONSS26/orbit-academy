@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy — Preview / Reviewer Gallery</title>
+<style>
+  :root{--bg:#070d18;--card:#0e1a2e;--fg:#dfe9f7;--dim:#8ba6c9;--line:#22344f;--accent:#5fd0ff;--gold:#ffcf4d;--grn:#39d353;}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at 50% -10%,#12294a,#050a14 60%);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.5}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 20px 80px}
+  .logo{font-size:24px;font-weight:bold;letter-spacing:1px;
+    background:linear-gradient(90deg,#5fd0ff,#ffcf4d,#39d353);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-size:22px;margin:2px 0 2px}
+  .sub{color:var(--dim);font-size:14px;margin-bottom:6px}
+  .banner{background:#123; border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:14px;color:#cfe3ff;margin:16px 0}
+  .banner b{color:var(--gold)}
+  h2{font-size:15px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start;padding:11px 0;border-bottom:1px solid #16243a}
+  .row:last-child{border-bottom:0}
+  .links{display:flex;flex-direction:column;gap:5px}
+  .links a{display:inline-block;background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:6px 11px;font-size:13px;font-weight:600;white-space:nowrap;width:max-content}
+  .links a:hover{background:#1c3a5f;border-color:var(--accent)}
+  .links a.sim{border-color:#2b6b45;color:#9be0af}
+  .links a.sim:hover{background:#14331f}
+  .desc{font-size:14px;color:var(--dim)}
+  .desc b{color:var(--fg)}
+  .mnum{font-size:12px;color:var(--dim);letter-spacing:1px}
+  .util{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .util a{background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:8px 13px;font-size:13px;font-weight:600}
+  .util a:hover{background:#1c3a5f;border-color:var(--accent)}
+  .foot{color:var(--dim);font-size:13px;margin-top:30px;line-height:1.6}
+  code{background:#0a1526;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12.5px;color:#cfe3ff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">◈ ORBIT ACADEMY</div>
+  <h1>Preview &amp; Reviewer Gallery</h1>
+  <div class="sub">Every page in one place — no login required. Jump straight to any worksheet or simulator.</div>
+
+  <div class="banner">
+    <b>No sign-in needed here.</b> Worksheets opened from this page run in <b>standalone mode</b> —
+    they work fully and save your progress in this browser (a “● standalone” badge appears). For
+    central accounts, saved progress across devices, and the instructor roster, use the
+    <a href="index.html">main hub</a> and sign in. Reviewers: just click around.
+  </div>
+
+  <h2>Modules — worksheet + simulator</h2>
+  <div id="modrows"></div>
+
+  <h2>Reference &amp; utilities</h2>
+  <div class="util">
+    <a href="index.html">🏠 Main hub (sign-in, roster)</a>
+    <a href="resources.html">📚 Resources by module</a>
+    <a href="cheatsheet.html">🃏 Controls cheat sheet</a>
+    <a href="controls.html">🎮 Controls reference (legacy)</a>
+  </div>
+
+  <div class="foot">
+    <b>Tip:</b> a worksheet works best beside its simulator — open the worksheet, then click its
+    “↗ Simulator” button (or the green sim link here) and arrange the two windows side by side.
+    <br>Simulators are fully standalone 3-D pages; worksheets are the guided lessons.
+    <br><br>Questions or setup help for a cohort: see <code>docs/INSTRUCTOR_GUIDE.md</code> in the repo.
+  </div>
+</div>
+
+<script>
+"use strict";
+const MODULES=[
+  {n:1, id:'worksheet1.html', sim:'tut1.html',  title:'How Orbits Work',
+   desc:'What an orbit <b>is</b> — falling sideways fast enough to keep missing the Earth. Speed sets the shape; circle vs. ellipse vs. escape; geosync; inclination.'},
+  {n:2, id:'worksheet2.html', sim:'tut2.html',  title:'Angular Rates & Geosync',
+   desc:'How fast a satellite <b>appears</b> to move; the geostationary belt and its 360 slots; geosync vs. geostationary; the sky from the ground; reference frames.'},
+  {n:3, id:'worksheet3a.html', sim:'tut3a.html', title:'Naming Orbits & TLEs',
+   desc:'The six numbers that <b>name</b> any orbit; perigee/apogee; the Keplerian ideal; how a Two-Line Element set encodes them; real orbits incl. Molniya/Tundra.'},
+  {n:4, id:'worksheet4.html', sim:'tut4.html',  title:'Maneuvers & Perturbations',
+   desc:'<b>Delta-v</b> as finite fuel; prograde vs. radial burns; the two-step transfer to GEO; escape velocity; atmospheric drag &amp; re-entry; radiation pressure; J2/sun-sync.'},
+  {n:5, id:'worksheet5.html', sim:'tut5.html',  title:'xGEO / Cislunar Space & Frames',
+   desc:'The Earth–Moon–Sun system; the tug-of-war &amp; Hill spheres; <b>four reference frames</b> with a 2×2 compare view; defining xGEO; leading the Moon for a transfer.'},
+];
+const host=document.getElementById('modrows');
+host.innerHTML=MODULES.map(m=>
+  '<div class="row"><div class="links">'+
+    '<div class="mnum">MODULE '+m.n+'</div>'+
+    '<a href="'+m.id+'">📋 Worksheet '+m.n+'</a>'+
+    '<a class="sim" href="'+m.sim+'" target="_blank">↗ Simulator</a>'+
+  '</div><div class="desc"><b>'+m.title+'</b><br>'+m.desc+'</div></div>'
+).join('');
+</script>
+</body>
+</html>

@@ -4,6 +4,21 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v2.1 — audit result: **PASS** (re-run)
+v2.1 is client-side only; **`server.js` has a zero diff** from v2.0, so the audited auth/gating/DoS
+surface is unchanged and re-verified by the suite. Reviewed the touched files:
+- **`tut1.html`** — physics/rendering fixes (hyperbolic Kepler propagation, frustum-culling flags,
+  removed the velocity-arrow checkbox). No new inputs, network calls, or injection of untrusted
+  data into the DOM.
+- **`gallery.html`** — a new static page of same-origin links (`worksheetN.html`, `tutN.html`) with
+  no user input and no `innerHTML` of external data.
+- **`worksheet-engine.js` / `resources.html`** — the only change was replacing absolute paths
+  (`'/'`, `href="/"`) with relative ones (`index.html`); no security impact.
+- Worksheet content (`worksheet1.data.js`) is author-authored, rendered through the existing
+  `esc()`-based engine (user/server data still escaped).
+No new endpoints, secrets, or external calls. Re-ran the full suite — **34 functional + 22 security
+checks + DoS guard, all passing**. `academy_data.json` confirmed gitignored. Cleared to ship v2.1.
+
 ## v2.0 — audit result: **PASS** (re-run)
 The v2.0 worksheet overhaul is entirely **client-side**; `server.js` has a **zero diff** from
 v1.3, so the audited auth surface (path traversal, sessions, roles/priv-esc, prerequisite gating,

@@ -2,6 +2,32 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.1 — 2026-07-12
+Reviewer gallery, Module 1 overhaul, and unbound-orbit physics fixes.
+
+**Reviewer access:**
+- New `public/gallery.html` — a no-login landing page listing every worksheet and simulator with
+  terse descriptors (opened worksheets run in standalone/localStorage mode). Linked from the hub.
+- README gains a "Reviewers — quickest way to try it" quick-start (clone & run locally). Clarified
+  that standard **GitHub Pages is world-readable even for a private repo**, so authorized-only
+  review = clone & run locally (or Codespaces); the instructor guide's hosting section says the same.
+
+**Module 1 (`tut1.html` + worksheet):**
+- Simulator: fixed the **high-velocity render bug** (a unit-scrambled clamp skipped every point of
+  an unbound orbit → flashing/no trajectory). Unbound injections now propagate with a proper
+  **hyperbolic Kepler solution** (M = e·sinh H − H): the object leaves from perigee, slows as it
+  recedes, and **never returns** (only the outgoing branch is drawn; the marker holds at the draw
+  edge). Added `frustumCulled=false` so objects no longer vanish when part of the orbit is
+  off-screen. Removed the velocity-arrow checkbox.
+- Worksheet: added **Part A · Drive the simulator** (pan/zoom/rotate, toggle object layers, time
+  warp) before any physics; reworked **Part B** to visit each real constellation (ISS/LEO/Starlink/
+  GPS/GEO) **one at a time** with detailed "think about…" prompts; added a **Part D · escape**
+  exercise (inject above escape speed, watch the hyperbola). The tutorial also gained a
+  controls-intro with an SVG gesture diagram; zoom wording now notes trackpad pinch.
+
+**Server:** unchanged (zero diff). Security audit re-run — **PASS**. Tests: 34 functional + 22
+security + DoS, all passing.
+
 ## v2.0 — 2026-07-12
 Major worksheet overhaul, standalone hosting, and an instructor's guide.
 

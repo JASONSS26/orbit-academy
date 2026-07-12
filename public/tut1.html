@@ -84,9 +84,8 @@
 
   <div class="sec">
     <h3>View</h3>
-    <label class="chk"><input type="checkbox" id="showVel" checked>show velocity arrow at release</label>
     <label class="chk"><input type="checkbox" id="showApo" checked>mark perigee / apogee</label>
-    <div style="color:var(--dim);font-size:10.5px;margin-top:4px">drag=pan · shift/right-drag=rotate · wheel=zoom · arrows=rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset view</div>
+    <div style="color:var(--dim);font-size:10.5px;margin-top:4px">drag=pan · shift/right-drag=rotate · pinch/wheel=zoom · arrows=rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset view</div>
   </div>
 </div>
 
@@ -273,19 +272,33 @@ function orbitFromRelease(r0_km, v_kms){
       // measure angle from +x: release sits at nu0, so scene angle = (nu - nu0)
       const ang=nu-nu0; pts.push(new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang))));}
   }else{
-    // hyperbolic/parabolic: sweep true anomaly within asymptote limits
+    // hyperbolic/parabolic: a tangential release is at perigee (nu=0). The object escapes and
+    // NEVER returns, so we draw only the OUTGOING branch (nu 0 → +numax), not the incoming past.
     const numax = e>1?Math.acos(-1/e)*0.98:Math.PI*0.98;
-    for(let k=-NS;k<=NS;k++){const nu=k/NS*numax;
-      const r=a*(1-e*e)/(1+e*Math.cos(nu)); if(r<0||r>toScene(80)*UNIT*3)continue;
+    for(let k=0;k<=NS;k++){const nu=k/NS*numax;
+      const r=a*(1-e*e)/(1+e*Math.cos(nu)); if(r<0||r>80*UNIT)continue;   // draw out to ~80 Earth radii
       const ang=nu-nu0; pts.push(new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang))));}
   }
   const period = bound? 2*Math.PI*Math.sqrt(a*a*a/MU):Infinity;
-  return {a,e,rp,ra,h,energy,bound,releaseIsPerigee,nu0,pts,period,r0,v};
+  // for unbound orbits: true anomaly at the draw edge (~80 Re), so the marker stops there once gone
+  let nuEdge=0;
+  if(!bound){ const p=a*(1-e*e); const cN=(p/(80*UNIT)-1)/e;   // r=80Re -> cos(nu)
+    nuEdge = (cN>-1&&cN<1)? Math.acos(cN) : (e>1?Math.acos(-1/e)*0.98:Math.PI*0.98); }
+  return {a,e,rp,ra,h,energy,bound,releaseIsPerigee,nu0,pts,period,r0,v,nuEdge};
 }
 // position along a bound orbit at time t (Kepler's equation) -> scene Vector3
 function posAtTime(orb,t){
-  if(!orb.bound){ // just march along nu for the open arc
-    const nu=orb.nu0 + (t*0.3)%(2*Math.PI); const r=orb.a*(1-orb.e*orb.e)/(1+orb.e*Math.cos(nu));
+  if(!orb.bound){ // HYPERBOLIC: leaves from perigee (nu=0) and never returns. Proper time evolution
+    // via the hyperbolic Kepler equation M = e·sinh(H) − H, so it slows as it recedes and does NOT
+    // loop. Once it passes the draw edge (~80 Re) we hold it there (it has effectively escaped).
+    const e=orb.e, a=orb.a;                                    // a<0 for hyperbola
+    const n=Math.sqrt(MU/Math.pow(-a,3));                      // hyperbolic mean motion (rad/s)
+    const M=n*t;                                               // starts 0 at perigee, grows monotonically
+    let H=Math.asinh(M/e||0)||M;                               // initial guess
+    for(let i=0;i<60;i++){ const f=e*Math.sinh(H)-H-M, fp=e*Math.cosh(H)-1; H-=f/fp; }
+    let nu=2*Math.atan(Math.sqrt((e+1)/(e-1))*Math.tanh(H/2)); // true anomaly (0..numax), monotonic
+    if(nu>orb.nuEdge) nu=orb.nuEdge;                           // clamp at the draw edge — gone for good
+    const r=a*(1-e*e)/(1+e*Math.cos(nu));
     const ang=nu-orb.nu0; return new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang)));
   }
   const n=2*Math.PI/orb.period; let M=(n*t)%(2*Math.PI);
@@ -309,8 +322,9 @@ function injectObject(alt_km,v_kms,colIdx,inc_deg){
   const grp=new THREE.Group(); grp.rotation.x=(inc_deg||0)*Math.PI/180; scene.add(grp);
   const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(orb.pts),
     new THREE.LineBasicMaterial({color:reentry?0xff3b30:col,transparent:true,opacity:reentry?0.6:0.85}));
+  line.frustumCulled=false;   // large/unbound orbits: don't cull when part is off-screen
   grp.add(line);
-  const mk=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),new THREE.MeshBasicMaterial({color:col})); grp.add(mk);
+  const mk=new THREE.Mesh(new THREE.SphereGeometry(0.05,10,8),new THREE.MeshBasicMaterial({color:col})); mk.frustumCulled=false; grp.add(mk);
   // apogee (red) & perigee (green) markers — diamond rings so they read distinctly from the satellite dot
   const apo=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.02,6,4),new THREE.MeshBasicMaterial({color:0xff5a52}));
   const per=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.02,6,4),new THREE.MeshBasicMaterial({color:0x39d353}));
@@ -322,10 +336,7 @@ function injectObject(alt_km,v_kms,colIdx,inc_deg){
   if(showAP){ const pgAng=orb.releaseIsPerigee?0:Math.PI, apAng=orb.releaseIsPerigee?Math.PI:0;
     per.position.set(toScene(orb.rp*Math.cos(pgAng)),0,-toScene(orb.rp*Math.sin(pgAng)));
     apo.position.set(toScene(orb.ra*Math.cos(apAng)),0,-toScene(orb.ra*Math.sin(apAng))); }
-  const relPos=new THREE.Vector3(toScene(r0),0,0);
-  const arrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,1),relPos,Math.max(0.3,v_kms*0.12),col,0.15,0.09);
-  grp.add(arrow);
-  const obj={orb,grp,line,mk,apo,per,arrow,col,t:0,inc:inc_deg||0};
+  const obj={orb,grp,line,mk,apo,per,col,t:0,inc:inc_deg||0};
   injected.push(obj); selectObj(obj); tutorReact(obj);
   return obj;
 }
@@ -492,8 +503,7 @@ function loop(){const now=performance.now();let wall=Math.min((now-last)/1000,0.
     else s=speedup.toFixed(0)+' sec/sec';
     wi.textContent='⏱ '+s+' (×'+Math.round(speedup).toLocaleString()+' real time)'; }
   // injected objects animate along their analytic orbits (Kepler)
-  for(const o of injected){o.t+=dt; const p=posAtTime(o.orb,o.t); o.mk.position.copy(p);
-    o.arrow.visible=$('showVel').checked;}
+  for(const o of injected){o.t+=dt; const p=posAtTime(o.orb,o.t); o.mk.position.copy(p);}
   if(selected)updateReadout();
   // camera orbits the (pannable) pivot
   camera.position.set(panPivot.x+camR*Math.sin(camPhi)*Math.cos(camTheta),
