@@ -2,6 +2,39 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v1.3 — 2026-07-11
+Adds Module 5, splits the later course into 8 modules, and rebalances Module 2 for readability.
+
+**Module 5 — xGEO / Cislunar Space & Reference Frames (complete):**
+- 3-D Cislunar Explorer (`tut5.html`): real lunar-surface texture; **3 zoom scales** (lunar surface
+  / Earth–Moon / Sun–Earth) × **4 reference frames** — Earth-centred inertial (ECI), Earth–Moon
+  rotating (synodic), Moon-centred inertial (MCI), and Moon-fixed. Analytic/Keplerian motion.
+- **2×2 compare mode**: all four frames rendered at once from one shared scene and one global
+  clock, each panel with independent pan/zoom/rotate (arrow keys follow the hovered panel).
+- Toggleable lunar orbiters (incl. an elliptical orbit reaching ½ the Hill radius) and xGEO
+  objects; Moon Hill sphere (follows the Moon) + Earth zone that meets it at L1; red Earth–Moon
+  line; GEO ring; Lagrange points; a rescaled effective-potential surface (per-body caps so both
+  the Earth and Moon wells and the L1 saddle show); Moon phases; tidal locking; a
+  release-on-the-Earth–Moon-line demo (L1 tick at 85%); and a "lead-the-Moon" trans-lunar transfer.
+- Worksheet (`worksheet5.html` + `.data.js`, 16 tasks): orbiting the Moon; Earth-vs-Moon-vs-Sun
+  tug-of-war (Hill sphere ≈ Earth–Moon L1 ≈ 61,500 km; L1 at ~85%); **the four reference frames**
+  (definitions table + a compare-mode task); Moon as a satellite (tidal locking, tilted planes);
+  the xGEO definition; and lead-the-Moon transfers. Physics verified numerically.
+
+**Course restructure (now 8 modules):** Maneuvers = 4, xGEO/Cislunar = 5, and the old plan split
+into **6 Lagrange Points & Complex Orbits**, **7 Lunar Transfers & Artemis**, **8 Observability**
+(all parked in `docs/MODULE_NOTES.md`). Server `COURSE` chain: t1, t2, t3a, t4, t5, t6, t7, t8.
+
+**Module 2 rebalance (19 → 15 tasks):** moved the observability-flavored tasks (resolvability,
+streak-endpoint astrometry, and the arcminute/arcsecond angle unit) into a parked
+`public/worksheet6.data.js` seed for the future Observability module, keeping Module 2 focused on
+the belt, geosync, and frames.
+
+**Readability:** glossed jargon on first use — “ascending node” and “argument” (Module 3),
+“sidereal” (Module 2), and “J2” (Module 4).
+
+**Tests:** `bash test/run.sh` — **34 functional + 22 security + DoS guard, all passing.**
+
 ## v1.2 — 2026-07-11
 Adds Modules 3 and 4, and re-orders the later course (xGEO before Observability).
 

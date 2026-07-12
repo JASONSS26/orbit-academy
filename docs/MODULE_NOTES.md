@@ -24,20 +24,46 @@ while building Tutorial 1. Pull these in when building each module.
 - Covers: Δv as currency, kill-tangential→radial-fall, drag paradox, disposal (burn-up vs graveyard),
   HAMR & solar sails, sun-synchronous advantages, custody & targeted obs (moved from Module 3).
 
-## Module 5 — xGEO / Cislunar Space  (was Module 6; promoted above Observability)
-- **Transition Earth-only → Earth–Moon–Sun three-body system.** This is where the force picture
-  from Module 4 expands beyond Earth's point-mass gravity.
-- **Lunar transfer orbits**: trans-lunar injection (TLI, ~3.1 km/s from LEO raising apogee to the
-  Moon's distance, timed so the Moon is there at arrival); lunar orbit insertion braking burn;
-  free-return trajectories; **low-energy transfers via Sun–Earth L1/L2** (à la CAPSTONE).
-- **Effective-potential surface** (rotating-frame pseudo-potential): render the surface with the
-  **five Lagrange wells**; show satellites "rolling around" on it (marble-in-a-bowl intuition).
-- **Scattering of an unbound object**: a hyperbolic flyby swinging past the Moon (gravity assist).
-- Reuse the existing **xGEO simulator** (potential wells, real Horizons objects, sandbox,
-  Artemis playback). Lookup-table trajectories (no live propagation) to avoid artifacts.
-- Define Lagrange points qualitatively ("past Sun–Earth L1/L2 you're mainly orbiting the Sun").
+## Module 5 — xGEO / Cislunar Space & Reference Frames  ✅ BUILT
+- Files: `tut5.html`, `worksheet5.html`, `worksheet5.data.js`. Registered as `t5` (prereq t4).
+- 3-D Cislunar Explorer: **3 zoom scales** (lunar surface / Earth–Moon / Sun–Earth) × **4 reference
+  frames** (fixed-stars, Earth co-moving, Earth–Moon rotating, Moon-locked). Real lunar-surface
+  texture. Toggleable lunar orbiters (LRO etc.), xGEO objects, Moon Hill sphere, GEO ring,
+  Lagrange points, a qualitative potential surface, Moon phases, tidal locking, and a
+  "lead-the-Moon" TLI. Analytic/Keplerian motion (no live propagation).
+- Covers: orbiting the Moon; Earth-vs-Moon-vs-Sun tug-of-war; Hill sphere ≈ Earth–Moon L1 ≈ 61,500 km;
+  **L1 is ~85% of the way to the Moon** (release-on-the-line demo); Sun–Earth L1 ≈ 1.5e6 km;
+  **the 4 reference frames** (core objective); Moon as a satellite (e≈0.055, ~5° to ecliptic,
+  tidally locked); three tilted planes → eclipses; **xGEO definition**; lead-the-Moon transfer.
+- The big learning objective = reference-frame fluency. Verified physics (see git commit / release).
 
-## Module 6 — Observability  ⭐ (was Module 5; most parked ideas land here)
+## Module 6 — Lagrange Points & Complex Orbits  (NEW — split out of the old mega-module 5)
+- **Potential-surface "marble" sandbox**: the effective (rotating-frame) potential with the five
+  wells/saddles; drop objects and let them roll; **release a cluster from L1** and watch it roll
+  down different sides — explore when trajectories become uncorrelated (chaos onset; unknown a priori).
+- **L1 vs L2 framing (user):** L1 is the physically-meaningful Earth–Moon balance point; **L2 is
+  NOT a force-balance saddle in the intuitive sense — it's where the orbital period matches the
+  parent body**, so a satellite stays co-linear. Say this explicitly.
+- **Halo orbits**: L2 halo (CAPSTONE / near-rectilinear), Lissajous; gallery of real cislunar
+  examples. **Chaotic / complex orbits** like TESS (2:1 lunar-resonant HEO); low-energy transfers.
+- **Scattering / gravity assist**: hyperbolic flyby swinging past the Moon.
+- Reuse the existing **xGEO simulator** (potential wells, real Horizons objects, sandbox).
+  Lookup-table trajectories (no live propagation) to avoid artifacts.
+
+## Module 7 — Lunar Transfers & Artemis  (NEW — capstone piloting module)
+- **Pilot Artemis II to the Moon and back** with realistic maneuvers: TLI → coast (lead the Moon) →
+  lunar-orbit insertion / free-return → trans-Earth injection → re-entry corridor. Δv budget /
+  fuel gauge (reuse Module 4's), timed **correction burns** (hints on when/how much).
+- **Cockpit view + ILS-style "on-slope" indicator**: a glideslope/localizer-like display for the
+  approach and re-entry corridor (needle centering = on target).
+- Builds directly on Module 4's two-step macro-maneuver and Module 5's lead-the-Moon TLI.
+
+## Module 8 — Observability  ⭐ (was Module 6/5; most parked ideas land here)
+- **SEED CONTENT ALREADY WRITTEN:** `public/worksheet6.data.js` holds 4 tasks moved out of
+  Module 2 during the readability/balance pass — resolvability ("can you see the panels", `c4`),
+  streak-endpoint astrometry (`c5`), and the arcminute/arcsecond angle unit + arcsec-vs-second-of-
+  time trap (`d1`,`d2`). Fold these in (renumber ids + rename file to worksheet8.data.js) when
+  building Module 8. NOT yet registered in quiz.js or wired to a tool; the file is inert until then.
 - **Reflected-sunlight detection** with a **moon-phase → satellite-illumination** interactive
   (most people can't explain why the Moon has phases; satellite illumination is the same idea).
 - **Satellite eclipse / shadow effect** (deferred from T1): a button/toggle that puts satellites

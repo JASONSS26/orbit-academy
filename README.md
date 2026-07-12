@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v1.2
+# 🛰 ORBIT ACADEMY — v1.3
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -7,25 +7,29 @@ course-management backend (accounts, prerequisite gating, progress tracking, ins
 Built for JASON / US Space Force technical-staff training. Companion to the CISLUNAR PATROL game
 and the xGEO simulator.
 
-## What's here (v1.2)
+## What's here (v1.3)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
 - **Module 2 — Angular Rates & Geosync** (complete): split-view (top-down + ground telescope),
-  the GEO belt & slots, geostationary vs. geosynchronous, streaks & astrometry.
+  the GEO belt & slots, geostationary vs. geosynchronous, sky-from-the-ground streaks & frames.
 - **Module 3 — Naming Orbits & TLEs** (complete): the six Keplerian elements (live-slider
   ellipse), "TLE of your orbit," and real orbits incl. Molniya/Tundra.
 - **Module 4 — Maneuvers & Perturbations** (complete): Δv burns (with a fuel "gas gauge"),
   GTO→GEO transfer, drag decay & re-entry, escape/unbound orbits, radiation pressure/HAMR,
   J2 & sun-synchronous — a 3-D simulator with real RK4 integration of gravity + drag.
-- The **live simulators** (`tut1.html`–`tut4.html`) with matching camera/time controls.
+- **Module 5 — xGEO / Cislunar Space & Reference Frames** (complete): the Earth–Moon–Sun system,
+  four reference frames (ECI / synodic / MCI / Moon-fixed) with a 2×2 compare view, Hill spheres
+  & Lagrange points, the potential surface, xGEO defined, and "lead-the-Moon" lunar transfers.
+- The **live simulators** (`tut1.html`–`tut5.html`) with matching camera/time controls.
 - **Interactive worksheets** that open beside each simulator: guided tasks with check questions
   and demo-specific remediation; progress saves as you go.
 - A shared **controls reference** (`controls.html`) linked from every module.
 - **Backend** (`server.js`): accounts, login/sessions, per-task progress, prerequisite gating,
   instructor dashboard. Zero dependencies.
 
-Modules 5–6 (xGEO/cislunar, then observability) are planned — see `docs/MODULE_NOTES.md`.
+Modules 6–8 (Lagrange points & complex orbits; lunar transfers & Artemis; observability) are
+planned — see `docs/MODULE_NOTES.md`.
 
 ## Run it
 
@@ -70,7 +74,7 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v1.2: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v1.3: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. Modules 3 & 4 are static client-side files
 (no new server surface). For internet-facing use, front it with HTTPS + rate-limiting

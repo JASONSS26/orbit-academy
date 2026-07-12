@@ -4,6 +4,18 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v1.3 — audit result: **PASS** (re-run)
+Module 5 and the Module 2 rebalance added **no new server attack surface**: everything new is
+static client-side files (`tut5.html`, `worksheet5.*`, and the inert `worksheet6.data.js` seed),
+rendered in the browser through the existing `esc()`-based renderer and using only the already-
+audited `/api/task` and `/api/complete` endpoints. The course expansion to 8 modules
+(t6/t7/t8 added) is a `COURSE`-array change only — `unlocked()` gating logic is unchanged and
+still walks the prereq chain. Three.js remains the same SRI-pinned CDN build; the new tool loads
+the moon texture from the same pinned `cdn.jsdelivr.net/gh/mrdoob/three.js@r128` path. No new
+endpoints, secrets, or external calls; new worksheet text is static (no user input interpolated
+into HTML). Re-ran the full suite — **34 functional + 22 security checks + DoS guard, all
+passing** (`bash test/run.sh`). Confirmed `academy_data.json` remains gitignored. Cleared to ship v1.3.
+
 ## v1.2 — audit result: **PASS** (re-run)
 Modules 3 and 4 added **no new server attack surface**: both are static client-side files
 (`tut3a.html`, `tut4.html`, and their worksheets/data), rendered in the browser and using only

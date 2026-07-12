@@ -7,6 +7,11 @@
    The server independently records the score and enforces prerequisites, so the client
    cannot unlock ahead by tampering. */
 const TUTORIALS = {
+  t5: {
+    worksheet: 'worksheet5.html',   // Module 5 — xGEO / Cislunar Space
+    tool: 'tut5.html',
+    blurb: 'The Earth–Moon–Sun system, reference frames, Lagrange points, xGEO, and lunar transfers.',
+  },
   t4: {
     worksheet: 'worksheet4.html',   // Module 4 — Maneuvers & Perturbations
     tool: 'tut4.html',

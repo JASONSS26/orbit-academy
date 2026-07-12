@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Tutorial 5: xGEO / Cislunar Space</title>
+<style>
+  :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--moon:#d8d2c4;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000407;color:var(--fg);
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
+  #app{display:grid;grid-template-columns:340px minmax(0,1fr) 285px;height:100vh;gap:8px;padding:8px}
+  .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
+  h2{margin:0 0 6px;font-size:19px;color:#fff}
+  .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
+  .big{font-size:14px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  .q{color:var(--dim);font-size:12px;margin-bottom:4px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+    padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
+  button:hover{background:#1f4a7a;border-color:var(--cyan)}
+  button.on{background:#1f5a3a;border-color:var(--grn)}
+  .seg{display:grid;gap:5px;margin-top:5px}
+  .seg.two{grid-template-columns:1fr 1fr}
+  .seg button{margin-top:0;font-size:12px;padding:7px 5px}
+  .seg button.sel{background:#1f4a7a;border-color:var(--cyan);color:#fff;font-weight:bold}
+  label.chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:5px 0;cursor:pointer}
+  label.chk .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
+  .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234;max-width:70%}
+  #frameTag{position:absolute;top:8px;right:10px;z-index:3;font-size:12px;color:var(--cyan);background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.72);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  #banner{position:absolute;bottom:44px;left:10px;right:10px;z-index:3;font-size:13px;padding:6px 11px;border-radius:6px;font-weight:bold;display:none;text-align:center}
+  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:13px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  .kv span:last-child{color:#fff;font-weight:bold;text-align:right}
+  .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
+  .warp{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .warp button{width:34px;font-size:16px;padding:4px}
+  kbd{background:#13273f;border:1px solid #274266;border-radius:4px;padding:0 5px;color:#fff;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- CONTROLS -->
+  <div id="left" class="col panel">
+    <h2>⑤ xGEO / Cislunar</h2>
+    <button onclick="(function(){var w=window.open('worksheet5.html','worksheet_t5');w&&w.focus();})()"
+      style="background:#1f4a7a">📋 Back to worksheet</button>
+
+    <div class="sec">
+      <div class="big">🔍 Zoom scale</div>
+      <div class="q">Where are we looking?</div>
+      <div class="seg" id="scaleSeg">
+        <button data-scale="moon" onclick="setScale('moon')">🌑 Low lunar orbit (zoom on the Moon)</button>
+        <button data-scale="em"   onclick="setScale('em')">🌍🌙 The Earth–Moon system</button>
+        <button data-scale="es"   onclick="setScale('es')">☀ The Sun–Earth system (way out)</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="big">🎥 Reference frame</div>
+      <div class="q">What are we holding still? (This is the big idea of the module.)</div>
+      <div class="seg" id="frameSeg">
+        <button data-frame="eci"   onclick="setFrame('eci')">Earth-centred inertial (ECI) — Moon orbits Earth</button>
+        <button data-frame="emrot" onclick="setFrame('emrot')">Earth–Moon rotating (synodic) — line fixed</button>
+        <button data-frame="mci"   onclick="setFrame('mci')">Moon-centred inertial (MCI) — Earth orbits Moon</button>
+        <button data-frame="moonfix" onclick="setFrame('moonfix')">Moon-fixed — ride the tidally-locked Moon</button>
+      </div>
+      <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames at once (2×2)</button>
+    </div>
+
+    <div class="sec">
+      <div class="big">👁 Show</div>
+      <div id="toggles"></div>
+    </div>
+
+    <div class="sec">
+      <div class="big">⚖ Release on the Earth–Moon line</div>
+      <div class="q">Drop an object at rest somewhere between Earth and Moon. Which way does it fall? The tipping point is <b>L1</b>.</div>
+      <div class="kv"><span>release point</span><span><b id="relV">50</b>% toward Moon</span></div>
+      <div style="position:relative">
+        <input id="rel" type="range" min="5" max="95" step="1" value="50" style="width:100%">
+        <!-- L1 tick: slider spans 5–95, so L1 at 85% sits at (85-5)/90 = 88.9% of the track -->
+        <div style="position:absolute;left:88.9%;top:-2px;transform:translateX(-50%);pointer-events:none;text-align:center">
+          <div style="width:2px;height:22px;background:#ff5a52;margin:0 auto"></div>
+          <div style="font-size:10px;color:#ff8a84;margin-top:1px">L1</div>
+        </div>
+      </div>
+      <button id="relBtn" onclick="releaseOnLine()" style="margin-top:18px">▶ release &amp; watch it drift</button>
+      <div class="note" id="relMsg">The Earth–Moon L1 point is about <b>85% of the way to the Moon</b> (not the midpoint — the Moon is much lighter, so its gravitational “territory” is small). Inside 85% → falls back toward Earth; beyond → falls onto the Moon.</div>
+    </div>
+
+    <div class="sec">
+      <div class="big">🚀 Trans-lunar transfer</div>
+      <div class="q">“Lead the Moon” like a duck hunter — burn so you arrive where the Moon <i>will be</i>.</div>
+      <button id="tliBtn" onclick="startTLI()">▶ set up a LEO→Moon transfer</button>
+      <div id="tliPanel" style="display:none;margin-top:6px">
+        <div class="q">departure lead angle (where the Moon is when you burn)</div>
+        <div class="kv"><span>lead angle</span><span><b id="leadV">120</b>°</span></div>
+        <input id="lead" type="range" min="80" max="160" step="1" value="120" style="width:100%">
+        <button class="go" id="tliGo" onclick="fireTLI()" style="background:#1e5c33;border-color:#39d353">🔥 burn trans-lunar injection</button>
+        <div class="note" id="tliMsg">Pick a lead angle, then fire. Watch whether you meet the Moon at apogee — too little lead and it hasn’t arrived; too much and it’s already gone by.</div>
+      </div>
+    </div>
+
+    <div class="sec warp">
+      <span style="font-size:12px;color:var(--dim)">time&nbsp;</span>
+      <button onclick="warpDown()">−</button>
+      <span id="warpV" style="font-size:13px;color:#fff;min-width:64px;text-align:center">1×</span>
+      <button onclick="warpUp()">+</button>
+      <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸</button>
+    </div>
+    <div class="sec" style="color:var(--dim);font-size:12px">
+      drag = pan · shift/right-drag = rotate · wheel = zoom · arrows = rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset
+    </div>
+  </div>
+
+  <!-- 3D VIEW -->
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <div class="stitle" id="stitle">🌙 Low lunar orbit</div>
+    <div id="frameTag">frame: Moon-locked</div>
+    <div id="banner"></div>
+    <div id="hint"></div>
+  </div>
+
+  <!-- READOUTS -->
+  <div id="read" class="col panel">
+    <div class="big">Where things are</div>
+    <div class="kv"><span>elapsed</span><span id="rT">0 d</span></div>
+    <div class="kv"><span>Moon phase</span><span id="rPhase">—</span></div>
+    <div id="scaleFacts"></div>
+    <div class="sec">
+      <div class="big" style="font-size:13px;color:var(--cyan)">Cislunar zones</div>
+      <div class="note" id="zoneNote"></div>
+    </div>
+    <div class="sec">
+      <div class="note">
+        <b style="color:var(--accent)">xGEO</b> = “extended GEO”: farther from Earth than the GEO belt
+        (~36,000 km) but still inside Earth’s gravitational grip — out to the Sun–Earth L1 point,
+        ~1.5 million km. The Moon, at 384,400 km, sits squarely in this region.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
+<script>
+"use strict";
+/* ============================================================================
+   TUTORIAL 5 — xGEO / Cislunar Space.
+   Goal: build physical intuition for REFERENCE FRAMES and the Earth–Moon–Sun
+   system, and define xGEO. Motion is analytic/Keplerian (no live propagation),
+   so there is zero integration drift. Three zoom scales (lunar surface,
+   Earth–Moon, Sun–Earth) × four frames (fixed-stars, Earth co-moving,
+   Earth–Moon rotating, Moon-locked), toggleable lunar orbiters & xGEO objects,
+   the Moon's Hill-sphere boundary, a rotating-frame potential surface with the
+   five Lagrange points, Moon phases, and a "lead the Moon" transfer.
+   Verified constants: Moon a=384,400 km, e=0.0549, i=5.14° to ecliptic,
+   sidereal 27.32 d; Hill sphere ≈ 61,500 km ≈ Earth–Moon L1; Sun–Earth L1
+   ≈ 1.5e6 km; low lunar orbit v≈1.63 km/s, lunar escape 2.38 km/s.
+   ============================================================================ */
+const $=id=>document.getElementById(id);
+// physical constants (km, days)
+const R_EARTH=6371, R_MOON=1737, R_SUN=696000;
+const D_EM=384400;          // Earth–Moon mean distance
+const D_ES=1.496e8;         // Earth–Sun
+const HILL_MOON=61500;      // Moon Hill sphere ≈ Earth–Moon L1
+const L1_ES=1.5e6;          // Sun–Earth L1 from Earth
+const GEO=42164;            // GEO radius from Earth center
+const MOON_ECL_INC=5.14*Math.PI/180;
+const T_MOON=27.32;         // sidereal month (days)
+const MOON_E=0.0549;
+
+let scale='moon', frame='moonfix', simT=0, warp=60, paused=false;
+let last=performance.now();
+
+/* ------------------------------- renderer -------------------------------- */
+const canvas=$('c');
+const r3=new THREE.WebGLRenderer({canvas,antialias:true}); r3.setPixelRatio(Math.min(devicePixelRatio,2)); r3.setClearColor(0x000407,1);
+const scene=new THREE.Scene();
+const sunLight=new THREE.DirectionalLight(0xffffff,1.5); scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0x55627a,0.5));
+// Starfield on a UNIT sphere; re-scaled and re-centred on each camera every frame so it always
+// sits just inside the far plane — a proper distant backdrop at every zoom scale and in every frame.
+const starDirs=[];
+const starGeo=new THREE.BufferGeometry(); {const N=1600,p=new Float32Array(N*3);
+  for(let k=0;k<N;k++){const th=k*2.399,ph=Math.acos(((k*57)%1000)/500-1);
+    const d=new THREE.Vector3(Math.sin(ph)*Math.cos(th),Math.sin(ph)*Math.sin(th),Math.cos(ph));
+    starDirs.push(d); p[k*3]=d.x;p[k*3+1]=d.y;p[k*3+2]=d.z;}
+  starGeo.setAttribute('position',new THREE.BufferAttribute(p,3)); }
+const starMat=new THREE.PointsMaterial({color:0xcfe0ff,sizeAttenuation:false,size:1.8});
+const starField=new THREE.Points(starGeo,starMat); starField.frustumCulled=false; scene.add(starField);
+// place the star shell around a given camera, scaled well beyond its view distance so stars always
+// read as a distant backdrop (called per view in renderView, before that view renders)
+function placeStars(v){ const R=Math.max(2e6, v.R*20); starField.position.copy(v.cam.position); starField.scale.setScalar(R); }
+
+const tl=new THREE.TextureLoader();
+function tex(u,mat,fallback){ tl.load(u,t=>{mat.map=t;mat.color.set(0xffffff);mat.needsUpdate=true;},undefined,()=>{if(fallback)mat.color.set(fallback);}); }
+
+// Earth
+const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
+const earth=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH,48,32),earthMat); scene.add(earth);
+tex('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',earthMat,0x2b6fb5);
+// Moon (real lunar surface image)
+const moonMat=new THREE.MeshStandardMaterial({color:0xd8d2c4,roughness:1});
+const moon=new THREE.Mesh(new THREE.SphereGeometry(R_MOON,48,32),moonMat); scene.add(moon);
+tex('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg',moonMat,0xd8d2c4);
+// Sun (billboarded glow, far away)
+const sun=new THREE.Mesh(new THREE.SphereGeometry(R_SUN*0.5,24,16),new THREE.MeshBasicMaterial({color:0xffe07a}));
+scene.add(sun);
+
+// helper: orbit ring, y-UP convention — a flat (incl=0) orbit lies in the x-z plane (y=0),
+// so the camera (y = up/north) looks down on it. Inclination tilts it about the x-axis (node line).
+function orbPoint(a,e,incl,nu){ const p=a*(1-e*e), r=p/(1+e*Math.cos(nu));
+  const along=r*Math.cos(nu), trans=r*Math.sin(nu);
+  return new THREE.Vector3(along, trans*Math.sin(incl), -trans*Math.cos(incl)); }
+function ringGeom(a,e,incl,steps){ const S=steps||160, pts=[];
+  for(let k=0;k<=S;k++) pts.push(orbPoint(a,e,incl,k/S*6.283));
+  return new THREE.BufferGeometry().setFromPoints(pts); }
+
+// Moon orbit ring (around Earth), inclined to ecliptic
+const moonOrbit=new THREE.Line(ringGeom(D_EM,MOON_E,0,220),new THREE.LineBasicMaterial({color:0x8fb4ff,transparent:true,opacity:0.5}));  // flat, matches moonPos()
+scene.add(moonOrbit);
+// Earth orbit ring (around Sun) — only shown at Sun–Earth scale
+const earthOrbit=new THREE.Line(ringGeom(D_ES,0.0167,0,240),new THREE.LineBasicMaterial({color:0x5fd0ff,transparent:true,opacity:0.4}));
+scene.add(earthOrbit);
+
+// GEO belt ring (around Earth)
+const geoRing=new THREE.Line(ringGeom(GEO,0,0,120),new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.6}));
+scene.add(geoRing);
+// Moon Hill sphere (boundary of lunar orbits) — repositioned onto the Moon every frame in place()
+const hill=new THREE.Mesh(new THREE.SphereGeometry(HILL_MOON,24,16),
+  new THREE.MeshBasicMaterial({color:0x39d353,wireframe:true,transparent:true,opacity:0.22}));
+hill.frustumCulled=false;   // moves with the Moon each frame
+scene.add(hill);
+// Earth's zone-of-influence sphere within the Earth–Moon system: sized to REACH L1, so it
+// meets the Moon's Hill sphere right at the L1 point.
+const EARTH_ZOI = D_EM - HILL_MOON;   // Earth→L1 distance (Moon Hill sphere touches here)
+const earthZoi=new THREE.Mesh(new THREE.SphereGeometry(EARTH_ZOI,32,20),
+  new THREE.MeshBasicMaterial({color:0x5fd0ff,wireframe:true,transparent:true,opacity:0.10}));
+earthZoi.visible=false; scene.add(earthZoi);
+// Sun–Earth L1 shell (only at Sun–Earth scale)
+const hillEarth=new THREE.Mesh(new THREE.SphereGeometry(L1_ES,24,16),
+  new THREE.MeshBasicMaterial({color:0x5fd0ff,wireframe:true,transparent:true,opacity:0.10}));
+scene.add(hillEarth);
+// red line joining Earth and Moon (the Earth–Moon line — the axis of the rotating frame)
+const emLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(D_EM,0,0)]),
+  new THREE.LineBasicMaterial({color:0xff5a52,transparent:true,opacity:0.85}));
+emLine.frustumCulled=false;   // its endpoint moves every frame; don't let a stale bounding sphere cull it
+scene.add(emLine);
+
+/* --- lunar orbiters (representative real missions; analytic). An elliptical one is ON
+   by default so the very first thing a student sees is an ellipse around the Moon. --- */
+const LUNAR=[
+  {id:'ele', name:'Elliptical lunar orbit (apogee ≈ ½ Hill radius)', c:0x5fd0ff, alt:17480, incl:30, e:0.6, on:true},
+  {id:'lro', name:'LRO (low ~100 km polar, near-circular)', c:0x9be0af, alt:100, incl:90, on:false},
+  {id:'cap', name:'CAPSTONE (highly elliptical, i≈57°)', c:0xffcf4d, alt:3500, incl:57, e:0.6, on:false},
+];
+const lunarObjs=LUNAR.map(s=>{ const a=R_MOON+s.alt;
+  const line=new THREE.Line(ringGeom(a,s.e||0,(s.incl||0)*Math.PI/180,140),new THREE.LineBasicMaterial({color:s.c}));
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(Math.max(120,a*0.04),12,10),new THREE.MeshBasicMaterial({color:s.c}));
+  const g=new THREE.Group(); g.add(line,dot); g.traverse(o=>o.frustumCulled=false); scene.add(g);
+  return {def:s, group:g, dot, a, e:s.e||0, incl:(s.incl||0)*Math.PI/180}; });
+
+/* --- xGEO objects (orbit Earth). A highly-elliptical one is ON by default so a student
+   sees an ellipse around the EARTH and one around the MOON at the same time. --- */
+const XGEO=[
+  {id:'xg2', name:'Highly-elliptical (apogee near Moon)', c:0xffa24d, a:250000, e:0.55, incl:25, on:true},
+  {id:'xg1', name:'xGEO patrol (~150,000 km)', c:0xff7bd0, a:150000, e:0.1, incl:15, on:false},
+];
+const xgeoObjs=XGEO.map(s=>{
+  const line=new THREE.Line(ringGeom(s.a,s.e,s.incl*Math.PI/180,160),new THREE.LineBasicMaterial({color:s.c,transparent:true,opacity:0.7}));
+  const dot=new THREE.Mesh(new THREE.SphereGeometry(s.a*0.012,10,8),new THREE.MeshBasicMaterial({color:s.c}));
+  const g=new THREE.Group(); g.add(line,dot); scene.add(g);
+  return {def:s, group:g, dot, a:s.a, e:s.e, incl:s.incl*Math.PI/180, period:2*Math.PI*Math.sqrt(s.a**3/398600.4418)/86400}; });
+
+/* --- Lagrange point markers (Earth–Moon), shown at EM scale in rotating frame --- */
+const LPTS=[['L1',0.849],['L2',1.168],['L3',-1.005]];  // fractions of D_EM along Earth–Moon line
+const lagGroup=new THREE.Group(); scene.add(lagGroup); lagGroup.visible=false;
+LPTS.forEach(([nm,f])=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(6000,10,8),new THREE.MeshBasicMaterial({color:0xff5a52}));
+  m.position.set(D_EM*f,0,0); m.userData.name=nm; lagGroup.add(m); });
+// L4/L5 (equilateral) — 60° ahead/behind the Moon in the orbital (x-z) plane
+[[Math.cos(Math.PI/3),-Math.sin(Math.PI/3),'L4'],[Math.cos(Math.PI/3),Math.sin(Math.PI/3),'L5']].forEach(([cx,cz,nm])=>{
+  const m=new THREE.Mesh(new THREE.SphereGeometry(6000,10,8),new THREE.MeshBasicMaterial({color:0xffa24d}));
+  m.position.set(D_EM*cx,0,D_EM*cz); lagGroup.add(m); });
+
+/* --- transfer trajectory (TLI) --- */
+const tliLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x39d353}));
+tliLine.frustumCulled=false; tliLine.visible=false; scene.add(tliLine);
+const tliShip=new THREE.Mesh(new THREE.SphereGeometry(2500,10,8),new THREE.MeshBasicMaterial({color:0x39d353}));
+tliShip.visible=false; scene.add(tliShip);
+let tli=null;   // {t0, arrive, leadDeg, ok}
+
+/* ------------------------- positions (analytic) --------------------------- */
+// Moon position around Earth at time t (days) — y-up inertial frame, tilted to ecliptic
+// NOTE: we model the Moon's orbit as FLAT (in the x-z plane) so that the Earth–Moon rotating
+// frame freezes the line perfectly. The real ~5.14° tilt to the ecliptic is taught as a fact in
+// the worksheet (it's what makes eclipses occasional); rendering it flat keeps the frame lesson clean.
+function moonPos(t){ return orbPoint(D_EM, MOON_E, 0, 2*Math.PI*(t/T_MOON)); }
+// Sun direction as seen from Earth (Earth goes around Sun once/year); Sun sweeps the x-z plane
+function sunDir(t){ const a=2*Math.PI*(t/365.25); return new THREE.Vector3(Math.cos(a),0,-Math.sin(a)); }
+
+/* ------------------------------- toggles UI ------------------------------- */
+function buildToggles(){ const host=$('toggles'); host.innerHTML='';
+  const add=(obj,label,c)=>{ const l=document.createElement('label'); l.className='chk';
+    l.innerHTML='<span class="sw" style="background:#'+c.toString(16).padStart(6,'0')+'"></span>'+label;
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=obj.def.on; cb.style.order='-1';
+    cb.onchange=()=>{obj.def.on=cb.checked;}; l.prepend(cb); host.appendChild(l); };
+  const structural=[
+    ['emline','Earth–Moon line',0xff5a52,()=>emLine.visible,v=>emLine.visible=v, scale!=='es'],
+    ['geo','GEO belt (reference)',0xffcf4d,()=>geoRing.visible,v=>geoRing.visible=v, scale!=='es'],
+    ['hill','Moon’s Hill sphere (lunar-orbit boundary)',0x39d353,()=>hill.visible,v=>hill.visible=v, scale==='em'||scale==='moon'],
+    ['zoi','Earth’s zone (meets Hill sphere at L1)',0x5fd0ff,()=>earthZoi.visible,v=>earthZoi.visible=v, scale==='em'],
+    ['moonorbit','Moon’s orbit around Earth',0x8fb4ff,()=>moonOrbit.visible,v=>moonOrbit.visible=v, scale!=='moon'],
+    ['lag','Lagrange points (rotating frame)',0xff5a52,()=>lagGroup.visible,v=>lagGroup.visible=v, scale==='em'],
+    ['pot','Potential surface (rotating frame)',0x8a7dff,()=>potMesh.visible,v=>potMesh.visible=v, scale==='em'],
+  ];
+  for(const [id,lab,c,get,set,show] of structural){ if(!show) continue;
+    const l=document.createElement('label'); l.className='chk';
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=get();
+    cb.onchange=()=>set(cb.checked); l.appendChild(cb);
+    const sw=document.createElement('span'); sw.className='sw'; sw.style.background='#'+c.toString(16).padStart(6,'0'); l.appendChild(sw);
+    l.appendChild(document.createTextNode(lab)); host.appendChild(l); }
+  if(scale==='moon'){ const h=document.createElement('div'); h.className='q'; h.style.marginTop='8px'; h.textContent='Lunar orbiters:'; host.appendChild(h);
+    lunarObjs.forEach(o=>add(o,o.def.name,o.def.c)); }
+  if(scale==='em'){ const h=document.createElement('div'); h.className='q'; h.style.marginTop='8px'; h.textContent='xGEO objects (orbit Earth):'; host.appendChild(h);
+    xgeoObjs.forEach(o=>add(o,o.def.name,o.def.c)); }
+}
+
+/* -------------------- potential surface (rotating frame) ------------------ */
+// A qualitative effective-potential "height field" over the Earth–Moon plane, so
+// satellites appear to "roll" in wells with saddles at the Lagrange points.
+let potMesh;
+(function buildPotential(){
+  // Qualitative CR3BP effective potential in NONDIMENSIONAL units (distance = Earth–Moon dist),
+  // Earth at x=-mu, Moon at x=1-mu. The Moon's term (mu=0.0123) is ~80× shallower than Earth's,
+  // so a single linear scale hides the Moon entirely. We clamp EACH body's 1/r term separately
+  // (capE, capM) — chosen so both wells and the L1 saddle at ~0.85 are all clearly visible.
+  const N=90, mu=0.0123, span=1.6, capE=3.0, capM=1.2, rmin=0.02;
+  const geo=new THREE.PlaneGeometry(span*2,span*2,N,N);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){ const x=pos.getX(i), y=pos.getY(i);   // nondimensional
+    const r1=Math.max(rmin,Math.hypot(x+mu,y)), r2=Math.max(rmin,Math.hypot(x-(1-mu),y));
+    const eE=Math.min((1-mu)/r1,capE), eM=Math.min(mu/r2,capM);
+    const U=-eE - eM - 0.5*(x*x+y*y);            // gravity + centrifugal, all NEGATIVE
+    pos.setZ(i, U*D_EM*0.14);                     // scale back to scene km; wells dip DOWN
+  }
+  // scale the plane's x-y from nondimensional to scene km (barycenter ~ Earth center at this mu)
+  geo.scale(D_EM,D_EM,1);
+  geo.computeVertexNormals();
+  potMesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x8a7dff,wireframe:true,transparent:true,opacity:0.4,side:THREE.DoubleSide}));
+  // built in x-y with height along +z; rotate to lie in the world x-z plane (height = world y)
+  potMesh.rotation.x=-Math.PI/2;
+  potMesh.visible=false; scene.add(potMesh);
+})();
+
+/* ------------------------------ cameras ----------------------------------- */
+/* Each reference frame gets its OWN camera + view params (pan/zoom/rotate), so
+   in 2×2 compare mode all four can be aimed independently. They share ONE scene
+   and ONE simulation clock, so the same dynamics play in every panel. */
+const FRAMES=['eci','emrot','mci','moonfix'];
+const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',moonfix:'Moon-fixed (rotating)'};
+const views={};
+for(const f of FRAMES){ views[f]={R:R_MOON*5, th:0.7, ph:1.0, target:new THREE.Vector3(0,0,0),
+  cam:new THREE.PerspectiveCamera(50,1,0.5,4e9)}; }
+let quad=false;
+// which frame's view is the input target: in quad mode, the panel under the cursor
+function panelFrameAt(clientX,clientY){ const r=canvas.getBoundingClientRect();
+  const u=(clientX-r.left)/r.width, v=(clientY-r.top)/r.height;
+  return FRAMES[(v<0.5?0:1)*2 + (u<0.5?0:1)]; }              // TL,TR,BL,BR = stars,earth,emrot,moon
+function activeFrame(cx,cy){ return quad? panelFrameAt(cx,cy) : frame; }
+// track the cursor globally so arrow keys drive whichever panel it's hovering (in quad mode).
+// Window-level (not canvas-level) so overlay elements never swallow the update; the hovered
+// panel is recomputed fresh in the loop from curX/curY.
+let curX=0,curY=0;
+addEventListener('mousemove',e=>{ curX=e.clientX; curY=e.clientY; });
+
+const keys={}; let drag=0,lx=0,ly=0,pinchD=0,dragFrame=frame;
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('mousedown',e=>{drag=(e.button===2||e.button===1||e.shiftKey||e.altKey)?2:1;lx=e.clientX;ly=e.clientY;dragFrame=activeFrame(e.clientX,e.clientY);e.preventDefault();});
+addEventListener('mouseup',()=>drag=0);
+addEventListener('mousemove',e=>{ if(!drag)return; const v=views[dragFrame]; const dx=e.clientX-lx,dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+  if(drag===2){ v.th-=dx*0.005; v.ph=Math.max(0.05,Math.min(Math.PI-0.05,v.ph-dy*0.005)); }
+  else { const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);
+    const k=v.R*0.0016; v.target.addScaledVector(right,-dx*k); v.target.addScaledVector(up,dy*k); } });
+canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*1.3,Math.min(L1_ES*3,v.R*(1+Math.sign(e.deltaY)*0.12)));},{passive:false});
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;dragFrame=activeFrame(lx,ly);}else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);const k=v.R*0.0016;v.target.addScaledVector(right,-dx*k);v.target.addScaledVector(up,dy*k);}else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinchD)v.R=Math.max(R_MOON*1.3,Math.min(L1_ES*3,v.R*(pinchD/d)));pinchD=d;}},{passive:false});
+canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
+addEventListener('keyup',e=>{keys[e.key]=false;});
+addEventListener('keydown',e=>{ keys[e.key]=true;
+  if(e.key===','||e.key==='<') warpDown();               // GLOBAL time control (all panels share it)
+  else if(e.key==='.'||e.key==='>') warpUp();
+  else if(e.key===' '){ togglePause(); e.preventDefault(); }
+  else if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey) resetView();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault(); });
+
+/* ------------------------------ warp ------------------------------------- */
+const WARPS=[1,10,60,300,1800,7200,43200,172800,864000,2592000];  // fine low end → 30 days/s
+function warpUp(){ let i=WARPS.indexOf(warp); if(i<WARPS.length-1) warp=WARPS[++i]; showWarp(); }
+function warpDown(){ let i=WARPS.indexOf(warp); if(i>0) warp=WARPS[--i]; showWarp(); }
+function showWarp(){ const s=warp; $('warpV').textContent = s<3600? s+'×' : s<86400? (s/3600).toFixed(0)+'h/s' : (s/86400).toFixed(0)+'d/s'; }
+function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶':'⏸'; }
+
+/* --------------------- release-on-the-line demo --------------------------- */
+const relDot=new THREE.Mesh(new THREE.SphereGeometry(7000,12,10),new THREE.MeshBasicMaterial({color:0xffffff}));
+relDot.visible=false; scene.add(relDot);
+const relTrail=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.6}));
+relTrail.frustumCulled=false; relTrail.visible=false; scene.add(relTrail);
+const L1_FRAC=0.849;   // Earth–Moon L1 as a fraction of the Earth–Moon distance
+let rel=null;
+$('rel').addEventListener('input',()=>$('relV').textContent=+$('rel').value);
+function releaseOnLine(){
+  // don't disturb the camera — the released object sits on the Earth–Moon line, visible in the
+  // current view. Just make sure the line is shown; leave scale, frame, and all four views as-is.
+  emLine.visible=true;
+  const f=(+$('rel').value)/100;
+  rel={ f0:f, t:0, toward: f<L1_FRAC?'earth':'moon', pts:[] };
+  relDot.visible=true; relTrail.visible=true; $('banner').style.display='none';
+  warp=21600; showWarp(); paused=false;
+  $('relMsg').innerHTML = f<L1_FRAC
+    ? 'Released at <b>'+(f*100).toFixed(0)+'%</b> — that’s <b>inside</b> L1 (85%), so Earth’s pull wins: it drifts back toward <b>Earth</b>.'
+    : (f>0.87? 'Released at <b>'+(f*100).toFixed(0)+'%</b> — <b>beyond</b> L1 (85%), so the Moon’s pull wins: it falls toward the <b>Moon</b>.'
+             : 'Released at <b>'+(f*100).toFixed(0)+'%</b> — right near the <b>L1 knife-edge</b> (~85%); it barely drifts, then tips one way.'); }
+
+/* --------------------------- scale & frame -------------------------------- */
+function setScale(s){ scale=s;
+  document.querySelectorAll('#scaleSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.scale===s));
+  const titles={moon:'🌙 Low lunar orbit',em:'🌍🌙 The Earth–Moon system',es:'☀ The Sun–Earth system'};
+  $('stitle').textContent=titles[s];
+  // Per-frame camera distance. Moon-centred frames (MCI, Moon-fixed) zoom in tighter so you
+  // genuinely "ride the Moon" — that's what distinguishes Moon-fixed from the synodic frame,
+  // which otherwise also freezes the Earth–Moon line (they share a rate because the Moon is
+  // tidally locked). The tighter zoom also shows the big elliptical lunar orbit clearly.
+  const base = s==='moon'? R_MOON*6 : s==='em'? D_EM*1.9 : D_ES*0.6;
+  for(const f of FRAMES){ views[f].R = (frameCentersMoon(f) && s!=='es') ? Math.min(base, HILL_MOON*1.4) : base; }
+  if(!quad){ if(s==='moon'&&(frame==='eci'||frame==='emrot')) setFrame('moonfix');
+    else if(s==='em'&&(frame==='mci'||frame==='moonfix')) setFrame('emrot');
+    else if(s==='es'&&frame!=='eci') setFrame('eci'); }
+  applyScaleDefaults(); buildToggles(); resetView();
+}
+function setFrame(f){ frame=f;
+  document.querySelectorAll('#frameSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.frame===f));
+  $('frameTag').textContent='frame: '+FRAME_NAMES[f];
+}
+function toggleQuad(){ quad=!quad;
+  $('quadBtn').classList.toggle('on',quad);
+  $('quadBtn').textContent = quad? '▭ back to single view' : '⊞ Compare all 4 frames at once (2×2)';
+  document.querySelectorAll('#frameSeg button').forEach(b=>b.style.opacity=quad?0.4:1);
+  $('frameTag').textContent = quad? 'comparing 4 frames — same time, same satellites' : 'frame: '+FRAME_NAMES[frame];
+  $('stitle').style.display = quad?'none':'block';
+  // the wireframe Hill/zone spheres are cluttered across four small panels — hide them on entering quad
+  if(quad){ hill.visible=false; earthZoi.visible=false; hillEarth.visible=false; buildToggles(); }
+  resize();
+}
+// Set sensible default visibility for the current scale. Called once when the scale changes;
+// per-panel toggles then override within the valid set. (NOT called every frame, so toggles stick.)
+function applyScaleDefaults(){
+  moonOrbit.visible  = (scale!=='moon');
+  earthOrbit.visible = (scale==='es');
+  hillEarth.visible  = (scale==='es');
+  sun.visible        = (scale==='es');
+  hill.visible       = (scale==='moon'||scale==='em');
+  emLine.visible     = (scale!=='es');
+  geoRing.visible    = (scale==='em');
+  earthZoi.visible   = false;            // off by default; a toggle turns it on at EM scale
+  lagGroup.visible   = false;
+  potMesh.visible    = false;
+}
+function updateVisibility(){ /* per-frame: nothing to force; toggles own it now */ }
+function resetView(){ const ph=(scale==='em'&&potMesh.visible)?0.5:1.0;
+  for(const f of FRAMES){ views[f].th=0.7; views[f].ph=ph; views[f].target.set(0,0,0); } }
+
+/* ------------------------------ TLI transfer ------------------------------ */
+function startTLI(){ setScale('em'); if(!quad) setFrame('eci'); $('tliPanel').style.display='block';
+  $('banner').style.display='none'; }
+function fireTLI(){
+  const leadDeg=+$('lead').value; simT=0; paused=false;
+  // transfer ellipse: perigee ~ LEO (300 km alt), apogee ~ Moon distance
+  const rp=R_EARTH+300, ra=D_EM, a=(rp+ra)/2;
+  const tof=Math.PI*Math.sqrt(a**3/398600.4418)/86400;  // half-period (days) — coast to apogee
+  // Moon must ARRIVE at the apogee point (fixed at +? we put apogee 180° from perigee).
+  // We fix perigee on +X; apogee is on -X. Moon must be at -X after 'tof' days.
+  // Moon angle at fire time = leadDeg ahead. "Correct" lead ≈ 180° - Moon's travel during tof.
+  const moonTravelDeg=360*(tof/T_MOON);
+  const idealLead=180-moonTravelDeg;
+  tli={t0:0, tof, a, rp, ra, leadDeg, idealLead, arrive:tof};
+  // build the transfer half-ellipse (perigee +X to apogee −X) in the orbit (x-z) plane
+  const e=(ra-rp)/(ra+rp), pts=[];
+  for(let k=0;k<=120;k++) pts.push(orbPoint(a,e,0,Math.PI*k/120));
+  tliLine.geometry.setFromPoints(pts); tliLine.visible=true; tliShip.visible=true;
+  $('tliMsg').innerHTML = 'Fired with a <b>'+leadDeg+'°</b> lead. Ideal is about <b>'+idealLead.toFixed(0)+'°</b>. Watch the ship coast to apogee (~'+tof.toFixed(1)+' days) and see if the Moon is there to meet it.';
+  warp=86400; showWarp();
+}
+
+/* ------------------------------ Moon phase -------------------------------- */
+function phaseName(frac){ // 0=new,0.5=full
+  if(frac<0.03||frac>0.97) return 'New 🌑'; if(frac<0.22) return 'Waxing crescent 🌒';
+  if(frac<0.28) return 'First quarter 🌓'; if(frac<0.47) return 'Waxing gibbous 🌔';
+  if(frac<0.53) return 'Full 🌕'; if(frac<0.72) return 'Waning gibbous 🌖';
+  if(frac<0.78) return 'Last quarter 🌗'; return 'Waning crescent 🌘'; }
+
+/* ------------------------------- readouts --------------------------------- */
+function updateReadouts(){
+  $('rT').textContent = simT<1? (simT*24).toFixed(1)+' h' : simT.toFixed(1)+' d';
+  // phase from Sun–Moon geometry: synodic month 29.53 d
+  const synodic=(simT % 29.53)/29.53; $('rPhase').textContent=phaseName(synodic);
+  const facts={
+    moon:'<div class="kv"><span>low-orbit speed</span><span>1.63 km/s</span></div>'+
+         '<div class="kv"><span>lunar escape</span><span>2.38 km/s</span></div>'+
+         '<div class="kv"><span>Hill sphere</span><span>61,500 km</span></div>',
+    em:'<div class="kv"><span>Earth–Moon dist</span><span>384,400 km</span></div>'+
+       '<div class="kv"><span>Moon incl (ecliptic)</span><span>5.14°</span></div>'+
+       '<div class="kv"><span>sidereal month</span><span>27.32 d</span></div>'+
+       '<div class="kv"><span>phase cycle</span><span>29.53 d</span></div>',
+    es:'<div class="kv"><span>Earth–Sun dist</span><span>150 M km</span></div>'+
+       '<div class="kv"><span>Sun–Earth L1</span><span>1.5 M km</span></div>'+
+       '<div class="kv"><span>Earth year</span><span>365.25 d</span></div>',
+  };
+  $('scaleFacts').innerHTML=facts[scale];
+  const zones={
+    moon:'You are inside the <b>Moon’s Hill sphere</b> (~61,500 km): here the Moon’s gravity wins and objects orbit the Moon. These are <b>elliptical orbits</b>, just like around Earth.',
+    em:'Between Earth and Moon, gravity is a tug-of-war. Inside ~61,500 km of the Moon you orbit the Moon; beyond that you orbit the Earth. The crossover sits near <b>Earth–Moon L1</b>. <b>xGEO</b> fills the space from the GEO belt out to the Moon and beyond.',
+    es:'Zoom out and the Moon is just another Earth satellite, and the whole Earth–Moon pair orbits the Sun. Inside <b>Sun–Earth L1</b> (~1.5 M km) you orbit the Earth; beyond it, the Sun takes over.',
+  };
+  $('zoneNote').innerHTML=zones[scale];
+}
+
+/* --------------------------------- loop ----------------------------------- */
+const MU_MOON=4902.8, MU_EARTH=398600.4418;
+function place(){
+  const mp=moonPos(simT);
+  moon.position.copy(mp);
+  // tidally locked: same face toward Earth. Face direction = -mp; spin about y to point it inward.
+  moon.rotation.y = Math.atan2(mp.x, mp.z) + Math.PI;
+  const sd=sunDir(simT); sun.position.copy(sd.clone().multiplyScalar(D_ES)); sunLight.position.copy(sd);
+  // Moon's Hill sphere follows the Moon; red Earth–Moon line + Earth zone-of-influence track the Moon
+  hill.position.copy(mp);
+  emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);
+  // lunar orbiters ride around the Moon (show at lunar AND Earth–Moon scale)
+  lunarObjs.forEach(o=>{ o.group.position.copy(mp); o.group.visible=((scale==='moon'||scale==='em')&&o.def.on);
+    const per=2*Math.PI*Math.sqrt(o.a**3/MU_MOON)/86400;
+    o.dot.position.copy(orbPoint(o.a,o.e,o.incl,2*Math.PI*(simT/per))); });
+  // xGEO objects orbit Earth (center)
+  xgeoObjs.forEach(o=>{ o.group.visible=(scale==='em'&&o.def.on);
+    o.dot.position.copy(orbPoint(o.a,o.e,o.incl,2*Math.PI*(simT/o.period))); });
+  // release-on-the-line: in the Earth–Moon rotating frame, an object placed at rest drifts along
+  // the line toward whichever body's pull dominates. Model the tip qualitatively — the net pull
+  // (hence drift speed) grows with distance from the L1 balance point — and keep it on the current
+  // Earth–Moon line so it reads correctly in every reference frame.
+  if(rel){
+    const target = rel.toward==='earth' ? 0.02 : 0.995;
+    const speed = Math.min(0.05, Math.abs(rel.f0-L1_FRAC)*0.06 + 0.002);  // near L1 → creeps
+    rel.cur = (rel.cur===undefined) ? rel.f0 : rel.cur + (target-rel.cur)*speed;
+    relDot.position.copy(mp.clone().normalize().multiplyScalar(D_EM*rel.cur));
+    rel.pts.push(relDot.position.clone()); if(rel.pts.length>500) rel.pts.shift();
+    relTrail.geometry.setFromPoints(rel.pts);
+    if(!rel.landed && (rel.cur<0.05 || rel.cur>0.97)){ rel.landed=true;
+      banner(rel.toward==='earth'?'⬇ It fell back toward EARTH — released inside L1.':'🌙 It fell onto the MOON — released beyond L1.',
+             rel.toward==='earth'?'#1e3a5c':'#5c3a1e', rel.toward==='earth'?'#8fb4ff':'#ffcf4d'); }
+  }
+  // TLI ship: coast along the transfer half-ellipse (perigee +X → apogee −X) over 'tof' days
+  if(tli && tliLine.visible){
+    const frac=Math.min(1, simT/tli.tof), nu=Math.PI*frac;
+    const e=(tli.ra-tli.rp)/(tli.ra+tli.rp);
+    tliShip.position.copy(orbPoint(tli.a,e,0,nu));
+    if(frac>=1 && !tli.done){ tli.done=true;
+      // Moon's angle in the orbit (x-z) plane vs. the apogee point at nu=π
+      const moonAng=Math.atan2(-mp.z,mp.x), apoAng=Math.PI;
+      let d=Math.abs(moonAng-apoAng); d=Math.min(d,2*Math.PI-d);
+      if(d<0.26) banner('🎯 Rendezvous! You led the Moon correctly — the ship meets it at apogee.','#1e5c33','#9be0af');
+      else banner('🌙 Missed — the Moon isn’t at the arrival point. Adjust the lead angle and try again.','#5c3a1e','#ffcf4d'); }
+  }
+}
+function banner(t,bg,fg){ const b=$('banner'); b.textContent=t; b.style.display='block'; b.style.background=bg; b.style.color=fg; b.style.border='1px solid '+fg; }
+
+let CW=0,CH=0;
+function resize(){ const st=$('stage'); CW=st.clientWidth; CH=st.clientHeight; r3.setSize(CW,CH,false);
+  positionLabels(); }
+addEventListener('resize',resize);
+
+/* Frame handling — the pedagogical core. Two independent choices define each frame:
+     CENTER  — Earth (origin) for ECI & synodic; the Moon for MCI & Moon-fixed.
+     CO-ROTATE — synodic & Moon-fixed carry an azimuth with the Earth–Moon line
+                 (so that line/the other body appears fixed while the rest sweeps);
+                 ECI & MCI do NOT co-rotate (so the Moon sweeps around Earth in ECI,
+                 and the Earth sweeps around the Moon in MCI).
+   All four share the same simT, so the underlying dynamics are identical. */
+function frameCentersMoon(f){ return f==='mci'||f==='moonfix'; }
+function frameCorotates(f){ return f==='emrot'||f==='moonfix'; }
+function emAzimuth(){ const mp=moonPos(simT); return Math.atan2(-mp.z, mp.x); }  // Earth–Moon line angle
+function aimCamera(f){ const v=views[f];
+  let tgt=v.target.clone(); if(frameCentersMoon(f)) tgt.add(moonPos(simT));
+  const th=v.th - (frameCorotates(f)? emAzimuth() : 0);
+  v.cam.position.set(tgt.x+v.R*Math.sin(v.ph)*Math.cos(th), tgt.y+v.R*Math.cos(v.ph), tgt.z+v.R*Math.sin(v.ph)*Math.sin(th));
+  v.cam.lookAt(tgt); }
+
+// 2×2 panel labels (DOM overlays)
+const labelEls={};
+(function(){ const st=$('stage');
+  FRAMES.forEach(f=>{ const d=document.createElement('div'); d.textContent=FRAME_NAMES[f];
+    d.style.cssText='position:absolute;z-index:4;font-size:12px;color:#cfe3ff;background:rgba(6,12,24,.8);border:1px solid #2b5686;border-radius:5px;padding:3px 8px;pointer-events:none;display:none';
+    st.appendChild(d); labelEls[f]=d; }); })();
+function positionLabels(){ const on=quad; const half=[[0,0],[0.5,0],[0,0.5],[0.5,0.5]];
+  FRAMES.forEach((f,i)=>{ const d=labelEls[f]; d.style.display=on?'block':'none';
+    if(on){ d.style.left=(half[i][0]*CW+8)+'px'; d.style.top=(half[i][1]*CH+8)+'px'; } }); }
+
+function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.updateProjectionMatrix();
+  aimCamera(f); placeStars(v);   // star shell re-centred/scaled for THIS view before it renders
+  // three.js viewport/scissor are in CSS pixels here (renderer scales by pixelRatio internally)
+  r3.setViewport(x,y,w,h); r3.setScissor(x,y,w,h); r3.setScissorTest(true);
+  r3.render(scene,v.cam); }
+
+function loop(ts){
+  const wall=Math.min((ts-last)/1000,0.05); last=ts;
+  const rotv=2.0*wall;   // arrow keys rotate the panel under the cursor (quad) or the current frame
+  const vv=views[quad? panelFrameAt(curX,curY) : frame];
+  if(keys['ArrowLeft'])vv.th+=rotv; if(keys['ArrowRight'])vv.th-=rotv;
+  if(keys['ArrowUp'])vv.ph=Math.max(0.05,vv.ph-rotv); if(keys['ArrowDown'])vv.ph=Math.min(Math.PI-0.05,vv.ph+rotv);
+  if(!paused){ simT += (warp*wall)/86400; }   // GLOBAL clock — shared by every panel
+
+  place(); updateVisibility(); updateReadouts();
+  earth.rotation.y = 2*Math.PI*(simT % 1);    // Earth's daily spin (same in all panels; invisible at this scale)
+
+  if(quad){ const hw=CW/2, hh=CH/2;
+    // WebGL viewport origin is bottom-left; lay out TL,TR,BL,BR to match label grid (FRAMES order)
+    renderView('eci',     0,  hh, hw, hh);
+    renderView('emrot',   hw, hh, hw, hh);
+    renderView('mci',     0,  0,  hw, hh);
+    renderView('moonfix', hw, 0,  hw, hh);
+    r3.setScissorTest(false);
+  } else { renderView(frame, 0,0,CW,CH); r3.setScissorTest(false); }
+  requestAnimationFrame(loop);
+}
+
+/* -------------------------------- init ------------------------------------
+   Start at the Earth–Moon scale in ECI so the very first view shows the whole
+   Earth–Moon line plus the two highly-elliptical orbiters (one around each body). */
+setFrame('eci'); setScale('em'); showWarp(); resize(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>
