@@ -2,6 +2,38 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.0 — 2026-07-12
+Major worksheet overhaul, standalone hosting, and an instructor's guide.
+
+**Unified worksheet engine:**
+- New shared `public/worksheet-engine.js` + `worksheet-engine.css`; all five worksheet pages are
+  now thin config-only shells (`const MODULE={…}` + data + engine). One place to fix/extend.
+- Every worksheet now follows one structure: **🎯 Objectives** ("In this module you will learn…")
+  → a terse **one-page tutorial** (with a memorable everyday **analogy** and an inline **SVG
+  diagram**) → **numbered exercises** with interspersed check-quizzes → a **Final Check** (4–5
+  summary questions) → **key-points summary** → **resources**.
+- All five modules' content rewritten to this shape (objectives, tutorial, and a final exam added
+  to each), keeping the existing exercises. Definitions tables (Modules 3–5) retained.
+
+**Standalone / GitHub-Pages hosting:**
+- Worksheets fall back to **`localStorage`** when no server is present, rendering normally and
+  saving progress in the browser (a "● standalone" badge shows). The static build now runs on
+  GitHub Pages with no backend; the server is still used when present.
+
+**New pages & docs:**
+- `public/cheatsheet.html` — printable controls wallet card (opens in its own window; button on
+  every worksheet + the hub).
+- `public/resources.html` — external-resources index by module (auto-harvested from the data
+  files); linked from every worksheet + the hub.
+- `docs/INSTRUCTOR_GUIDE.md` — detailed: download/install, three hosting options (Pages standalone
+  / Node server / both), data-file & backup notes, per-module teaching notes, roster, troubleshooting.
+
+**Server:** unchanged (zero diff). All new material is static client-side.
+
+**Security:** audit re-run — **PASS** (no new server surface; user/server data escaped before
+DOM insertion; localStorage holds only booleans). **Tests: 34 functional + 22 security + DoS,
+all passing.**
+
 ## v1.3 — 2026-07-11
 Adds Module 5, splits the later course into 8 modules, and rebalances Module 2 for readability.
 

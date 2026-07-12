@@ -2,10 +2,22 @@
    parts = ordered groups; tasks = the individual interactive exercises (each optionally
    with a check-question + demo-specific remediation feedback). Order matters. */
 const WORKSHEET = {
-  intro: [
-    'Welcome to Orbit Academy. This first module builds a <b>gut feel for how orbits work</b> — no math required. You’ll fly objects around Earth in a live 3-D simulator and watch what happens.',
-    'The big idea: an orbit is just <b>falling sideways so fast you keep missing the ground</b>. How fast you’re going, and in which direction, decides the whole shape of the path — a circle, a stretched-out ellipse, a crash, or an escape.',
-    'Work through the tasks in order, doing each one in the simulator before answering its check question. Take your time — the goal is understanding, not speed. Your progress saves automatically.',
+  objectives: [
+    'why a satellite doesn’t fall down — it’s <b>falling sideways</b> fast enough to keep missing the Earth.',
+    'how your <b>release speed</b> decides the whole shape of the path — a crash, a clean circle, a stretched <b>ellipse</b>, or an escape.',
+    'why an object races through <b>perigee</b> (closest) and crawls at <b>apogee</b> (farthest), and why <b>farther out means slower</b>.',
+    'what <b>geosynchronous</b> and <b>geostationary</b> really mean, and why a 24-hour orbit can hang over one spot on Earth.',
+    'how <b>inclination</b> tilts an orbit — and why launch sites like Florida and Vandenberg point in the directions they do.',
+    'a gut sense of <b>scale</b>: just how close “space” (and the ISS) actually is.',
+  ],
+  tutorial: [
+    'An <b>orbit</b> sounds exotic, but it’s really just falling. Gravity is always pulling a satellite straight down toward Earth. What keeps it up isn’t some anti-gravity trick — it’s <b>sideways speed</b>.',
+    { analogy: 'Fire a cannonball off a tall mountain. Lob it gently and it arcs down and hits the ground. Fire it harder and it lands farther away. Fire it hard enough and the ground <i>curves away beneath it just as fast as it falls</i> — so it keeps missing the Earth, forever. That’s an orbit: falling sideways so fast you never come down.' },
+    { h: 'Speed sets the shape' },
+    'At any given height there’s exactly <b>one speed</b> that gives a perfect <b>circle</b>. Go a little slower and you dip toward Earth on the far side (too slow, and you crash). Go faster and you swing out wide, tracing a stretched-out oval called an <b>ellipse</b>. Faster still — about 10.7 km/s — and you escape Earth entirely.',
+    { figure: '<svg viewBox="0 0 640 300" width="640" xmlns="http://www.w3.org/2000/svg"><circle cx="150" cy="150" r="55" fill="#2b6fb5"/><line x1="150" y1="95" x2="330" y2="95" stroke="#888" stroke-width="1.5" stroke-dasharray="5 4"/><path d="M150 95 Q 250 220 150 205" fill="none" stroke="#c0392b" stroke-width="2"/><circle cx="205" cy="150" r="55" fill="none" stroke="#1a4c8b" stroke-width="2"/><ellipse cx="235" cy="150" rx="130" ry="55" fill="none" stroke="#1a4c8b" stroke-width="2"/><text x="150" y="82" font-size="13" fill="#c0392b" text-anchor="middle">too slow → crash</text><text x="470" y="150" font-size="13" fill="#1a4c8b">circle &amp; ellipse</text><text x="150" y="153" font-size="12" fill="#fff" text-anchor="middle">Earth</text></svg>', caption: 'Same launch point, faster each time: a slow lob re-enters, the right speed makes a circle, more speed opens it into an ellipse.' },
+    'On an ellipse the object moves <b>fastest when it’s closest (perigee)</b> and <b>slowest when it’s farthest (apogee)</b>. And the higher an orbit is, the slower it goes overall — a low satellite whips around in about 90 minutes, while a far-out one at <b>GEO</b> takes a full 24 hours, keeping pace with Earth’s spin so it hovers over one spot.',
+    'A couple more words you’ll meet: <b>prograde</b> means going with Earth’s spin (the easy, default direction); <b>inclination</b> is how much the orbit is tilted, which decides how far north and south the satellite travels. Now open the simulator and see it for yourself.',
   ],
   parts: [
     { title: 'PART A · Get oriented', tasks: ['a1','a2'] },
@@ -122,5 +134,27 @@ const WORKSHEET = {
         opts:['California has better weather','A due-south launch from Vandenberg flies over open ocean, avoiding populated areas','Polar orbits must launch westward','Vandenberg is higher up'],
         a:1, why:'Correct — safety sets the site. South from Vandenberg is open Pacific; the same heading from Florida would cross populated land. (And Florida launches EAST for low-inclination orbits to bank Earth’s spin.)',
         feedback:['Weather isn’t the driver — think about what’s under the flight path.','','Polar orbits go north–south, not west.','Elevation isn’t it — it’s ocean vs. populated land underneath.'] } },
+  ],
+  exam: [
+    { q:'What actually keeps a satellite from falling to Earth?',
+      opts:['There’s no gravity that high up','It’s moving sideways fast enough to keep missing the ground as it falls','Its engines constantly push it up','Earth’s magnetic field holds it in place'],
+      a:1, why:'Exactly — an orbit is falling sideways so fast the ground curves away beneath you.',
+      feedback:['Gravity is still strong up there — it’s what bends the path into an orbit.','','Orbiting satellites coast on gravity alone; no engines needed to stay up.','Magnetism isn’t holding it — it’s speed plus gravity.'] },
+    { q:'You release an object at the exact circular speed for its altitude. If you instead released it a bit FASTER, what would happen?',
+      opts:['It would trace a wider ellipse, with the release point as the low point (perigee)','It would stay in the same circle','It would immediately crash','Nothing changes until it slows down'],
+      a:0, why:'Right — extra speed swings it out on the far side, so the release point becomes perigee (the low point).',
+      feedback:['','Only the one exact speed gives a circle; more speed opens it into an ellipse.','Crashing comes from going too SLOW, not too fast.','The change is immediate — the whole orbit shape depends on that release speed.'] },
+    { q:'On a stretched-out elliptical orbit, where does the satellite move fastest?',
+      opts:['At apogee, the farthest point','At perigee, the closest point','It moves at the same speed the whole way around','Exactly halfway between the two'],
+      a:1, why:'Correct — it races through perigee (closest) and crawls at apogee (farthest).',
+      feedback:['Apogee is the slowest point, not the fastest.','','That’s only true for a perfect circle; an ellipse clearly speeds up and slows down.','Speed peaks at the closest approach, not the midpoint.'] },
+    { q:'Why does a geostationary satellite appear to hang over one spot on Earth?',
+      opts:['It has stopped moving entirely','Its orbit takes exactly one day, so it keeps pace with the ground turning below it','It has flown beyond Earth’s gravity','It is much lower than the ISS'],
+      a:1, why:'Correct — a ~24-hour period over the equator keeps it locked above one longitude.',
+      feedback:['It’s still moving at about 3 km/s — just in step with the ground.','','It’s deep in Earth’s gravity; that’s what holds the orbit.','GEO is far higher than the ISS, not lower.'] },
+    { q:'Why do polar-orbit missions launch south from Vandenberg in California rather than from Florida?',
+      opts:['California weather is better for launches','A due-south track from Vandenberg flies over open ocean instead of populated land','Polar orbits have to launch toward the west','Vandenberg sits at a higher elevation'],
+      a:1, why:'Right — safety picks the site: south from Vandenberg is open Pacific, while the same heading from Florida would cross populated areas.',
+      feedback:['Weather isn’t the deciding factor — think about what’s under the flight path.','','Polar orbits run north–south, not west.','Elevation isn’t the reason; it’s ocean versus populated land below.'] },
   ],
 };

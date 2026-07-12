@@ -4,66 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Worksheet 4 — Maneuvers &amp; Perturbations</title>
-<style>
-  :root{--bg:#e9ebee;--panel:#ffffff;--fg:#1b1e24;--dim:#5a6270;--line:#c6ccd4;--accent:#1a4c8b;--grn:#1e7a33;--red:#b3261e;}
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--fg);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55;font-size:18px}
-  .wrap{max-width:none;margin:0;padding:0 40px 100px}
-  header{background:var(--panel);border-bottom:3px solid var(--accent);
-    padding:20px 40px;margin-bottom:0;position:sticky;top:0;z-index:20}
-  header .inner{max-width:none;margin:0;display:flex;align-items:center;gap:18px}
-  .crest{flex:0 0 auto}
-  header h1{margin:0;font-size:26px;color:var(--fg);font-weight:700}
-  header .sub{color:var(--dim);font-size:15px;margin-top:2px}
-  header .who{margin-left:auto;text-align:right;font-size:15px;color:var(--dim)}
-  header .who b{color:var(--fg)}
-  #railWrap{position:sticky;top:88px;z-index:15;background:var(--bg);padding:14px 40px 10px;margin:0 -40px}
-  #rail{display:flex;gap:6px;flex-wrap:wrap}
-  .pip{flex:1 1 0;min-width:18px;height:12px;border-radius:3px;background:#c6ccd4;transition:.2s}
-  .pip.done{background:var(--grn)}
-  #railTxt{font-size:15px;color:var(--dim);margin-top:7px;font-weight:600}
-  .tip{background:#dfeefe;border:1px solid #9bc2ea;border-radius:6px;padding:14px 18px;font-size:16px;color:#123;margin:18px 0}
-  .tip b{color:var(--accent)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px 26px;margin:18px 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-  .card h2{margin-top:0;color:var(--accent)}
-  .part{margin-top:34px}
-  .part h2{font-size:20px;color:var(--accent);letter-spacing:.3px;border-bottom:2px solid var(--line);padding-bottom:8px;font-weight:700}
-  .task{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:22px 26px;margin:16px 0;position:relative;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-  .task.done{border-left:5px solid var(--grn);background:#f2f9f3}
-  .task .n{position:absolute;top:-12px;left:18px;background:var(--accent);color:#fff;font-weight:700;
-    font-size:13px;padding:3px 11px;border-radius:4px}
-  .task h3{margin:6px 0 10px;font-size:20px;color:var(--fg);font-weight:700}
-  .task p{margin:9px 0;font-size:17px}
-  .task .do{color:var(--accent);font-weight:600} .task b{color:var(--fg);font-weight:700}
-  .task ol{margin:8px 0;padding-left:24px} .task li{margin:6px 0;font-size:17px}
-  /* elements-table + illustration link */
-  table.elem{border-collapse:collapse;width:100%;margin:10px 0;font-size:16px}
-  table.elem th,table.elem td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
-  table.elem th{background:#eef3f9;color:var(--accent)}
-  table.elem tr:hover td{background:#f0f5fb}
-  .elem td:first-child{font-weight:700;white-space:nowrap}
-  .quiz{margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
-  .quiz .q{font-weight:700;font-size:18px;margin-bottom:12px}
-  .opt{display:block;padding:13px 16px;margin:8px 0;border:1.5px solid var(--line);border-radius:6px;cursor:pointer;font-size:17px;transition:.1s;background:#fbfbfc}
-  .opt:hover{border-color:var(--accent);background:#f0f5fb}
-  .opt.correct{background:#e3f4e6;border-color:var(--grn)}
-  .opt.wrong{background:#f9e2e0;border-color:var(--red)}
-  .fb{margin-top:14px;padding:14px 16px;border-radius:6px;font-size:16px;display:none}
-  .fb.ok{background:#e3f4e6;border:1px solid var(--grn);color:#124a1d;display:block}
-  .fb.no{background:#f9e2e0;border:1px solid var(--red);color:#6b1712;display:block}
-  .simlink{color:var(--accent);cursor:pointer;text-decoration:underline;font-weight:600}
-  #done{display:none;background:var(--panel);border:2px solid var(--grn);
-    border-radius:8px;padding:32px;text-align:center;margin-top:36px}
-  #done h2{color:var(--grn);font-size:26px}
-  .btn{background:var(--accent);border:1px solid var(--accent);color:#fff;font-family:inherit;font-size:16px;font-weight:600;padding:13px 24px;border-radius:6px;cursor:pointer;margin:4px}
-  .btn:hover{background:#15406f}
-  #status{position:fixed;bottom:16px;right:16px;background:var(--panel);border:1px solid var(--line);
-    border-radius:6px;padding:10px 15px;font-size:15px;color:var(--dim);z-index:30;box-shadow:0 2px 6px rgba(0,0,0,.12)}
-  #status b{color:var(--grn)}
-  code{background:#eef1f5;border:1px solid #d7dde4;border-radius:4px;padding:1px 5px;font-size:15px}
-  pre.tle{background:#0d1b2a;color:#bfe6ff;border-radius:6px;padding:12px 14px;font-size:14px;overflow-x:auto;line-height:1.5}
-</style>
+<link rel="stylesheet" href="worksheet-engine.css"/>
 </head>
 <body>
 <header>
@@ -75,153 +16,47 @@
     </svg>
     <div>
       <h1>Worksheet 4 · Maneuvers &amp; Perturbations</h1>
-      <div class="sub">ORBIT ACADEMY — Cislunar Fundamentals · apply burns and watch perturbations in the live simulator</div>
+      <div class="sub">ORBIT ACADEMY — Cislunar Fundamentals · burns, transfers, drag, and the forces that perturb orbits</div>
     </div>
-    <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
-      <button class="btn" style="margin:0" onclick="openControls()">🎮 Controls</button>
-      <button class="btn" style="margin:0;background:#fff;color:var(--accent);border:1px solid var(--accent)" onclick="openSim()">↗ Simulator</button>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn ghost" style="margin:0" onclick="openControls()">🃏 Cheat sheet</button>
+      <button class="btn ghost" style="margin:0" onclick="openResources()">📚 Resources</button>
+      <button class="btn ghost" style="margin:0" onclick="printSheet()">🖨 Print</button>
+      <button class="btn" style="margin:0" onclick="openSim()">↗ Simulator</button>
       <div class="who" id="who"></div>
     </div>
   </div>
 </header>
 
 <div class="wrap">
-  <div id="railWrap">
-    <div id="rail"></div>
-    <div id="railTxt"></div>
-  </div>
-
+  <div id="railWrap"><div id="rail"></div><div id="railTxt"></div></div>
   <div class="tip">
-    <b>How this works:</b> keep the <span class="simlink" onclick="openSim()">orbit tool</span> open beside this sheet.
-    Drag the six element sliders, watch the ellipse change, and read off period / apogee / perigee. Answer each
-    check question to mark the task complete. Your progress saves automatically.
+    <b>How this works:</b> read the objectives and quick tutorial, then keep the
+    <span class="simlink" onclick="openSim()">simulator</span> open beside this sheet and work the numbered
+    exercises. Answer each check question (or mark the step done) to complete it, then take the final check.
+    Your progress saves automatically. Need the keyboard controls? Open the <span class="simlink" onclick="openControls()">cheat sheet</span>.
   </div>
 
-  <div id="intro"></div>
+  <div id="objectives"></div>
+  <div id="tutorial"></div>
   <div id="elemTable"></div>
   <div id="tasks"></div>
+  <div id="exam"></div>
 
   <div id="done">
     <div style="font-size:40px">🎓</div>
     <h2>Module 4 complete!</h2>
-    <div style="color:var(--dim)">You now understand how burns reshape orbits and how natural forces perturb them.</div>
-    <div id="summary" style="text-align:left;max-width:900px;margin:24px auto 0"></div>
+    <div style="color:var(--dim)">You understand how burns reshape orbits and how natural forces perturb them.</div>
     <div style="margin-top:24px"><button class="btn" onclick="backToHub()">← Back to your flight path</button></div>
   </div>
 
   <div id="endmatter"></div>
 </div>
 
-<div id="status">saving to your account…</div>
+<div id="status">loading…</div>
 
+<script>const MODULE={id:'t4',title:'Maneuvers & Perturbations',tool:'tut4.html',toolWindow:'orbitsim4'};</script>
 <script src="worksheet4.data.js"></script>
-<script>
-"use strict";
-const $=id=>document.getElementById(id);
-const TUT='t4';
-let SIMWIN=null;
-function openSim(){ if(SIMWIN&&!SIMWIN.closed){SIMWIN.focus();return;}
-  SIMWIN=window.open('tut4.html','orbitsim4','width=1320,height=880'); }
-function openControls(){ window.open('controls.html','orbitcontrols','width=1000,height=800'); }
-function backToHub(){ window.opener?window.opener.focus():null; window.open('/','_self'); }
-
-let ME=null, state={};
-async function boot(){
-  const r=await fetch('/api/me'); if(!r.ok){ document.body.innerHTML='<p style="padding:40px">Please <a href="/">sign in</a> first.</p>'; return; }
-  const d=await r.json(); ME=d.user;
-  $('who').innerHTML='<b>'+esc(ME.name)+'</b><br>'+ME.role;
-  const prog=ME.progress[TUT]||{}; const tasks=(prog.tasks)||{};
-  WORKSHEET.tasks.forEach(t=>{ state[t.id]={done:!!(tasks[t.id]&&tasks[t.id].done), answered:!!(tasks[t.id]&&tasks[t.id].done)}; });
-  renderIntro(); renderElemTable(); render(); renderEndmatter(); updateRail();
-}
-// Key take-aways + resources are ALWAYS shown at the bottom (not gated behind completion).
-function renderEndmatter(){
-  let html='';
-  if(WORKSHEET.summary){
-    html+='<div class="card"><h2>🎯 Key points to remember</h2>'+
-      '<ul style="line-height:1.7;padding-left:22px;font-size:17px">'+WORKSHEET.summary.map(s=>'<li style="margin:8px 0">'+s+'</li>').join('')+'</ul></div>'; }
-  if(WORKSHEET.resources){
-    html+='<div class="card"><h2>📚 Learn more</h2>'+
-      '<ul style="line-height:1.8;padding-left:22px;font-size:17px">'+WORKSHEET.resources.map(r=>'<li><a href="'+esc(r.u)+'" target="_blank" rel="noopener" style="color:var(--accent)">'+esc(r.t)+'</a></li>').join('')+'</ul></div>'; }
-  $('endmatter').innerHTML=html;
-}
-function renderIntro(){
-  if(!WORKSHEET.intro) return;
-  $('intro').innerHTML='<div class="card"><h2>Before you start</h2>'+
-    WORKSHEET.intro.map(p=>'<p>'+p+'</p>').join('')+'</div>';
-}
-function renderElemTable(){
-  if(!WORKSHEET.elements) return;
-  const E=WORKSHEET.elements;
-  let html='<div class="card"><h2>'+esc(E.title)+'</h2><p>'+E.blurb+'</p>';
-  html+='<table class="elem"><tr><th>What it sets</th><th>Plain-language meaning</th><th>In the tool</th></tr>';
-  E.rows.forEach(r=>{ html+='<tr><td>'+r.name+'</td><td>'+r.meaning+'</td><td>'+r.tool+'</td></tr>'; });
-  html+='</table><p style="color:var(--dim);font-size:15px">'+E.foot+'</p></div>';
-  $('elemTable').innerHTML=html;
-}
-function render(){
-  const host=$('tasks'); host.innerHTML='';
-  let n=0;
-  for(const part of WORKSHEET.parts){
-    const pd=document.createElement('div'); pd.className='part';
-    pd.innerHTML='<h2>'+esc(part.title)+'</h2>'+(part.blurb?'<p style="color:var(--dim)">'+part.blurb+'</p>':'');
-    host.appendChild(pd);
-    for(const tid of part.tasks){ n++;
-      const t=WORKSHEET.tasks.find(x=>x.id===tid); const done=state[tid].done;
-      const card=document.createElement('div'); card.className='task'+(done?' done':''); card.id='card_'+tid;
-      let html='<div class="n">TASK '+n+(done?' ✓':'')+'</div><h3>'+esc(t.title)+'</h3>';
-      if(t.do) html+='<p class="do">▶ In the tool: '+t.do+'</p>';
-      if(t.observe) html+='<p style="color:var(--dim)">👁 Notice: '+t.observe+'</p>';
-      if(t.body) html+=t.body;
-      if(t.quiz){ html+='<div class="quiz"><div class="q">'+esc(t.quiz.q)+'</div>';
-        t.quiz.opts.forEach((o,oi)=>{ html+='<label class="opt" data-t="'+tid+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'>'+esc(o)+'</label>'; });
-        html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+tid+'">'+(done?'✓ '+esc(t.quiz.why):'')+'</div></div>'; }
-      card.innerHTML=html; host.appendChild(card);
-      if(t.quiz && !done) card.querySelectorAll('.opt').forEach(el=>el.onclick=()=>answer(tid,+el.dataset.o));
-    }
-  }
-  if(WORKSHEET.tasks.every(t=>state[t.id].done)) showDone();
-}
-async function answer(tid,oi){
-  const t=WORKSHEET.tasks.find(x=>x.id===tid); const q=t.quiz;
-  const card=$('card_'+tid); const opts=card.querySelectorAll('.opt'); const fb=$('fb_'+tid);
-  const correct=oi===q.a;
-  opts.forEach(el=>{const i=+el.dataset.o; el.classList.remove('sel','wrong','correct');
-    if(i===oi) el.classList.add(correct?'correct':'wrong');});
-  if(correct){
-    opts.forEach(el=>el.style.pointerEvents='none');
-    fb.className='fb ok'; fb.innerHTML='✓ '+esc(q.why);
-    state[tid].done=true; state[tid].answered=true;
-    card.classList.add('done'); const nlabel=card.querySelector('.n'); if(nlabel&&!/✓/.test(nlabel.textContent)) nlabel.textContent+=' ✓';
-    await save(tid,true); updateRail();
-    if(WORKSHEET.tasks.every(x=>state[x.id].done)) showDone();
-  }else{ fb.className='fb no'; fb.innerHTML='✗ '+esc((q.feedback&&q.feedback[oi])||'Not quite — try it in the tool and answer again.');
-    setTimeout(()=>opts.forEach(el=>el.classList.remove('wrong')),1000); }
-}
-async function save(tid,done){
-  $('status').innerHTML='saving…';
-  const total=WORKSHEET.tasks.length;
-  const r=await fetch('/api/task',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({tutorial:TUT,task:tid,done,attempt:true,totalTasks:total})});
-  if(r.ok){ const d=await r.json(); ME.progress=d.progress;
-    $('status').innerHTML='<b>saved ✓</b> '+doneCount()+'/'+total+' tasks'; }
-  else $('status').innerHTML='save failed (are you signed in?)';
-}
-function showDone(){ const d=$('done'); d.style.display='block';
-  // Take-aways & resources live in #endmatter (always visible); the completion
-  // card just confirms the badge and points down to them.
-  if(!$('summary').innerHTML)
-    $('summary').innerHTML='<p style="text-align:center;color:var(--dim)">Your key take-aways and further reading are listed just below. 👇</p>';
-}
-function doneCount(){ return WORKSHEET.tasks.filter(t=>state[t.id].done).length; }
-function updateRail(){
-  const total=WORKSHEET.tasks.length, done=doneCount();
-  const rail=$('rail'); rail.innerHTML='';
-  WORKSHEET.tasks.forEach(t=>{const d=document.createElement('div');d.className='pip'+(state[t.id].done?' done':'');rail.appendChild(d);});
-  $('railTxt').textContent=done+' of '+total+' tasks complete'+(done===total?' — module finished! 🎉':'');
-}
-function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-boot();
-</script>
+<script src="worksheet-engine.js"></script>
 </body>
 </html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy — Controls Cheat Sheet</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1626;color:#dfe9f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;padding:16px}
+  .card{max-width:520px;margin:0 auto;background:#111f34;border:1px solid #2b4a70;border-radius:12px;padding:18px 20px;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+  h1{font-size:19px;margin:0 0 2px;color:#fff}
+  .sub{color:#8ba6c9;font-size:13px;margin-bottom:14px}
+  h2{font-size:14px;color:#ffcf4d;margin:16px 0 6px;border-bottom:1px solid #2b4a70;padding-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+  table{width:100%;border-collapse:collapse}
+  td{padding:5px 6px;font-size:14px;vertical-align:top;border-bottom:1px solid #1c3149}
+  td.k{white-space:nowrap;width:42%}
+  kbd{background:#1d3250;border:1px solid #38598a;border-bottom-width:2px;border-radius:5px;padding:1px 7px;color:#fff;font-size:13px;font-family:ui-monospace,Menlo,monospace}
+  .mouse{color:#9be0af;font-weight:600}
+  .note{color:#8ba6c9;font-size:12px;margin-top:14px;line-height:1.5}
+  .btnrow{text-align:center;margin-top:16px}
+  button{background:#1a4c8b;border:1px solid #2b6fb5;color:#fff;font-family:inherit;font-size:13px;padding:8px 14px;border-radius:7px;cursor:pointer}
+  button:hover{background:#2359a0}
+  @media print{body{background:#fff;color:#000}.card{border:1px solid #000;box-shadow:none}kbd{background:#eee;color:#000;border-color:#999}h2{color:#1a4c8b}.mouse{color:#1e7a33}.note,.sub{color:#555}.btnrow{display:none}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🃏 Orbit Academy — Controls</h1>
+  <div class="sub">Wallet card · works in every simulator. Print or keep this window open beside the sim.</div>
+
+  <h2>View — mouse</h2>
+  <table>
+    <tr><td class="k"><span class="mouse">Left-drag</span></td><td>Pan (slide the view)</td></tr>
+    <tr><td class="k"><span class="mouse">Shift-drag / right-drag</span></td><td>Rotate the view</td></tr>
+    <tr><td class="k"><span class="mouse">Scroll / pinch</span></td><td>Zoom in &amp; out</td></tr>
+  </table>
+
+  <h2>View — keyboard</h2>
+  <table>
+    <tr><td class="k"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd></td><td>Rotate the view</td></tr>
+    <tr><td class="k"><kbd>R</kbd></td><td>Reset the view</td></tr>
+  </table>
+
+  <h2>Time</h2>
+  <table>
+    <tr><td class="k"><kbd>,</kbd> and <kbd>.</kbd></td><td>Slow down / speed up time</td></tr>
+    <tr><td class="k"><kbd>space</kbd></td><td>Pause / resume</td></tr>
+  </table>
+
+  <h2>Module-specific</h2>
+  <table>
+    <tr><td class="k">Module 4 burns</td><td>Prograde / retrograde / radial buttons; watch the Δv gas gauge</td></tr>
+    <tr><td class="k">Module 5 frames</td><td>Pick a reference frame, or <b>⊞ Compare all 4</b> (arrows drive the panel under the cursor)</td></tr>
+  </table>
+
+  <div class="note">Not every control appears in every module — each simulator only shows the ones it uses.
+    In the 2×2 compare view, mouse and arrow controls affect whichever panel the cursor is over; the time keys are global.</div>
+
+  <div class="btnrow"><button onclick="window.print()">🖨 Print this card</button>
+    <button onclick="window.close()">✕ Close</button></div>
+</div>
+</body>
+</html>

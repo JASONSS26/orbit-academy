@@ -6,10 +6,24 @@
    fixed stars + period/apogee/perigee readouts + "TLE of your orbit" panel +
    clickable real orbits (ISS, GPS, GEO, Molniya, Tundra). */
 const WORKSHEET = {
-  intro: [
-    'In Modules 1 and 2 you built a feel for how orbits move. Now we give every orbit a <b>name tag</b>: a short list of numbers that pins down its exact size, shape, and orientation in space — so anyone, anywhere, can point an antenna or a telescope at it.',
-    'The idealized, perfectly-repeating ellipse is called a <b>Keplerian orbit</b> — the path a satellite would follow if Earth were a perfect point of gravity and nothing else touched it. It takes exactly <b>six numbers</b> to describe one. Open the orbit tool and drag each slider: watch which numbers change the <i>shape</i> of the ellipse and which only <i>turn it</i> in space.',
-    'At the end we connect those six numbers to the <b>Two-Line Element set (TLE)</b> — the compact text format the U.S. Space Force publishes for every tracked object — and see why a real orbit slowly <i>drifts</i> away from its ideal Keplerian values over time.',
+  objectives: [
+    'Why every orbit can be pinned down by just <b>six numbers</b> — and what each one controls.',
+    'The plain-word meaning of <b>size</b>, <b>shape</b>, <b>tilt</b>, <b>swivel</b>, <b>twist</b>, and <b>position</b>, plus <b>perigee</b> and <b>apogee</b>.',
+    'Why <b>size alone sets the period</b>, while re-orienting an orbit leaves its period, apogee, and perigee unchanged.',
+    'What a <b>Keplerian orbit</b> is — the idealized, unperturbed ellipse behind all six numbers.',
+    'How a <b>Two-Line Element set (TLE)</b> packs those numbers into the text format the Space Force publishes for every tracked object.',
+    'Why real orbits (<b>ISS</b>, <b>GPS</b>, <b>GEO</b>, <b>Molniya</b>, <b>Tundra</b>) look the way they do — and slowly drift from their ideal values.',
+  ],
+  tutorial: [
+    'You have watched orbits move. Now you need a way to <b>name</b> one precisely — so a colleague in another building, or an antenna on the far side of the planet, can point at the exact same object. Remarkably, it takes only <b>six numbers</b> to do this.',
+    { analogy:'Think of the six numbers as a <b>mailing address</b> for an orbit. A street address is a short, fixed list — number, street, city, ZIP — that lets anyone, anywhere, find one exact house. In the same way, these six values are the complete address of a satellite’s path. Change nothing, and everyone points at the same orbit; change the last number only, and you have moved next door on the same street.' },
+    { h:'What the six numbers do' },
+    'Two of them set the <b>shape</b> of the ellipse (how big, how stretched). Three <b>orient</b> that ellipse in space (its tilt, and which way it faces). The last one says <b>where the satellite is</b> right now. The full breakdown — plain names, meanings, and which slider each one is — is in the table just below, so drag along as you read it.',
+    { figure:'<svg viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg"><rect width="320" height="180" fill="#f4f8fc"/><ellipse cx="150" cy="90" rx="120" ry="55" fill="none" stroke="#1a4c8b" stroke-width="2"/><circle cx="196" cy="90" r="18" fill="#2b6fb5"/><circle cx="54" cy="90" r="4" fill="#c0392b"/><text x="30" y="82" font-family="sans-serif" font-size="11" fill="#c0392b">perigee</text><text x="228" y="82" font-family="sans-serif" font-size="11" fill="#1a4c8b">apogee</text><text x="176" y="120" font-family="sans-serif" font-size="10" fill="#5a6270">Earth</text></svg>', caption:'A stretched orbit. The closest point to Earth is <b>perigee</b>; the farthest is <b>apogee</b>. A perfect circle is just the special case where the two are equal.' },
+    { h:'Keplerian orbit' },
+    'A <b>Keplerian orbit</b> is the idealized, perfectly-repeating ellipse a satellite would trace if Earth were a tidy point of gravity and nothing else ever touched it. It is the clean picture those six numbers describe. Real orbits are nudged by many small effects and slowly drift away from it — the topic of the next module.',
+    { h:'Two-Line Element set (TLE)' },
+    'A <b>TLE</b> is simply those six numbers written into a fixed-column, two-line block of text — the format the U.S. Space Force publishes for every tracked object. It adds a <b>drag term</b> and an <b>epoch</b> (the timestamp the numbers are valid for). In a TLE the size/period shows up as <b>mean motion</b> (orbits per day) and the position as <b>mean anomaly</b> — steady, clock-like stand-ins for the sliders, chosen because they make predicting a future position easy arithmetic.',
   ],
 
   // The illustration-linked definitions table (no Greek symbols, by request).
@@ -172,5 +186,27 @@ const WORKSHEET = {
               'Molniya orbits use no fuel','Geostationary orbits don’t exist that far north — the Earth blocks them entirely'],
         a:1, why:'Correct — from far-northern latitudes a GEO bird barely clears the horizon. A highly eccentric Molniya loiters near apogee high over the north, giving hours of good, high-elevation coverage per pass. The 63.4° inclination keeps apogee parked there.',
         feedback:['Launch cost isn’t the reason — it’s coverage geometry.','','Every orbit needs some station-keeping; that’s not the driver.','GEO satellites are visible from the north, just too low on the horizon to be useful.'] } },
+  ],
+  exam: [
+    { q:'Which single orbital element determines how long one orbit takes (the period)?',
+      opts:['Shape (eccentricity)','Tilt (inclination)','Size (semi-major axis)','Swivel (RAAN)'],
+      a:2, why:'Right — the period depends only on the orbit’s size; the other five leave the timing alone.',
+      feedback:['Shape splits apogee and perigee apart but leaves the period unchanged.','Tilt only orients the plane against the equator.','','Swivel only turns the plane in space; the period is unchanged.'] },
+    { q:'You leave size and shape alone but sweep RAAN (swivel) and argument of perigee (twist) through their full range. What stays the same?',
+      opts:['The period, apogee, and perigee all stay fixed','Nothing — every readout changes','Only the inclination','Only the position along the orbit'],
+      a:0, why:'Correct — those two angles merely re-orient the ellipse; its period, apogee, and perigee are set by size and shape alone.',
+      feedback:['','Re-orienting an orbit does not resize or reshape it, so those three readouts hold steady.','Inclination is a third orientation angle you did not touch — but the invariants asked about are period, apogee, and perigee.','Position changes with time regardless; the question is about what re-orienting leaves fixed.'] },
+    { q:'What is a Two-Line Element set (TLE)?',
+      opts:['A live video feed of a satellite','A fixed-column text format encoding an orbit’s six numbers plus a drag term and epoch','The engine that pushes a satellite into orbit','A ranking of the two most important satellites'],
+      a:1, why:'Correct — a TLE is just the orbital elements written into a compact, standardized two-line block of text.',
+      feedback:['A TLE is plain text, not imagery or video.','','A TLE describes an orbit; it is not hardware.','“Two-line” refers to the two lines of text, not to a top-two list.'] },
+    { q:'Two satellites fly the exact same orbit but sit at different points along it. In their TLEs, which field differs?',
+      opts:['Inclination','Eccentricity','Mean motion','Mean anomaly (the position along the orbit)'],
+      a:3, why:'Correct — same orbit means identical size, shape, tilt, swivel, and twist, so only the position (mean anomaly) sets them apart.',
+      feedback:['Same orbit means the same tilt, so inclination matches.','Same orbit means the same shape, so eccentricity matches.','Same orbit means the same size and period, so mean motion matches.',''] },
+    { q:'A "Keplerian orbit" is best described as…',
+      opts:['Any orbit that passes over the poles','The idealized, unperturbed ellipse a satellite would follow with a perfect point-mass Earth and nothing else acting on it','An orbit that stays fixed over one point on the ground','The orbit of the very first satellite Kepler launched'],
+      a:1, why:'Correct — it is the clean, perfectly-repeating ellipse the six elements describe, before real-world perturbations nudge it.',
+      feedback:['Polar paths are one inclination among many; that is not what “Keplerian” means.','','That describes a geostationary orbit specifically, not the general Keplerian ideal.','Kepler described the mathematics of orbits centuries before any satellite existed.'] },
   ],
 };

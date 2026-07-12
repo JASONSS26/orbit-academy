@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy — Resources by Module</title>
+<style>
+  :root{--bg:#e9ebee;--panel:#fff;--fg:#1b1e24;--dim:#5a6270;--line:#c6ccd4;--accent:#1a4c8b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55}
+  header{background:var(--panel);border-bottom:3px solid var(--accent);padding:20px 40px;position:sticky;top:0;z-index:10}
+  header h1{margin:0;font-size:24px}
+  header .sub{color:var(--dim);font-size:15px;margin-top:2px}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 40px 80px}
+  nav{margin:10px 0 22px;display:flex;gap:8px;flex-wrap:wrap}
+  nav a{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:5px 13px;font-size:14px;color:var(--accent);text-decoration:none}
+  nav a:hover{background:#eef3f9}
+  .mod{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px 24px;margin:16px 0;box-shadow:0 1px 3px rgba(0,0,0,.06);scroll-margin-top:90px}
+  .mod h2{margin:0 0 4px;color:var(--accent);font-size:20px}
+  .mod .msub{color:var(--dim);font-size:14px;margin-bottom:10px}
+  ul{margin:8px 0;padding-left:22px} li{margin:7px 0;font-size:16px}
+  a.res{color:var(--accent)} .note{color:var(--dim);font-size:14px}
+  .btn{display:inline-block;background:var(--accent);color:#fff;border-radius:6px;padding:9px 16px;text-decoration:none;font-size:15px;font-weight:600;margin-top:8px}
+  @media print{header{position:static}nav,.btn{display:none}.mod{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Orbit Academy — External Resources</h1>
+  <div class="sub">Further reading for every module, in one place. Links open in a new tab.</div>
+</header>
+<div class="wrap">
+  <nav id="nav"></nav>
+  <div id="mods"></div>
+  <a class="btn" href="/">← Back to Orbit Academy</a>
+</div>
+
+<script>
+"use strict";
+// Module metadata (order + titles). Data files are loaded sequentially; each defines a global
+// WORKSHEET, so we snapshot its .resources after each loads.
+const MODS=[
+  {id:'t1', num:1, title:'How Orbits Work',            file:'worksheet1.data.js'},
+  {id:'t2', num:2, title:'Angular Rates & Geosync',    file:'worksheet2.data.js'},
+  {id:'t3a',num:3, title:'Naming Orbits & TLEs',       file:'worksheet3a.data.js'},
+  {id:'t4', num:4, title:'Maneuvers & Perturbations',  file:'worksheet4.data.js'},
+  {id:'t5', num:5, title:'xGEO & Cislunar Space',      file:'worksheet5.data.js'},
+];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function loadSeq(i,acc){
+  if(i>=MODS.length){ render(acc); return; }
+  const s=document.createElement('script'); s.src=MODS[i].file;
+  s.onload=()=>{ acc.push({...MODS[i], resources:(window.WORKSHEET&&WORKSHEET.resources)||[]}); window.WORKSHEET=undefined; loadSeq(i+1,acc); };
+  s.onerror=()=>{ acc.push({...MODS[i], resources:[]}); loadSeq(i+1,acc); };
+  document.body.appendChild(s);
+}
+function render(mods){
+  $('nav').innerHTML=mods.map(m=>'<a href="#'+m.id+'">'+m.num+'. '+esc(m.title)+'</a>').join('');
+  $('mods').innerHTML=mods.map(m=>{
+    const items=m.resources.length? '<ul>'+m.resources.map(r=>'<li><a class="res" href="'+esc(r.u)+'" target="_blank" rel="noopener">'+esc(r.t)+'</a>'+(r.note?' — <span class="note">'+r.note+'</span>':'')+'</li>').join('')+'</ul>'
+      : '<p class="note">No external resources listed yet.</p>';
+    return '<div class="mod" id="'+m.id+'"><h2>Module '+m.num+' · '+esc(m.title)+'</h2>'+
+      '<div class="msub">'+m.resources.length+' resource'+(m.resources.length===1?'':'s')+'</div>'+items+'</div>';
+  }).join('');
+  if(location.hash){ const el=document.getElementById(location.hash.slice(1)); if(el) el.scrollIntoView(); }
+}
+function $(id){return document.getElementById(id);}
+loadSeq(0,[]);
+</script>
+</body>
+</html>

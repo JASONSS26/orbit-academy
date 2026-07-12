@@ -4,6 +4,27 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v2.0 — audit result: **PASS** (re-run)
+The v2.0 worksheet overhaul is entirely **client-side**; `server.js` has a **zero diff** from
+v1.3, so the audited auth surface (path traversal, sessions, roles/priv-esc, prerequisite gating,
+DoS body cap, input validation, timing-safe password compare) is unchanged and re-verified by the
+suite. Reviewed the new client code:
+- **XSS:** the only non-author data rendered is `ME.name`/`ME.role` (server-held, set by the user
+  at registration) — both are `esc()`-escaped before `innerHTML` in `worksheet-engine.js`. Quiz
+  question/option/feedback text is also `esc()`-escaped (defense in depth). Author-written
+  worksheet content (objectives/tutorial/inline SVG/exercises) is intentionally rendered as HTML,
+  the same trusted-author model used since v1.0.
+- **Standalone/localStorage:** stores only booleans keyed by author-defined task IDs, read back via
+  `JSON.parse` in a `try/catch`, and used only as truthy completion flags — never re-inserted into
+  the DOM. No injection path, no secrets stored. Note that standalone mode has **no server-side
+  gating** by design (it's for open/self-study); tracked cohorts must run the server.
+- **resources.html:** loads same-origin, author-authored `worksheetN.data.js` as `<script>`; no
+  user input is involved.
+- **cheatsheet.html / instructor guide:** static content, no inputs.
+No new endpoints, secrets, or external calls (Three.js remains the same SRI-pinned CDN build).
+Re-ran the full suite — **34 functional + 22 security checks + DoS guard, all passing**
+(`bash test/run.sh`). `academy_data.json` confirmed gitignored. Cleared to ship v2.0.
+
 ## v1.3 — audit result: **PASS** (re-run)
 Module 5 and the Module 2 rebalance added **no new server attack surface**: everything new is
 static client-side files (`tut5.html`, `worksheet5.*`, and the inert `worksheet6.data.js` seed),
