@@ -54,9 +54,34 @@
       <div class="seg" id="scenSeg">
         <button data-scen="lpts"  onclick="scenario('lpts')">⚖ The five Lagrange points</button>
         <button data-scen="force" onclick="scenario('force')">➡ Force balance at L1 · Moon · L2 (1-D)</button>
-        <button data-scen="halo"  onclick="scenario('halo')">🍩 A near-rectilinear halo (NRHO)</button>
         <button data-scen="tess"  onclick="scenario('tess')">🛰 TESS — a 2:1 resonant orbit</button>
         <button data-scen="fan"   onclick="scenario('fan')">💥 Fan release — watch chaos grow</button>
+        <button data-scen="zoo"   onclick="scenario('zoo')">🌀 Libration zoo — the L1 orbit family</button>
+        <button data-scen="halo"  onclick="scenario('halo')">🍩 Grand finale: the NRHO</button>
+      </div>
+      <div class="sec" id="zooBox" style="display:none">
+        <div class="big">🌀 L1 orbit family</div>
+        <div class="q">Two amplitude knobs set the size; a <b>frequency ratio</b> sets the pattern. When the in-plane and out-of-plane rhythms are a <b>whole-number ratio</b> the path closes into a clean figure; an <b>irrational</b> ratio never closes.</div>
+        <div style="margin-top:6px">
+          <div class="kv"><span>↔ in-plane amplitude (A<sub>x</sub>)</span><span><b id="zooAxV">40</b>%</span></div>
+          <input id="zooAx" type="range" min="0" max="100" step="1" value="40">
+          <div class="kv" style="margin-top:6px"><span>↕ out-of-plane (A<sub>z</sub>)</span><span><b id="zooAzV">45</b>%</span></div>
+          <input id="zooAz" type="range" min="0" max="100" step="1" value="45">
+        </div>
+        <div class="q" style="margin-top:8px">Frequency ratio (out-of-plane : in-plane):</div>
+        <div class="seg" id="zooRatioSeg" style="grid-template-columns:1fr 1fr 1fr">
+          <button data-ratio="1/3" onclick="setZooRatio('1/3')">1:3</button>
+          <button data-ratio="1/2" onclick="setZooRatio('1/2')">1:2</button>
+          <button data-ratio="1" class="sel" onclick="setZooRatio('1')">1:1 (halo)</button>
+          <button data-ratio="2" onclick="setZooRatio('2')">2:1</button>
+          <button data-ratio="3" onclick="setZooRatio('3')">3:1</button>
+          <button data-ratio="10" onclick="setZooRatio('10')">10:1 😜</button>
+          <button data-ratio="irr" onclick="setZooRatio('irr')">irrational</button>
+        </div>
+        <div class="note" id="zooLockNote" style="margin-top:6px"></div>
+        <label class="chk" style="margin-top:8px"><input type="checkbox" id="zooTrail" checked onchange="zooTrailToggle()"> long trail (watch it fill space)</label>
+        <div class="note" id="zooMsg"></div>
+        <div class="note" style="margin-top:4px;color:#6f86a8">Note: a <b>fudged linear approximation</b> — the shapes and rhythms are honest, and the center is nudged toward the Moon at high out-of-plane amplitude via a lookup, but it isn’t a full nonlinear integration.</div>
       </div>
       <label class="chk" style="margin-top:9px"><input type="checkbox" id="showLpts" checked onchange="toggleLpts()"> show <b style="color:var(--accent)">▲ Lagrange points</b> (overlay)</label>
     </div>
@@ -124,8 +149,8 @@
     <div class="big">Cislunar facts</div>
     <div class="kv"><span>Earth–Moon dist</span><span>384,400 km</span></div>
     <div class="kv"><span>lunar period</span><span>27.3 d</span></div>
-    <div class="kv"><span>Earth–Moon L1</span><span>83.7% out</span></div>
-    <div class="kv"><span>Earth–Moon L2</span><span>116% out</span></div>
+    <div class="kv"><span>Earth–Moon L1</span><span>85% out</span></div>
+    <div class="kv"><span>Earth–Moon L2</span><span>119% out</span></div>
     <div class="kv"><span>Earth : Moon mass</span><span>81 : 1</span></div>
     <div class="sec">
       <div class="big" style="font-size:13px;color:var(--cyan)">This scenario</div>
@@ -164,7 +189,7 @@ const R_EARTH=6371, R_MOON=1737, D_EM=384400, T_MOON=27.32;
 const MU_E=398600.4418, MU_M=4902.8, MU=MU_E+MU_M;
 const massFrac=MU_M/MU;                       // ≈0.0121 (Moon fraction)
 // collinear points (fractions of D_EM from Earth center), from the earlier CR3BP solve
-const L1F=0.8369, L2F=1.1557, L3F=-1.0051;
+const L1F=0.8513, L2F=1.1858, L3F=-1.0051;   // true Earth–Moon libration fractions (CR3BP)
 
 let scene, cam3, r3;
 let scale='em', frame='emrot', quad=false, simT=0, warp=1, paused=false;
@@ -233,6 +258,55 @@ const tessLine=makeTraj(0xff7bd0); tessLine.visible=false;
 const tessDot=new THREE.Mesh(new THREE.SphereGeometry(6000,10,8),new THREE.MeshBasicMaterial({color:0xff7bd0})); tessDot.frustumCulled=false; tessDot.visible=false; scene.add(tessDot);
 const haloLine=makeTraj(0x5fd0ff); haloLine.visible=false;
 const haloDot=new THREE.Mesh(new THREE.SphereGeometry(5000,10,8),new THREE.MeshBasicMaterial({color:0x5fd0ff})); haloDot.frustumCulled=false; haloDot.visible=false; scene.add(haloDot);
+
+/* --- LIBRATION ZOO: the family of orbits around Earth–Moon L1 -------------------------------------
+   Uses the LINEARIZED CR3BP motion about L1 (Richardson form). In the L1-local frame (x along the
+   Earth–Moon line, y in-plane cross-track, z out of plane):
+     x(t) = −Ax·cos(ωp·t),  y(t) = κ·Ax·sin(ωp·t),  z(t) = Az·sin(ωv·t + φ)
+   The REAL Earth–Moon L1 frequencies (units of the monthly rate) are ωp≈2.367, ωv≈2.302 — so close
+   that a halo (ωp=ωv, forced by nonlinearity at one amplitude) is only mildly offset, while a generic
+   orbit with ωp≠ωv is a LISSAJOUS figure that never closes and slowly fills a band. Amplitude is the
+   ONE knob: set Ax,Az and the shape+period follow. High Az → dramatically out-of-plane.
+   The whole L1-local frame rides at 0.851·D_EM out along the (rotating) Earth–Moon line. */
+const ZOO_WP=2.3669, ZOO_WV=2.3020, ZOO_KAPPA=3.634;
+const ZOO_UNIT=0.14866*D_EM;              // L1 length scale (γ·D_EM ≈ 57,000 km)
+const L1X=L1F*D_EM;                        // L1 distance from Earth (same constant the ▲ marker uses)
+const zooLine=makeTraj(0xffcf4d); zooLine.visible=false;
+const zooDot=new THREE.Mesh(new THREE.SphereGeometry(4500,10,8),new THREE.MeshBasicMaterial({color:0xffcf4d})); zooDot.frustumCulled=false; zooDot.visible=false; scene.add(zooDot);
+// Two amplitude knobs (Ax in-plane, Az out-of-plane) set the SIZE; a frequency RATIO sets the PATTERN.
+// The out-of-plane rhythm runs at (ratio × base); the in-plane runs at the base. A whole-number ratio
+// makes the path CLOSE into a Lissajous figure (1:1 = the classic halo); an irrational ratio never
+// closes and slowly fills a 3-D band. This is the real degree-of-freedom story: amplitudes + ratio.
+let zooRatio='1', zooTrailLong=true;
+let zooAx=0.40, zooAz=0.45;               // amplitude fractions (0…1)
+const ZOO_AXMAX=0.42, ZOO_AZMAX=1.10;     // max in-plane / out-of-plane extent (in ZOO_UNIT)
+const ZOO_IRR=Math.SQRT2*0.618;           // an irrational multiplier for the "never closes" case
+// FUDGED axial-shift lookup: real L1 halo families drift their center toward the Moon as out-of-plane
+// amplitude grows; the linear model misses that, so we nudge the loop center along the E–M line via a
+// lookup keyed on Az (~0.45·gap at max). Honest fudge, flagged in the UI.
+function zooCenterX(azFrac){ const gap=(1-L1F)*D_EM; return L1X + 0.45*gap*azFrac*azFrac; }
+// out-of-plane frequency multiple relative to the in-plane rhythm. Accepts whole numbers ("2"),
+// fractions ("1/3" → in-plane runs faster: figure tips into the other orientation), and "irr".
+function zooVMult(){ if(zooRatio==='irr') return ZOO_IRR;
+  if(zooRatio.indexOf('/')>=0){ const [a,b]=zooRatio.split('/'); return (+a)/(+b); }
+  return +zooRatio; }
+// halo (1:1) gets a 90° phase so it reads as a clean tilted loop rather than a flat line
+function zooPhase(){ return zooRatio==='1' ? Math.PI/2 : 0; }
+// L1-local (x,y,z) at t → scene coords; loop centered at zooCenterX along the (un-rotated) +x axis,
+// rotated by emAzimuth() each frame. scene map: local x→scene x, out-of-plane→scene y (up), y→scene z.
+function zooLocal(t){ const wp=ZOO_WP, wv=ZOO_WP*zooVMult(), ph=zooPhase();
+  const Ax=zooAx*ZOO_AXMAX, Az=zooAz*ZOO_AZMAX;
+  const x=-Ax*Math.cos(wp*t), y=ZOO_KAPPA*Ax*Math.sin(wp*t), z=Az*Math.sin(wv*t+ph);
+  return new THREE.Vector3(zooCenterX(zooAz) + x*ZOO_UNIT, z*ZOO_UNIT, y*ZOO_UNIT); }
+function buildZoo(){ const pts=[]; const rational=(zooRatio!=='irr');
+  // A rational ratio closes after BOTH rhythms complete a whole number of cycles. For p:q the closing
+  // period is the SLOWER rhythm's full cycle (× denominator), so 1:3 needs 3 in-plane loops to close.
+  let span, N;
+  if(rational){ let denom=1; if(zooRatio.indexOf('/')>=0) denom=+zooRatio.split('/')[1];
+    span=(2*Math.PI/ZOO_WP)*denom; N=Math.max(600,300*denom); }
+  else { span=160; N=9000; }
+  for(let k=0;k<=N;k++) pts.push(zooLocal(span*k/N));
+  zooLine.geometry.setFromPoints(pts); }
 
 /* --- fan-release particles (live RK4, inertial frame) --- */
 const fanColors=[0xff5a52,0xffcf4d,0x39d353,0x5fd0ff,0xc080ff,0xff7bd0,0x9fe0af];
@@ -331,29 +405,71 @@ const SCEN_NOTE={
   halo:'A <b>near-rectilinear halo orbit (NRHO)</b> — the real path CAPSTONE flew and the Gateway station will use. Because L2 is unstable, the spacecraft can’t sit there; instead it rides this dramatically elongated, near-vertical loop that <b>skims low over one lunar pole</b> (~3,000 km) and <b>swings far out over the other</b> (~70,000 km), nudging its thrusters occasionally. (This close to the Moon it also shows the <b>same illuminated phase as the Moon</b> — same Sun angle.)',
   tess:'<b>TESS</b> rides a highly elliptical orbit locked in a <b>2:1 resonance</b> with the Moon — it laps the Earth twice for every one lunar orbit, and the Moon’s pull shepherds it so it stays stable for years. Flip through the frames (or the 2×2) to see how differently the same path looks.',
   fan:'Release a tight cluster of objects, all launched almost identically, and watch how quickly their paths scatter. In the tangled Earth+Moon gravity field, tiny differences explode — that’s <b>chaos</b>, and it’s why long-term cislunar tracking is so hard.',
+  zoo:'The <b>family</b> of orbits around L1. Two knobs set the size — <b>A<sub>x</sub></b> (in-plane) and <b>A<sub>z</sub></b> (out-of-plane) — and a <b>frequency ratio</b> sets the pattern. At <b>1:1</b> the path closes into a <b>halo</b>: leave A<sub>z</sub>=0 and it lies flat (a planar <b>Lyapunov</b> loop); raise A<sub>z</sub> and the loop <b>tilts up out of the plane</b> — the ratio A<sub>z</sub>/A<sub>x</sub> <i>is</i> the inclination. Whole-number ratios (2:1, 3:1, 4:1) make closed knots; an <b>irrational</b> ratio never closes and fills a 3-D band. Rotate with the <b>arrow keys</b> to see the out-of-plane structure.',
 };
 function scenario(s){ scen=s;
   document.querySelectorAll('#scenSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.scen===s));
-  const titles={lpts:'⚖ The five Lagrange points',force:'➡ Force balance at L1 · Moon · L2',halo:'🍩 A near-rectilinear halo orbit (NRHO)',tess:'🛰 TESS — a 2:1 resonant orbit',fan:'💥 Fan release — watch chaos grow'};
+  const titles={lpts:'⚖ The five Lagrange points',force:'➡ Force balance at L1 · Moon · L2',halo:'🍩 A near-rectilinear halo orbit (NRHO)',tess:'🛰 TESS — a 2:1 resonant orbit',fan:'💥 Fan release — watch chaos grow',zoo:'🌀 Libration zoo — the L1 orbit family'};
   $('stitle').textContent=titles[s]; $('scenNote').innerHTML=SCEN_NOTE[s];
   // visibility per scenario
   forceGroup.visible=(s==='force'); if(s==='force') buildForceDiagram();
   tessLine.visible=tessDot.visible=(s==='tess');
   haloLine.visible=haloDot.visible=(s==='halo');
+  zooLine.visible=zooDot.visible=(s==='zoo');
   $('fanBox').style.display=(s==='fan')?'block':'none';
+  $('zooBox').style.display=(s==='zoo')?'block':'none';
   clearFan(); if(s==='fan'){ setFrame('emrot'); }
   if(s==='tess') buildTess();
   if(s==='halo') buildHalo();
-  // The Lagrange scenario turns the ▲ points on and syncs the overlay checkbox; other scenarios
-  // leave them under the checkbox's control, so you can overlay the ▲ points on the halo, TESS, etc.
-  if(s==='lpts'){ lptsOverlay=true; const cb=$('showLpts'); if(cb) cb.checked=true; }
+  if(s==='zoo'){ setFrame('emrot'); buildZoo(); setZooRatio(zooRatio); }
+  // Scenarios that are ABOUT the Lagrange points switch the checkbox on for you; but the checkbox is
+  // then fully authoritative — unchecking it hides the ▲ markers in EVERY scenario, no exceptions.
+  if(s==='lpts'||s==='force'){ lptsOverlay=true; const cb=$('showLpts'); if(cb) cb.checked=true; }
   applyLptsVis();
   $('banner').style.display='none'; resetView();
 }
-// Lagrange markers are visible when the Lagrange/force scenarios need them OR the overlay is on.
-function applyLptsVis(){ lagGroup.visible = (scen==='lpts'||scen==='force'||lptsOverlay); }
+// The ▲ markers follow the checkbox alone — global on/off across all visualizations.
+function applyLptsVis(){ lagGroup.visible = lptsOverlay; }
 function toggleLpts(){ lptsOverlay=$('showLpts').checked; applyLptsVis(); }
 let scen='lpts', lptsOverlay=true;
+
+const ZOO_MSG={
+  '1/3':'<b>1:3.</b> Now the <b>in-plane</b> rhythm is the fast one — three in-plane loops for each single out-of-plane swing. The Lissajous figure tips into the <b>other orientation</b> (stretched the opposite way from 3:1). Takes three in-plane loops to close.',
+  '1/2':'<b>1:2.</b> Two in-plane loops per out-of-plane swing — the mirror-orientation partner of 2:1. Whole-number ratios always close eventually.',
+  '1':'<b>1:1 — the halo.</b> In-plane and out-of-plane rhythms match, so the path <b>closes</b> into a single tilted 3-D loop offset to one side of the plane. This is the SOHO/Gateway kind — a genuine periodic orbit. Turn <b>A<sub>z</sub></b> down to 0 and it flattens into a planar <b>Lyapunov</b> loop.',
+  '2':'<b>2:1.</b> The craft bobs out of the plane <b>twice</b> for each in-plane loop — a closed figure-eight-ish pattern. Rotate with the arrow keys to see the double out-of-plane swing.',
+  '3':'<b>3:1.</b> Three out-of-plane bobs per in-plane loop — a more intricate closed knot. Whole-number ratios always eventually close.',
+  '10':'<b>10:1 — for grins.</b> Ten out-of-plane bobs per in-plane loop: a dense, spring-like coil. Still perfectly <b>closed</b> (it’s a whole-number ratio) — just wound very tight. Rotate to appreciate the 3-D coil.',
+  irr:'<b>Irrational ratio.</b> The two rhythms never line up, so the path <b>never closes</b> — given forever it densely <b>fills a 3-D band</b> around L1. Turn on the long trail and watch it fill space. This is what most bounded orbits near L1 actually do.',
+};
+function setZooRatio(r){ zooRatio=r;
+  document.querySelectorAll('#zooRatioSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.ratio===r));
+  // Switching TO a locked (whole-number) ratio snaps the amplitudes onto the one-parameter family
+  // curve, using the current Az as the master. Irrational leaves whatever independent values are set.
+  if(zooCoupled()) zooSetE((zooAz-0.15)/0.85);
+  $('zooMsg').innerHTML=ZOO_MSG[r]; $('scenNote').innerHTML=SCEN_NOTE.zoo;
+  $('zooLockNote').innerHTML = zooCoupled()
+    ? '🔒 <b>Locked:</b> one governing parameter — drag <i>either</i> amplitude slider and the other follows along the family.'
+    : '🔓 <b>Free:</b> two independent knobs — set A<sub>x</sub> and A<sub>z</sub> separately.';
+  buildZoo(); zooT=0; }
+function zooTrailToggle(){ zooTrailLong=$('zooTrail').checked; }
+// At 1:1 (a real halo) Ax and Az are NOT independent — one constraint links them, so the family has a
+// SINGLE governing parameter. We model that constraint as a monotonic family curve in slider space:
+//   Az = 0.15 + 0.85·e,   Ax = 1.00 − 0.60·e,   e∈[0,1]  (out-of-plane grows, in-plane shrinks a bit).
+// Either slider is the master: drag one → solve for e → set the other. Away from 1:1 they're free.
+// A whole-number ratio picks a closed, one-parameter family: the two amplitudes are LOCKED together
+// (either slider is the master, the other follows). "irrational" frees them → two independent knobs.
+function zooCoupled(){ return zooRatio!=='irr'; }
+function zooShowAmps(){ $('zooAx').value=Math.round(zooAx*100); $('zooAxV').textContent=Math.round(zooAx*100);
+  $('zooAz').value=Math.round(zooAz*100); $('zooAzV').textContent=Math.round(zooAz*100); }
+function zooSetE(e){ e=Math.max(0,Math.min(1,e)); zooAz=0.15+0.85*e; zooAx=1.00-0.60*e; zooShowAmps(); }
+$('zooAx').addEventListener('input',()=>{ zooAx=(+$('zooAx').value)/100;
+  if(zooCoupled()) zooSetE((1.00-zooAx)/0.60); else $('zooAxV').textContent=Math.round(zooAx*100);
+  buildZoo(); zooT=0; });
+$('zooAz').addEventListener('input',()=>{ zooAz=(+$('zooAz').value)/100;
+  if(zooCoupled()) zooSetE((zooAz-0.15)/0.85); else $('zooAzV').textContent=Math.round(zooAz*100);
+  buildZoo(); zooT=0; });
+let zooT=0;
 
 function setFrame(f){ frame=f; document.querySelectorAll('#frameSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.frame===f));
   $('frameTag').textContent='frame: '+FRAME_NAMES[f]; }
@@ -468,7 +584,7 @@ function releaseFan(){
     p.trail=[]; p.mesh.visible=true; p.line.visible=true; });
   fan._blew=false; fanActive=true; warp=(fanMode==='scatter'?86400:21600); showWarp(); paused=false;
   $('fanMsg').innerHTML = fanMode==='scatter'
-    ? 'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then meet the Moon and each gets a different <b>gravitational slingshot</b>. Let it run: some impact, some stay looping, and several are flung <b>unbound</b> out of the system. The “unbound so far” counter keeps score. Use <kbd>,</kbd><kbd>.</kbd> to adjust the speed.'
+    ? 'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b> off the Moon: most stay looping, a couple are flung <b>unbound</b> out of the system (the “unbound so far” counter keeps score). Use <kbd>,</kbd><kbd>.</kbd> for speed, and the <b>arrow keys to rotate</b> — the paths spread <b>out of the plane</b> in 3-D.'
     : 'Released 7 objects from the <b>same spot</b> at a range of angles: two lean <b>retrograde</b> (peel inward), three form a near-identical <b>cluster</b> ('+(+$('spread').value).toFixed(1)+'% speed spread) that blows apart — chaos — and two aim at the Moon: one <b>flies past</b> and one <b>scatters off it</b> and escapes.';
 }
 
@@ -509,6 +625,11 @@ function loop(ts){ const wall=Math.min((ts-last)/1000,0.05); last=ts; lastWall=w
     const lp=haloPtsLocal[idx], th=emAzimuth();
     haloDot.position.set(lp.x*Math.cos(th)+lp.z*Math.sin(th), lp.y, -lp.x*Math.sin(th)+lp.z*Math.cos(th));
     haloLine.rotation.y=th; }
+  if(zooDot.visible){ const th=emAzimuth();
+    zooLine.rotation.y=th;                                    // ride the rotating Earth–Moon line
+    zooT += (warp*wall)/86400 * 0.5;                          // advance the time parameter (watchable pace)
+    const lp=zooLocal(zooT);                                  // current point in scene coords (pre-rotation)
+    zooDot.position.set(lp.x*Math.cos(th)+lp.z*Math.sin(th), lp.y, -lp.x*Math.sin(th)+lp.z*Math.cos(th)); }
 
   // fan: live RK4 (inertial) over this frame's worth of sim time
   if(fanActive && !paused){ const dtSec=2, simDelta=warp*wall, nsteps=Math.min(3000,Math.max(1,Math.round(simDelta/dtSec)));

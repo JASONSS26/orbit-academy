@@ -2,6 +2,31 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.5 — 2026-07-13
+Deepens Module 6 with a **libration-orbit "zoo"** and a new capstone worksheet part, plus physics
+fixes. Client + docs only — **`server.js` has a zero diff** — so the auth/gating surface is unchanged.
+Security audit: **PASS** (34 functional + 22 security + DoS, all green).
+
+- **New simulator scenario — 🌀 Libration zoo (the L1 orbit family):** the family of orbits around
+  Earth–Moon L1 from the linearized CR3BP. Two amplitude sliders (in-plane A_x, out-of-plane A_z) plus
+  a **frequency-ratio ladder** (1:3, 1:2, 1:1 halo, 2:1, 3:1, 10:1, irrational). Whole-number ratios
+  close into Lissajous figures; irrational never closes (fills a 3-D band). At any rational ratio the
+  two amplitudes are **locked** into one governing parameter (either slider is master); irrational
+  frees them. A lookup **axial slide** drifts the loop toward the Moon as A_z grows. Clearly labeled a
+  **fudged linear approximation** (shapes/rhythms honest; not a full nonlinear integration).
+- **New worksheet Part E — "How to orbit around nothing":** stresses these are **non-Keplerian**
+  orbits (no TLE applies), the family takes essentially **one parameter**, and the monthly precession
+  is a real **torque from the Moon's off-axis gravity**. Plus exam questions on non-Keplerian/one-
+  parameter and the torque, and a 3-D rotate exercise (`d1c`) for the scatter demo.
+- **Physics fix:** Earth–Moon **L1/L2 marker positions corrected** to the true CR3BP fractions
+  (L1 0.8369→0.8513, L2 1.1557→1.1858); readout panel updated. The zoo loops now sit on the ▲ L1 marker.
+- **Lunar-scatter (fan) reworked** to launch on a transfer orbit that coasts one clean arc, then
+  slingshots off the Moon with an out-of-plane/inclination spread — tuned so 0 impact, some unbound.
+- **UI:** the ▲ Lagrange-points checkbox is now globally authoritative (on/off in every scenario);
+  the NRHO moved to the bottom of the scenario list as the "grand finale"; 2×2 compare starts moving.
+- Added `docs/TODO.md` (running follow-ups) — flags a careful Module-6 worksheet walkthrough as the
+  top item.
+
 ## v2.4 — 2026-07-12
 Adds **Module 6 — Lagrange Points & Complex Orbits** (new simulator + worksheet), completes the
 Module 4/5 physics polish, and hardens the dev server. Security audit: **PASS** (34 functional +

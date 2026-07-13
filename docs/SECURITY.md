@@ -4,6 +4,16 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v2.5 — audit result: **PASS**
+The v2.5 change set is **client + docs only**: the Module 6 simulator (`tut6.html`) gained a libration-
+zoo scenario and physics fixes, the worksheet (`worksheet6.data.js`) gained a Part E capstone + exam
+questions, and docs were updated (`CHANGELOG`, `README`, new `TODO.md`). **`server.js` has a zero
+diff** — no change to accounts, sessions, roles, prereq gating, input handling, or DoS guards. The new
+simulator code is self-contained, Three.js from the SRI-pinned CDN, no network calls, no untrusted-
+data DOM sinks (all worksheet content is trusted-author HTML through the already-audited engine). Re-
+ran the full suite on fresh isolated servers — **34 functional + 22 security checks + DoS guard, all
+passing**. `academy_data.json` confirmed gitignored. Cleared to ship v2.5.
+
 ## v2.4 — audit result: **PASS**
 The v2.4 change set is **Module 6** (three new client files — `tut6.html`, `worksheet6.html`,
 `worksheet6.data.js`), Module 4/5 worksheet content edits, and **one small `server.js` change**: an
