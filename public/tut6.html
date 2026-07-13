@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Tutorial 6: Lagrange Points & Complex Orbits</title>
+<style>
+  :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--red:#ff5a52;--moon:#d8d2c4;}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#000407;color:var(--fg);
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
+  #app{display:grid;grid-template-columns:340px minmax(0,1fr) 285px;height:100vh;gap:8px;padding:8px}
+  .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
+  h2{margin:0 0 6px;font-size:19px;color:#fff}
+  .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
+  .big{font-size:14px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  .q{color:var(--dim);font-size:12px;margin-bottom:4px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+    padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
+  button:hover{background:#1f4a7a;border-color:var(--cyan)}
+  button.on{background:#1f5a3a;border-color:var(--grn)}
+  button.go{background:#1e5c33;border-color:#39d353}
+  .seg{display:grid;gap:5px;margin-top:5px}
+  .seg button{margin-top:0;font-size:12px;padding:7px 5px}
+  .seg button.sel{background:#1f4a7a;border-color:var(--cyan);color:#fff;font-weight:bold}
+  label.chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:5px 0;cursor:pointer}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:20px}
+  .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234;max-width:70%}
+  #frameTag{position:absolute;top:8px;right:10px;z-index:3;font-size:12px;color:var(--cyan);background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.72);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  #banner{position:absolute;bottom:44px;left:10px;right:10px;z-index:3;font-size:13px;padding:6px 11px;border-radius:6px;font-weight:bold;display:none;text-align:center}
+  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:13px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  .kv span:last-child{color:#fff;font-weight:bold;text-align:right}
+  .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
+  .warp{display:flex;gap:6px;align-items:center;margin-top:6px}
+  .warp button{width:34px;font-size:16px;padding:4px}
+  kbd{background:#13273f;border:1px solid #274266;border-radius:4px;padding:0 5px;color:#fff;font-size:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- CONTROLS -->
+  <div id="left" class="col panel">
+    <h2>⑥ Lagrange Points</h2>
+    <button onclick="(function(){var w=window.open('worksheet6.html','worksheet_t6');w&&w.focus();})()"
+      style="background:#1f4a7a">📋 Back to worksheet</button>
+
+    <div class="sec">
+      <div class="big">🎬 Scenarios</div>
+      <div class="seg" id="scenSeg">
+        <button data-scen="lpts"  onclick="scenario('lpts')">⚖ The five Lagrange points</button>
+        <button data-scen="force" onclick="scenario('force')">➡ Force balance at L1 · Moon · L2 (1-D)</button>
+        <button data-scen="halo"  onclick="scenario('halo')">🍩 A near-rectilinear halo (NRHO)</button>
+        <button data-scen="tess"  onclick="scenario('tess')">🛰 TESS — a 2:1 resonant orbit</button>
+        <button data-scen="fan"   onclick="scenario('fan')">💥 Fan release — watch chaos grow</button>
+      </div>
+      <label class="chk" style="margin-top:9px"><input type="checkbox" id="showLpts" checked onchange="toggleLpts()"> show <b style="color:var(--accent)">▲ Lagrange points</b> (overlay)</label>
+    </div>
+
+    <div class="sec" id="frameBox">
+      <div class="big">🎥 Reference frame</div>
+      <div class="q">Same four frames as Module 5.</div>
+      <div class="seg" id="frameSeg">
+        <button data-frame="eci"   onclick="setFrame('eci')">Earth-centred inertial (ECI)</button>
+        <button data-frame="emrot" onclick="setFrame('emrot')">Earth–Moon rotating (synodic)</button>
+        <button data-frame="mci"   onclick="setFrame('mci')">Moon-centred inertial (MCI)</button>
+        <button data-frame="moonfix" onclick="setFrame('moonfix')">Moon-fixed (rotating)</button>
+      </div>
+      <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames (2×2)</button>
+    </div>
+
+    <div class="sec" id="fanBox" style="display:none">
+      <div class="big">💥 Fan release</div>
+      <div class="q">Drop a set of objects and watch how fast their paths diverge — the hallmark of chaos.</div>
+      <div class="kv"><span>mode</span><span id="fanModeLbl">mixed fan</span></div>
+      <div class="seg" id="fanModeSeg" style="grid-template-columns:1fr 1fr">
+        <button data-mode="mixed" class="sel" onclick="setFanMode('mixed')">mixed fan</button>
+        <button data-mode="scatter" onclick="setFanMode('scatter')">🌙 lunar scatter</button>
+      </div>
+      <div id="fanMixedOpts">
+      <div class="kv" style="margin-top:8px"><span>release spot</span><span id="fanSpotLbl">at L1</span></div>
+      <div class="seg" id="fanSpotSeg" style="grid-template-columns:1fr 1fr">
+        <button data-spot="l1" onclick="setFanSpot('l1')">at L1</button>
+        <button data-spot="l2" onclick="setFanSpot('l2')">at L2</button>
+        <button data-spot="l1moon" onclick="setFanSpot('l1moon')">L1↔Moon</button>
+        <button data-spot="far" onclick="setFanSpot('far')">far out</button>
+      </div>
+      <div class="kv" style="margin-top:8px"><span>speed spread</span><span><b id="spreadV">0.4</b>% of orbital speed</span></div>
+      <input id="spread" type="range" min="0.1" max="3" step="0.1" value="0.4">
+      </div>
+      <div class="note" id="fanScatterNote" style="display:none">Released right beside the Moon, each object kicked a fixed speed in a <b>different direction</b> — then let the Moon’s gravity scatter them.</div>
+      <button class="go" id="fanGo" onclick="releaseFan()">▶ release</button>
+      <div class="kv" style="margin-top:8px"><span id="scatterLbl">current scatter</span><span id="scatterV">—</span></div>
+      <div class="note" id="fanMsg">Release a tight cluster and watch it stay together, then blow apart. How long until they’re uncorrelated?</div>
+    </div>
+
+    <div class="sec warp">
+      <span style="font-size:12px;color:var(--dim)">time&nbsp;</span>
+      <button onclick="warpDown()">−</button>
+      <span id="warpV" style="font-size:13px;color:#fff;min-width:64px;text-align:center">1×</span>
+      <button onclick="warpUp()">+</button>
+      <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸</button>
+    </div>
+    <div class="sec" style="color:var(--dim);font-size:12px">
+      drag = pan · shift/right-drag = rotate · wheel = zoom · arrows = rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset
+    </div>
+  </div>
+
+  <!-- 3D VIEW -->
+  <div class="stage" id="stage">
+    <canvas id="c"></canvas>
+    <div class="stitle" id="stitle">⚖ The five Lagrange points</div>
+    <div id="frameTag">frame: Earth–Moon rotating</div>
+    <div id="banner"></div>
+    <div id="hint"></div>
+  </div>
+
+  <!-- READOUTS -->
+  <div id="read" class="col panel">
+    <div class="big">Cislunar facts</div>
+    <div class="kv"><span>Earth–Moon dist</span><span>384,400 km</span></div>
+    <div class="kv"><span>lunar period</span><span>27.3 d</span></div>
+    <div class="kv"><span>Earth–Moon L1</span><span>83.7% out</span></div>
+    <div class="kv"><span>Earth–Moon L2</span><span>116% out</span></div>
+    <div class="kv"><span>Earth : Moon mass</span><span>81 : 1</span></div>
+    <div class="sec">
+      <div class="big" style="font-size:13px;color:var(--cyan)">This scenario</div>
+      <div class="note" id="scenNote"></div>
+    </div>
+    <div class="sec">
+      <div class="note">
+        <b style="color:var(--accent)">L1–L5</b> are the five spots where, under Earth + Moon together,
+        an object keeps the <b>same 27.3-day period as the Moon</b> and so holds station on the
+        rotating Earth–Moon line. L1 and L2 are <b>unstable</b> — like a golf ball balanced on a
+        basketball — so real missions there fly small looping <b>halo orbits</b> and nudge often.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
+<script>
+"use strict";
+/* ============================================================================
+   TUTORIAL 6 — Lagrange Points & Complex Orbits.
+   Builds on Module 5's four reference frames (ECI / synodic / MCI / Moon-fixed)
+   and 2×2 compare view. Shows: the five Earth–Moon Lagrange points; a 1-D
+   force-balance diagram at L1/Moon/L2; an L2 halo orbit; TESS (a 2:1 lunar-
+   resonant HEO); and a live "fan release" that demonstrates chaotic divergence.
+   Trajectories: LIVE RK4 in the INERTIAL frame (real Earth+Moon gravity, no
+   fictitious forces) for the fan; analytic/tabulated paths for TESS & the halo.
+   Language rule: no fictitious-force jargon anywhere (see the course-wide ban).
+   Verified: L1 at 0.837 D, L2 at 1.156 D, L4/L5 stable (mass ratio 81>24.96),
+   TESS-like HEO period 13.9 d (~2:1 with the 27.3-d Moon), RK4 dt=2s clean.
+   ============================================================================ */
+const $=id=>document.getElementById(id);
+const R_EARTH=6371, R_MOON=1737, D_EM=384400, T_MOON=27.32;
+const MU_E=398600.4418, MU_M=4902.8, MU=MU_E+MU_M;
+const massFrac=MU_M/MU;                       // ≈0.0121 (Moon fraction)
+// collinear points (fractions of D_EM from Earth center), from the earlier CR3BP solve
+const L1F=0.8369, L2F=1.1557, L3F=-1.0051;
+
+let scene, cam3, r3;
+let scale='em', frame='emrot', quad=false, simT=0, warp=1, paused=false;
+
+/* ------------------------------- renderer -------------------------------- */
+const canvas=$('c');
+r3=new THREE.WebGLRenderer({canvas,antialias:true}); r3.setPixelRatio(Math.min(devicePixelRatio,2)); r3.setClearColor(0x000407,1);
+scene=new THREE.Scene();
+const sunLight=new THREE.DirectionalLight(0xffffff,1.4); sunLight.position.set(1,0.4,1); scene.add(sunLight);
+scene.add(new THREE.AmbientLight(0x55627a,0.6));
+let starField;
+(function stars(){const g=new THREE.BufferGeometry(),N=1400,p=new Float32Array(N*3);
+  for(let k=0;k<N;k++){const rr=3e6+((k*131)%2e6),th=k*2.399,ph=Math.acos(((k*57)%1000)/500-1);
+    p[k*3]=rr*Math.sin(ph)*Math.cos(th);p[k*3+1]=rr*Math.sin(ph)*Math.sin(th);p[k*3+2]=rr*Math.cos(ph);}
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  starField=new THREE.Points(g,new THREE.PointsMaterial({color:0xcfe0ff,sizeAttenuation:false,size:1.8})); starField.frustumCulled=false; scene.add(starField);})();
+
+const tl=new THREE.TextureLoader();
+const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
+const earth=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH,48,32),earthMat); scene.add(earth);
+tl.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',t=>{earthMat.map=t;earthMat.color.set(0xffffff);earthMat.needsUpdate=true;},undefined,()=>{});
+const moonMat=new THREE.MeshStandardMaterial({color:0xd8d2c4,roughness:1});
+const moon=new THREE.Mesh(new THREE.SphereGeometry(R_MOON*2.2,40,28),moonMat); scene.add(moon);  // slightly enlarged to read at this scale
+tl.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg',t=>{moonMat.map=t;moonMat.color.set(0xffffff);moonMat.needsUpdate=true;},undefined,()=>{});
+
+// helper: y-up orbit point (flat orbit in x-z plane); Moon modelled flat like Module 5
+function orbPoint(a,e,incl,nu){ const p=a*(1-e*e), r=p/(1+e*Math.cos(nu));
+  const along=r*Math.cos(nu), trans=r*Math.sin(nu);
+  return new THREE.Vector3(along, trans*Math.sin(incl), -trans*Math.cos(incl)); }
+function moonPos(t){ return orbPoint(D_EM,0.0,0,2*Math.PI*(t/T_MOON)); }   // flat, circular-ish
+function emAzimuth(){ const mp=moonPos(simT); return Math.atan2(-mp.z, mp.x); }
+
+// Moon orbit ring
+const moonOrbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+  Array.from({length:161},(_,k)=>orbPoint(D_EM,0,0,k/160*6.283))),
+  new THREE.LineBasicMaterial({color:0x8fb4ff,transparent:true,opacity:0.4})); scene.add(moonOrbit);
+// red Earth–Moon line (the axis the Lagrange points live on) — updated each frame to reach the Moon
+const emLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(D_EM,0,0)]),
+  new THREE.LineBasicMaterial({color:0xff5a52,transparent:true,opacity:0.85})); emLine.frustumCulled=false; scene.add(emLine);
+
+/* --- Lagrange markers, in a group that rotates with the Earth–Moon line --- */
+const lagGroup=new THREE.Group(); scene.add(lagGroup);
+const LPTS=[['L1',L1F,0,0xffcf4d],['L2',L2F,0,0xff8a4d],['L3',L3F,0,0x9a86ff]];
+function lagLabel(txt,x,z,color){ const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');
+  g.font='bold 40px monospace';g.fillStyle=color;g.textAlign='center';g.textBaseline='middle';g.fillText(txt,32,32);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
+  sp.position.set(x,14000,z);sp.scale.set(26000,26000,1);return sp; }
+// Lagrange points are drawn as camera-facing TRIANGLE glyphs (▲) — a distinct shape from the round
+// bodies/satellites everywhere else, so they always read as "balance point," not "object."
+function lagTri(x,z,color){ const cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');
+  g.beginPath();g.moveTo(32,7);g.lineTo(57,54);g.lineTo(7,54);g.closePath();
+  g.fillStyle=color;g.fill();g.lineWidth=4;g.strokeStyle='#04121f';g.stroke();
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false}));
+  sp.position.set(x,0,z);sp.scale.set(15000,15000,1);sp.renderOrder=5;return sp; }
+LPTS.forEach(([nm,f,,c])=>{ const col='#'+c.toString(16).padStart(6,'0');
+  lagGroup.add(lagTri(D_EM*f,0,col)); lagGroup.add(lagLabel(nm,D_EM*f,0,col)); });
+// L4/L5: 60° ahead/behind the Moon (equilateral), in the orbital plane
+[['L4',Math.cos(Math.PI/3),-Math.sin(Math.PI/3),'#39d353'],['L5',Math.cos(Math.PI/3),Math.sin(Math.PI/3),'#39d353']].forEach(([nm,cx,cz,col])=>{
+  lagGroup.add(lagTri(D_EM*cx,D_EM*cz,col)); lagGroup.add(lagLabel(nm,D_EM*cx,D_EM*cz,col)); });
+lagGroup.traverse(o=>o.frustumCulled=false);
+
+/* --- reusable trajectory line + moving marker set --- */
+function makeTraj(color){ const line=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color,transparent:true,opacity:0.8}));
+  line.frustumCulled=false; scene.add(line); return line; }
+const tessLine=makeTraj(0xff7bd0); tessLine.visible=false;
+const tessDot=new THREE.Mesh(new THREE.SphereGeometry(6000,10,8),new THREE.MeshBasicMaterial({color:0xff7bd0})); tessDot.frustumCulled=false; tessDot.visible=false; scene.add(tessDot);
+const haloLine=makeTraj(0x5fd0ff); haloLine.visible=false;
+const haloDot=new THREE.Mesh(new THREE.SphereGeometry(5000,10,8),new THREE.MeshBasicMaterial({color:0x5fd0ff})); haloDot.frustumCulled=false; haloDot.visible=false; scene.add(haloDot);
+
+/* --- fan-release particles (live RK4, inertial frame) --- */
+const fanColors=[0xff5a52,0xffcf4d,0x39d353,0x5fd0ff,0xc080ff,0xff7bd0,0x9fe0af];
+const fan=[];   // {s:[x,y,z? no—2D in x-z], mesh, trail:[], line}
+let fanActive=false, fanSpot='l1', fanMode='mixed', fanT0=0;
+for(let i=0;i<7;i++){ const c=fanColors[i];
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(4500,8,6),new THREE.MeshBasicMaterial({color:c})); mesh.frustumCulled=false; mesh.visible=false; scene.add(mesh);
+  const line=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.7})); line.frustumCulled=false; line.visible=false; scene.add(line);
+  fan.push({mesh,line,trail:[],st:null}); }
+
+// inertial-frame gravity from Earth (origin) + Moon (moonPos), FULLY 3-D. The Moon orbits in the x-z
+// plane (y=0); objects can have out-of-plane (y) motion, so releases can carry an inclination spread.
+// State is 6-D: [x,y,z, vx,vy,vz].
+function fanAcc(t,st){
+  const mp=moonPos(t); const x=st[0],y=st[1],z=st[2];
+  const dxe=x, dye=y, dze=z, dxm=x-mp.x, dym=y-mp.y, dzm=z-mp.z;
+  const re=Math.max(1e6,(dxe*dxe+dye*dye+dze*dze))**1.5, rm=Math.max(1e5,(dxm*dxm+dym*dym+dzm*dzm))**1.5;
+  return [ -MU_E*dxe/re - MU_M*dxm/rm, -MU_E*dye/re - MU_M*dym/rm, -MU_E*dze/re - MU_M*dzm/rm ];
+}
+function fanStep(st,t,h){ const a1=fanAcc(t,st);
+  const b=[st[0]+st[3]*h/2,st[1]+st[4]*h/2,st[2]+st[5]*h/2,st[3]+a1[0]*h/2,st[4]+a1[1]*h/2,st[5]+a1[2]*h/2],a2=fanAcc(t+h/2,b);
+  const c=[st[0]+b[3]*h/2,st[1]+b[4]*h/2,st[2]+b[5]*h/2,st[3]+a2[0]*h/2,st[4]+a2[1]*h/2,st[5]+a2[2]*h/2],a3=fanAcc(t+h/2,c);
+  const e=[st[0]+c[3]*h,st[1]+c[4]*h,st[2]+c[5]*h,st[3]+a3[0]*h,st[4]+a3[1]*h,st[5]+a3[2]*h],a4=fanAcc(t+h,e);
+  return [st[0]+h/6*(st[3]+2*b[3]+2*c[3]+e[3]), st[1]+h/6*(st[4]+2*b[4]+2*c[4]+e[4]), st[2]+h/6*(st[5]+2*b[5]+2*c[5]+e[5]),
+          st[3]+h/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), st[4]+h/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1]), st[5]+h/6*(a1[2]+2*a2[2]+2*a3[2]+a4[2])]; }
+
+/* --- 1-D force-balance overlay (drawn as 3-D arrows along the Earth–Moon line) --- */
+const forceGroup=new THREE.Group(); scene.add(forceGroup); forceGroup.visible=false;
+function arrow(fromX,len,color,y){ const dir=new THREE.Vector3(Math.sign(len),0,0);
+  const a=new THREE.ArrowHelper(dir,new THREE.Vector3(fromX,y||0,0),Math.abs(len),color,Math.abs(len)*0.18,Math.abs(len)*0.1);
+  a.line.material.linewidth=2; return a; }
+function buildForceDiagram(){
+  while(forceGroup.children.length) forceGroup.remove(forceGroup.children[0]);
+  // at three points along the line, show Earth-pull (toward Earth, −x if x>0), Moon-pull, and net.
+  const pts=[['L1',L1F*D_EM],['Moon',(1-massFrac)*D_EM],['L2',L2F*D_EM]];
+  const S=1.1e10;   // scale accel (km/s^2) → scene length
+  pts.forEach(([nm,x],i)=>{
+    const y=(i-1)*60000;                              // stack them vertically so they don't overlap
+    const dxm=x-(1-massFrac)*D_EM;
+    const aE = -MU_E/(x*x) * Math.sign(x);            // toward Earth (inward)
+    const aM = (Math.abs(dxm)<1?0:-MU_M/(dxm*dxm)*Math.sign(dxm)); // toward Moon
+    forceGroup.add(arrow(x, aE*S, 0x5fd0ff, y));      // Earth pull (cyan)
+    if(nm!=='Moon') forceGroup.add(arrow(x, aM*S, 0xd8d2c4, y)); // Moon pull (grey)
+  });
+  forceGroup.traverse(o=>o.frustumCulled=false);
+}
+
+/* ------------------------------ cameras (from Module 5) ------------------- */
+const FRAMES=['eci','emrot','mci','moonfix'];
+const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',moonfix:'Moon-fixed (rotating)'};
+const views={};
+for(const f of FRAMES) views[f]={R:D_EM*1.9, th:0.7, ph:1.0, target:new THREE.Vector3(0,0,0), cam:new THREE.PerspectiveCamera(50,1,0.5,4e9)};
+function frameCentersMoon(f){ return f==='mci'||f==='moonfix'; }
+function frameCorotates(f){ return f==='emrot'||f==='moonfix'; }
+function aimCamera(f){ const v=views[f]; let tgt=v.target.clone(); if(frameCentersMoon(f)) tgt.add(moonPos(simT));
+  const th=v.th - (frameCorotates(f)?emAzimuth():0);
+  v.cam.position.set(tgt.x+v.R*Math.sin(v.ph)*Math.cos(th), tgt.y+v.R*Math.cos(v.ph), tgt.z+v.R*Math.sin(v.ph)*Math.sin(th));
+  v.cam.lookAt(tgt); }
+const starShell={pos:new THREE.Vector3()};
+
+let curX=0,curY=0;
+addEventListener('mousemove',e=>{ curX=e.clientX; curY=e.clientY; });
+function panelFrameAt(cx,cy){ const r=canvas.getBoundingClientRect(); const u=(cx-r.left)/r.width, v=(cy-r.top)/r.height; return FRAMES[(v<0.5?0:1)*2+(u<0.5?0:1)]; }
+const keys={}; let drag=0,lx=0,ly=0,dragFrame=frame,pinchD=0;
+function activeFrame(cx,cy){ return quad?panelFrameAt(cx,cy):frame; }
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('mousedown',e=>{drag=(e.button===2||e.button===1||e.shiftKey||e.altKey)?2:1;lx=e.clientX;ly=e.clientY;dragFrame=activeFrame(e.clientX,e.clientY);e.preventDefault();});
+addEventListener('mouseup',()=>drag=0);
+addEventListener('mousemove',e=>{ if(!drag)return; const v=views[dragFrame]; const dx=e.clientX-lx,dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+  if(drag===2){ v.th-=dx*0.005; v.ph=Math.max(0.05,Math.min(Math.PI-0.05,v.ph-dy*0.005)); }
+  else { const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);
+    const k=v.R*0.0016; v.target.addScaledVector(right,-dx*k); v.target.addScaledVector(up,dy*k); } });
+canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*3,Math.min(D_EM*8,v.R*(1+Math.sign(e.deltaY)*0.12)));},{passive:false});
+canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;dragFrame=activeFrame(lx,ly);}else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);const k=v.R*0.0016;v.target.addScaledVector(right,-dx*k);v.target.addScaledVector(up,dy*k);}else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinchD)v.R=Math.max(R_MOON*3,Math.min(D_EM*8,v.R*(pinchD/d)));pinchD=d;}},{passive:false});
+canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
+addEventListener('keyup',e=>{keys[e.key]=false;});
+addEventListener('keydown',e=>{ keys[e.key]=true;
+  if(e.key===','||e.key==='<') warpDown(); else if(e.key==='.'||e.key==='>') warpUp();
+  else if(e.key===' '){ togglePause(); e.preventDefault(); }
+  else if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey) resetView();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault(); });
+function resetView(){ for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].target.set(0,0,0); } }
+
+/* ------------------------------ warp/pause ------------------------------- */
+const WARPS=[1,60,600,3600,21600,86400,172800,432000];
+function warpUp(){ let i=WARPS.indexOf(warp); if(i<WARPS.length-1) warp=WARPS[++i]; showWarp(); }
+function warpDown(){ let i=WARPS.indexOf(warp); if(i>0) warp=WARPS[--i]; showWarp(); }
+function showWarp(){ $('warpV').textContent=warp<3600?warp+'×':warp<86400?(warp/3600).toFixed(0)+'h/s':(warp/86400).toFixed(0)+'d/s'; }
+function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶':'⏸'; }
+
+/* ------------------------------ scenarios -------------------------------- */
+const SCEN_NOTE={
+  lpts:'The five spots where Earth + Moon together give the <b>27.3-day lunar period</b>, so an object holds station on the rotating Earth–Moon line. Switch to the <b>synodic</b> frame and they stand still. <b>L4/L5</b> (60° ahead/behind the Moon) are stable; <b>L1/L2/L3</b> are not.',
+  force:'A 1-D look along the Earth–Moon line. At <b>L1</b> the Moon pulls <i>outward</i> (it’s farther out), partially cancelling Earth → a gentler inward pull → matches a 27.3-day loop despite being closer in. At <b>L2</b> both pull <i>inward</i> and add → a stronger pull → also matches 27.3 days despite being farther out.',
+  halo:'A <b>near-rectilinear halo orbit (NRHO)</b> — the real path CAPSTONE flew and the Gateway station will use. Because L2 is unstable, the spacecraft can’t sit there; instead it rides this dramatically elongated, near-vertical loop that <b>skims low over one lunar pole</b> (~3,000 km) and <b>swings far out over the other</b> (~70,000 km), nudging its thrusters occasionally. (This close to the Moon it also shows the <b>same illuminated phase as the Moon</b> — same Sun angle.)',
+  tess:'<b>TESS</b> rides a highly elliptical orbit locked in a <b>2:1 resonance</b> with the Moon — it laps the Earth twice for every one lunar orbit, and the Moon’s pull shepherds it so it stays stable for years. Flip through the frames (or the 2×2) to see how differently the same path looks.',
+  fan:'Release a tight cluster of objects, all launched almost identically, and watch how quickly their paths scatter. In the tangled Earth+Moon gravity field, tiny differences explode — that’s <b>chaos</b>, and it’s why long-term cislunar tracking is so hard.',
+};
+function scenario(s){ scen=s;
+  document.querySelectorAll('#scenSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.scen===s));
+  const titles={lpts:'⚖ The five Lagrange points',force:'➡ Force balance at L1 · Moon · L2',halo:'🍩 A near-rectilinear halo orbit (NRHO)',tess:'🛰 TESS — a 2:1 resonant orbit',fan:'💥 Fan release — watch chaos grow'};
+  $('stitle').textContent=titles[s]; $('scenNote').innerHTML=SCEN_NOTE[s];
+  // visibility per scenario
+  forceGroup.visible=(s==='force'); if(s==='force') buildForceDiagram();
+  tessLine.visible=tessDot.visible=(s==='tess');
+  haloLine.visible=haloDot.visible=(s==='halo');
+  $('fanBox').style.display=(s==='fan')?'block':'none';
+  clearFan(); if(s==='fan'){ setFrame('emrot'); }
+  if(s==='tess') buildTess();
+  if(s==='halo') buildHalo();
+  // The Lagrange scenario turns the ▲ points on and syncs the overlay checkbox; other scenarios
+  // leave them under the checkbox's control, so you can overlay the ▲ points on the halo, TESS, etc.
+  if(s==='lpts'){ lptsOverlay=true; const cb=$('showLpts'); if(cb) cb.checked=true; }
+  applyLptsVis();
+  $('banner').style.display='none'; resetView();
+}
+// Lagrange markers are visible when the Lagrange/force scenarios need them OR the overlay is on.
+function applyLptsVis(){ lagGroup.visible = (scen==='lpts'||scen==='force'||lptsOverlay); }
+function toggleLpts(){ lptsOverlay=$('showLpts').checked; applyLptsVis(); }
+let scen='lpts', lptsOverlay=true;
+
+function setFrame(f){ frame=f; document.querySelectorAll('#frameSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.frame===f));
+  $('frameTag').textContent='frame: '+FRAME_NAMES[f]; }
+function toggleQuad(){ quad=!quad; $('quadBtn').classList.toggle('on',quad);
+  $('quadBtn').textContent=quad?'▭ back to single view':'⊞ Compare all 4 frames (2×2)';
+  $('frameTag').textContent=quad?'comparing 4 frames — same time':'frame: '+FRAME_NAMES[frame];
+  // The 4-frame compare only makes sense while things are MOVING (the frames differ by rotation).
+  // Entering it, make sure we're running at a rate where the Moon visibly orbits — otherwise it
+  // looks frozen. Only bump if the user is still at a slow default (don't clobber a chosen rate).
+  if(quad){ if(paused) togglePause(); if(warp<21600){ warp=86400; showWarp(); } }   // ≈1 day/s → Moon laps in ~27 s
+  $('stitle').style.display=quad?'none':'block'; positionLabels(); }
+
+/* --- TESS: analytic 2:1 HEO (perigee ~108,000 km, apogee ~375,000 km, ~13.7 d), inclined --- */
+let tessA,tessE,tessIncl,tessPer;
+function buildTess(){ const rp=R_EARTH+108000, ra=375000; tessA=(rp+ra)/2; tessE=(ra-rp)/(ra+rp);
+  tessIncl=37*Math.PI/180; tessPer=2*Math.PI*Math.sqrt(tessA**3/MU_E)/86400;   // ~13.7 d
+  const pts=[]; for(let k=0;k<=220;k++) pts.push(orbPoint(tessA,tessE,tessIncl,k/220*6.283));
+  tessLine.geometry.setFromPoints(pts); }
+/* --- L2 halo: a small looping curve drawn around the (rotating) L2 point --- */
+let haloPtsLocal=[], haloCum=[], haloTot=1;
+// A near-rectilinear halo orbit (NRHO) — the real Gateway/CAPSTONE shape: a dramatically
+// elongated, nearly-vertical loop that skims LOW over one lunar pole (perilune ~3,000 km) and
+// swings FAR over the other (apolune ~70,000 km). Built in a Moon-centred local frame (offset by
+// the Moon's along-line distance), oriented mostly out of the orbital plane (the y axis here).
+function buildHalo(){ const moonX=(1-massFrac)*D_EM; haloPtsLocal=[];
+  // NRHO geometry, honest to the real shape: the loop WRAPS the Moon. Perilune skims ~3,000 km over
+  // the SOUTH pole (so the Moon is ~the focus of the close pass); apolune swings ~70,000 km over the
+  // NORTH pole. It is deliberately NOT symmetric about the orbital plane (y=0) — that lopsidedness is
+  // what makes it a "halo." The polar (out-of-plane) axis here is y; the orbital plane is x–z.
+  const peri=R_MOON+3000, apo=70000;                  // km from Moon centre: close pass ↔ far swing
+  const ay=(apo+peri)/2, cyoff=(apo-peri)/2;          // loop centre sits cyoff NORTH of the Moon
+  for(let k=0;k<=200;k++){ const a=k/200*6.283;
+    const y = cyoff - ay*Math.cos(a);                 // a=0 → −peri (perilune, south pole, skims Moon); a=π → +apo (north)
+    const lean = 0.10*(y + peri);                     // long axis tilts gently toward L2 as it climbs north (≈0 at perilune)
+    const x = moonX + lean;                           // perilune sits right at the Moon; the loop wraps it
+    const z = 6000*Math.sin(a);                       // small cross-track width (near-rectilinear ⇒ nearly planar)
+    haloPtsLocal.push(new THREE.Vector3(x, y, z)); }
+  // Kepler-like time map: the craft WHIZZES through perilune and LINGERS at apolune.
+  // Time spent per step scales like distance-from-Moon^1.5 (energy/angular-momentum intuition),
+  // so we build a cumulative-time table the marker walks at constant real-time rate.
+  haloCum=[0];
+  for(let k=1;k<haloPtsLocal.length;k++){ const p=haloPtsLocal[k];
+    const r=Math.hypot(p.x-moonX,p.y,p.z);            // distance from Moon centre at this point
+    haloCum.push(haloCum[k-1]+Math.pow(r,1.5)); }
+  haloTot=haloCum[haloCum.length-1];
+  haloLine.geometry.setFromPoints(haloPtsLocal); }
+
+/* --- fan release --- */
+const FAN_FRAC={l1:L1F, l2:L2F, l1moon:(L1F+1)/2, far:1.5};
+function setFanSpot(s){ fanSpot=s; $('fanSpotLbl').textContent={l1:'at L1',l2:'at L2',l1moon:'midway L1↔Moon',far:'far out'}[s];
+  document.querySelectorAll('#fanSpotSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.spot===s)); }
+function setFanMode(m){ fanMode=m; $('fanModeLbl').textContent={mixed:'mixed fan',scatter:'🌙 lunar scatter'}[m];
+  $('scatterLbl').textContent = m==='scatter' ? 'unbound so far' : 'current scatter';
+  document.querySelectorAll('#fanModeSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.mode===m));
+  // Scatter mode ignores the release-spot/spread controls (it always releases beside the Moon), so
+  // hide them and show a short explainer instead.
+  $('fanMixedOpts').style.display = m==='scatter' ? 'none' : 'block';
+  $('fanScatterNote').style.display = m==='scatter' ? 'block' : 'none';
+}
+$('spread').addEventListener('input',()=>$('spreadV').textContent=(+$('spread').value).toFixed(1));
+// After dragging the slider it keeps keyboard focus; in some browsers the FIRST click elsewhere is
+// then swallowed just to blur the control, so the ▶ release button "won't activate" until a second
+// click. Blur on release (change) so the very next click goes straight to the button.
+$('spread').addEventListener('change',()=>$('spread').blur());
+function clearFan(){ fanActive=false; fan.forEach(p=>{p.mesh.visible=false;p.line.visible=false;p.trail=[];p.st=null;}); $('scatterV').textContent='—'; }
+const W_MOON=2*Math.PI/(T_MOON*86400);   // lunar angular rate (rad/s)
+const D2R=Math.PI/180;
+// MIXED design rows = [label, tf (along-track ×v_corotating), rf (radial-out toward Moon ×v)]:
+//   2 retrograde peel inward · 3 near-identical cluster blow apart (chaos) · 1 lunar flyby · 1 scatters off Moon.
+function mixedDesign(s){ return [['retrograde',0.90,-0.05],['retrograde',0.95,-0.02],
+  ['cluster',1.00,0.00],['cluster',1.00+s,0.00],['cluster',1.00+2*s,0.00],
+  ['lunar flyby',1.00,0.43],['Moon scatter',1.00,0.51]]; }
+// SCATTER: put the objects on a TRANSFER ELLIPSE (perigee SCAT_RP, apogee at the Moon's distance),
+// released at perigee and TIMED so half an orbit later apogee coincides with the Moon. So they first
+// coast up one clean coherent arc (~9 days), THEN meet the Moon and scatter. Each object gets its own
+// flight-angle (deg off prograde) and out-of-plane tilt, hand-tuned so closest passes span ~1.3–18
+// lunar radii — genuine close flybys with NONE actually impacting — and the outcomes split between
+// staying bound and being slingshotted UNBOUND (verified by RK4: 5 bound, 2 unbound, 0 impact).
+const SCAT_RP=200000, SCAT_N=7;
+const SCAT_ANG=[-4.5,-3,-1.5,0,2,3,4];        // flight-path angle per object (deg off prograde)
+const SCAT_YINC=[0.02,-0.015,0.01,-0.01,0.015,-0.02,0.018];   // out-of-plane velocity fraction per object
+function releaseFan(){
+  const baseFrac = FAN_FRAC[fanSpot];
+  fanT0=simT;
+  const mp=moonPos(simT); const ux=mp.x/D_EM, uz=mp.z/D_EM;    // unit vector Earth→Moon (in-plane)
+  const px=-uz, pz=ux;                                          // perpendicular = prograde direction
+  // transfer-ellipse geometry (shared by all scatter objects)
+  const aEll=(SCAT_RP+D_EM)/2;                                  // semi-major axis (apogee = Moon distance)
+  const Thalf=Math.PI*Math.sqrt(aEll**3/MU_E)/86400;           // days perigee→apogee
+  const vpEll=Math.sqrt(MU_E*(2/SCAT_RP-1/aEll));              // perigee speed
+  const apoMoon=moonPos(simT+Thalf);                           // where the Moon will BE at apogee time
+  const apoAng=Math.atan2(apoMoon.z,apoMoon.x), periAng=apoAng+Math.PI;   // perigee is opposite apogee
+  fan.forEach((p,i)=>{ let x,y=0,z,vx,vy=0,vz;
+    if(fanMode==='scatter'){
+      x=SCAT_RP*Math.cos(periAng); z=SCAT_RP*Math.sin(periAng); // start at perigee
+      const tgx=-Math.sin(periAng), tgz=Math.cos(periAng);      // prograde tangential unit
+      const rax=Math.cos(periAng),  raz=Math.sin(periAng);      // radial (outward) unit
+      const dth=SCAT_ANG[i]*D2R;                                // this object's flight-path angle
+      const spd=vpEll;                                          // all at the transfer perigee speed
+      vx=spd*(tgx*Math.cos(dth)+rax*Math.sin(dth));
+      vz=spd*(tgz*Math.cos(dth)+raz*Math.sin(dth));
+      vy=spd*SCAT_YINC[i];                                      // out-of-plane tilt → inclination spread
+    } else {
+      const r=baseFrac*D_EM; x=ux*r; z=uz*r;                    // shared release point on the E–M line
+      const vmag=W_MOON*r;                                      // co-rotating speed ω·r there
+      const s=(+$('spread').value)/100;                         // cluster speed spread (fraction of v)
+      const [,tf,rf]=mixedDesign(s)[i];
+      vx=px*vmag*tf + ux*vmag*rf;
+      vz=pz*vmag*tf + uz*vmag*rf;
+    }
+    p.st=[x, y, z, vx, vy, vz];
+    p.trail=[]; p.mesh.visible=true; p.line.visible=true; });
+  fan._blew=false; fanActive=true; warp=(fanMode==='scatter'?86400:21600); showWarp(); paused=false;
+  $('fanMsg').innerHTML = fanMode==='scatter'
+    ? 'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then meet the Moon and each gets a different <b>gravitational slingshot</b>. Let it run: some impact, some stay looping, and several are flung <b>unbound</b> out of the system. The “unbound so far” counter keeps score. Use <kbd>,</kbd><kbd>.</kbd> to adjust the speed.'
+    : 'Released 7 objects from the <b>same spot</b> at a range of angles: two lean <b>retrograde</b> (peel inward), three form a near-identical <b>cluster</b> ('+(+$('spread').value).toFixed(1)+'% speed spread) that blows apart — chaos — and two aim at the Moon: one <b>flies past</b> and one <b>scatters off it</b> and escapes.';
+}
+
+/* --------------------------------- labels -------------------------------- */
+const labelEls={}; (function(){ const st=$('stage'); FRAMES.forEach(f=>{ const d=document.createElement('div'); d.textContent=FRAME_NAMES[f];
+  d.style.cssText='position:absolute;z-index:4;font-size:12px;color:#cfe3ff;background:rgba(6,12,24,.8);border:1px solid #2b5686;border-radius:5px;padding:3px 8px;pointer-events:none;display:none';
+  st.appendChild(d); labelEls[f]=d; }); })();
+function positionLabels(){ const on=quad,half=[[0,0],[0.5,0],[0,0.5],[0.5,0.5]];
+  FRAMES.forEach((f,i)=>{ const d=labelEls[f]; d.style.display=on?'block':'none'; if(on){ d.style.left=(half[i][0]*CW+8)+'px'; d.style.top=(half[i][1]*CH+8)+'px'; } }); }
+
+/* --------------------------------- loop ---------------------------------- */
+let CW=0,CH=0;
+function resize(){ const st=$('stage'); CW=st.clientWidth; CH=st.clientHeight; r3.setSize(CW,CH,false); positionLabels(); }
+addEventListener('resize',resize);
+
+function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.updateProjectionMatrix(); aimCamera(f);
+  // Lock the star field to this camera so the stars sit at effective infinity (no parallax):
+  // in an INERTIAL frame (ECI/MCI) they hold still even as the camera translates with the Moon.
+  if(starField) starField.position.copy(v.cam.position);
+  r3.setViewport(x,y,w,h); r3.setScissor(x,y,w,h); r3.setScissorTest(true); r3.render(scene,v.cam); }
+
+let last=performance.now(), lastWall=0;
+function loop(ts){ const wall=Math.min((ts-last)/1000,0.05); last=ts; lastWall=wall;
+  const rot=2.0*wall; const vv=views[quad?panelFrameAt(curX,curY):frame];
+  if(keys['ArrowLeft'])vv.th+=rot; if(keys['ArrowRight'])vv.th-=rot;
+  if(keys['ArrowUp'])vv.ph=Math.max(0.05,vv.ph-rot); if(keys['ArrowDown'])vv.ph=Math.min(Math.PI-0.05,vv.ph+rot);
+  if(!paused) simT += (warp*wall)/86400;
+
+  // Moon + markers
+  const mp=moonPos(simT); moon.position.copy(mp); moon.rotation.y=Math.atan2(mp.x,mp.z)+Math.PI;
+  lagGroup.rotation.y=emAzimuth(); forceGroup.rotation.y=emAzimuth();
+  emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);   // red Earth–Moon line
+  if(tessDot.visible) tessDot.position.copy(orbPoint(tessA,tessE,tessIncl,2*Math.PI*(simT/tessPer)));
+  if(haloDot.visible && haloPtsLocal.length){ const NRHO_P=6.5;   // days per NRHO rev (Gateway-class)
+    // Walk the loop by the cumulative-TIME table so the craft whizzes at perilune, lingers at apolune.
+    const frac=((simT/NRHO_P)%1+1)%1, target=frac*haloTot;
+    let idx=0; while(idx<haloCum.length-1 && haloCum[idx+1]<target) idx++;
+    const lp=haloPtsLocal[idx], th=emAzimuth();
+    haloDot.position.set(lp.x*Math.cos(th)+lp.z*Math.sin(th), lp.y, -lp.x*Math.sin(th)+lp.z*Math.cos(th));
+    haloLine.rotation.y=th; }
+
+  // fan: live RK4 (inertial) over this frame's worth of sim time
+  if(fanActive && !paused){ const dtSec=2, simDelta=warp*wall, nsteps=Math.min(3000,Math.max(1,Math.round(simDelta/dtSec)));
+    for(let k=0;k<nsteps;k++){ const tAbs=(simT - (warp*wall)/86400) + (k*dtSec)/86400;
+      for(const p of fan){ if(p.st) p.st=fanStep(p.st, tAbs, dtSec); } }
+    // update meshes + trails + scatter metric; also count how many are now UNBOUND from Earth.
+    // State is [x,y,z,vx,vy,vz] with y = out of the orbital plane (scene y-up).
+    let cx=0,cy=0,cz=0,n=0; for(const p of fan){ if(!p.st) continue; cx+=p.st[0]; cy+=p.st[1]; cz+=p.st[2]; n++; }
+    cx/=n; cy/=n; cz/=n; let scatter=0, unbound=0;
+    for(const p of fan){ if(!p.st) continue; p.mesh.position.set(p.st[0],p.st[1],p.st[2]);
+      p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2])); if(p.trail.length>1200)p.trail.shift();
+      p.line.geometry.setFromPoints(p.trail);
+      scatter=Math.max(scatter,Math.hypot(p.st[0]-cx,p.st[1]-cy,p.st[2]-cz));
+      // specific orbital energy wrt Earth: ε = v²/2 − μ/r. ε ≥ 0 ⇒ unbound (escaping).
+      const de=Math.hypot(p.st[0],p.st[1],p.st[2]), v2=p.st[3]*p.st[3]+p.st[4]*p.st[4]+p.st[5]*p.st[5];
+      if(v2/2 - MU_E/de >= 0) unbound++; }
+    $('scatterV').textContent = fanMode==='scatter'
+      ? unbound+' of '+n+' unbound' : (scatter/D_EM*100).toFixed(1)+'% of D';
+    if(fanMode==='scatter' && unbound>0 && !fan._blew){ fan._blew=true; banner('🚀 An object just went UNBOUND — flung by the Moon onto an escape trajectory, gone from the Earth–Moon system for good.','#12331f','#7be0a0'); }
+  }
+
+  if(quad){ const hw=CW/2,hh=CH/2;
+    renderView('eci',0,hh,hw,hh); renderView('emrot',hw,hh,hw,hh); renderView('mci',0,0,hw,hh); renderView('moonfix',hw,0,hw,hh);
+    r3.setScissorTest(false);
+  } else { renderView(frame,0,0,CW,CH); r3.setScissorTest(false); }
+  requestAnimationFrame(loop);
+}
+function banner(t,bg,fg){ const b=$('banner'); b.innerHTML=t; b.style.display='block'; b.style.background=bg; b.style.color=fg; b.style.border='1px solid '+fg; }
+
+/* -------------------------------- init ----------------------------------- */
+setFrame('emrot'); scenario('lpts'); setFanSpot('l1'); showWarp(); resize(); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

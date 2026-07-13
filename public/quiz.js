@@ -7,6 +7,11 @@
    The server independently records the score and enforces prerequisites, so the client
    cannot unlock ahead by tampering. */
 const TUTORIALS = {
+  t6: {
+    worksheet: 'worksheet6.html',   // Module 6 — Lagrange Points & Complex Orbits
+    tool: 'tut6.html',
+    blurb: 'The five Lagrange points, halo orbits, orbital resonance (TESS), and cislunar chaos.',
+  },
   t5: {
     worksheet: 'worksheet5.html',   // Module 5 — xGEO / Cislunar Space
     tool: 'tut5.html',

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Worksheet 6 — Lagrange Points &amp; Complex Orbits</title>
+<link rel="stylesheet" href="worksheet-engine.css"/>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <svg class="crest" width="52" height="52" viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="94" fill="#fff" stroke="#1a4c8b" stroke-width="6"/>
+      <g fill="none" stroke="#1a4c8b" stroke-width="4" opacity=".7"><ellipse cx="100" cy="100" rx="70" ry="28" transform="rotate(-20 100 100)"/><ellipse cx="100" cy="100" rx="55" ry="55"/></g>
+      <path d="M100 55 L128 130 L100 115 L72 130 Z" fill="#1a4c8b"/><circle cx="100" cy="100" r="10" fill="#1a4c8b"/>
+    </svg>
+    <div>
+      <h1>Worksheet 6 · Lagrange Points &amp; Complex Orbits</h1>
+      <div class="sub">ORBIT ACADEMY — Cislunar Fundamentals · Lagrange points, halo orbits, resonances, and chaos</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn ghost" style="margin:0" onclick="openControls()">🃏 Cheat sheet</button>
+      <button class="btn ghost" style="margin:0" onclick="openResources()">📚 Resources</button>
+      <button class="btn ghost" style="margin:0" onclick="printSheet()">🖨 Print</button>
+      <button class="btn" style="margin:0" onclick="openSim()">↗ Simulator</button>
+      <div class="who" id="who"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="railWrap"><div id="rail"></div><div id="railTxt"></div></div>
+  <div class="tip">
+    <b>How this works:</b> read the objectives and quick tutorial, then keep the
+    <span class="simlink" onclick="openSim()">simulator</span> open beside this sheet and work the numbered
+    exercises. Answer each check question (or mark the step done) to complete it, then take the final check.
+    Your progress saves automatically. Need the keyboard controls? Open the <span class="simlink" onclick="openControls()">cheat sheet</span>.
+  </div>
+
+  <div id="objectives"></div>
+  <div id="tutorial"></div>
+  <div id="elemTable"></div>
+  <div id="tasks"></div>
+  <div id="exam"></div>
+
+  <div id="done">
+    <div style="font-size:40px">🎓</div>
+    <h2>Module 6 complete!</h2>
+    <div style="color:var(--dim)">You understand Lagrange points, halo orbits, orbital resonance, and why cislunar tracking is hard.</div>
+    <div style="margin-top:24px"><button class="btn" onclick="backToHub()">← Back to your flight path</button></div>
+  </div>
+
+  <div id="endmatter"></div>
+</div>
+
+<div id="status">loading…</div>
+
+<script>const MODULE={id:'t6',title:'Lagrange Points & Complex Orbits',tool:'tut6.html',toolWindow:'lagrange6'};</script>
+<script src="worksheet6.data.js"></script>
+<script src="worksheet-engine.js"></script>
+</body>
+</html>

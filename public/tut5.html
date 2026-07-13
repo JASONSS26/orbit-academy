@@ -78,30 +78,30 @@
 
     <div class="sec">
       <div class="big">⚖ Release on the Earth–Moon line</div>
-      <div class="q">Drop an object at rest somewhere between Earth and Moon. Which way does it fall? The tipping point is <b>L1</b>.</div>
+      <div class="q">Drop an object at rest somewhere between Earth and Moon. Which way does it fall? The tipping point is the <b>balance point</b>.</div>
       <div class="kv"><span>release point</span><span><b id="relV">50</b>% toward Moon</span></div>
       <div style="position:relative">
         <input id="rel" type="range" min="5" max="95" step="1" value="50" style="width:100%">
-        <!-- L1 tick: slider spans 5–95, so L1 at 85% sits at (85-5)/90 = 88.9% of the track -->
+        <!-- balance-point tick: slider spans 5–95, so the ~85% mark sits at (85-5)/90 = 88.9% of the track -->
         <div style="position:absolute;left:88.9%;top:-2px;transform:translateX(-50%);pointer-events:none;text-align:center">
           <div style="width:2px;height:22px;background:#ff5a52;margin:0 auto"></div>
-          <div style="font-size:10px;color:#ff8a84;margin-top:1px">L1</div>
+          <div style="font-size:10px;color:#ff8a84;margin-top:1px">balance</div>
         </div>
       </div>
       <button id="relBtn" onclick="releaseOnLine()" style="margin-top:18px">▶ release &amp; watch it drift</button>
-      <div class="note" id="relMsg">The Earth–Moon L1 point is about <b>85% of the way to the Moon</b> (not the midpoint — the Moon is much lighter, so its gravitational “territory” is small). Inside 85% → falls back toward Earth; beyond → falls onto the Moon.</div>
+      <div class="note" id="relMsg">The <b>balance point</b> is about <b>85% of the way to the Moon</b> (not the midpoint — the Moon is much lighter, so its gravitational “territory” is small). Inside 85% → falls back toward Earth; beyond → falls onto the Moon.</div>
     </div>
 
     <div class="sec">
       <div class="big">🚀 Trans-lunar transfer</div>
       <div class="q">“Lead the Moon” like a duck hunter — burn so you arrive where the Moon <i>will be</i>.</div>
-      <button id="tliBtn" onclick="startTLI()">▶ set up a LEO→Moon transfer</button>
+      <button id="tliBtn" onclick="startTLI()">▶ set up a LEO→Moon transfer (arm)</button>
       <div id="tliPanel" style="display:none;margin-top:6px">
-        <div class="q">departure lead angle (where the Moon is when you burn)</div>
+        <div class="q">departure lead angle — drag to place the Moon ahead of your launch point (time is paused while you aim)</div>
         <div class="kv"><span>lead angle</span><span><b id="leadV">120</b>°</span></div>
         <input id="lead" type="range" min="80" max="160" step="1" value="120" style="width:100%">
-        <button class="go" id="tliGo" onclick="fireTLI()" style="background:#1e5c33;border-color:#39d353">🔥 burn trans-lunar injection</button>
-        <div class="note" id="tliMsg">Pick a lead angle, then fire. Watch whether you meet the Moon at apogee — too little lead and it hasn’t arrived; too much and it’s already gone by.</div>
+        <button class="go" id="tliGo" onclick="fireTLI()" style="background:#1e5c33;border-color:#39d353">🔥 launch (burn trans-lunar injection)</button>
+        <div class="note" id="tliMsg">Arm the transfer, drag the lead angle to aim, then press launch. Time is paused while you aim; after launch, speed it up to watch the coast to apogee.</div>
       </div>
     </div>
 
@@ -139,8 +139,8 @@
     <div class="sec">
       <div class="note">
         <b style="color:var(--accent)">xGEO</b> = “extended GEO”: farther from Earth than the GEO belt
-        (~36,000 km) but still inside Earth’s gravitational grip — out to the Sun–Earth L1 point,
-        ~1.5 million km. The Moon, at 384,400 km, sits squarely in this region.
+        (~36,000 km) but still inside Earth’s gravitational grip — out to the <b>edge of Earth’s Hill
+        sphere</b>, ~1.5 million km. The Moon, at 384,400 km, sits squarely in this region.
       </div>
     </div>
   </div>
@@ -158,8 +158,8 @@
    so there is zero integration drift. Three zoom scales (lunar surface,
    Earth–Moon, Sun–Earth) × four frames (fixed-stars, Earth co-moving,
    Earth–Moon rotating, Moon-locked), toggleable lunar orbiters & xGEO objects,
-   the Moon's Hill-sphere boundary, a rotating-frame potential surface with the
-   five Lagrange points, Moon phases, and a "lead the Moon" transfer.
+   the Moon's Hill-sphere boundary, Moon phases, and a "lead the Moon" transfer.
+   (Lagrange points & the effective-potential surface are deferred to Module 6.)
    Verified constants: Moon a=384,400 km, e=0.0549, i=5.14° to ecliptic,
    sidereal 27.32 d; Hill sphere ≈ 61,500 km ≈ Earth–Moon L1; Sun–Earth L1
    ≈ 1.5e6 km; low lunar orbit v≈1.63 km/s, lunar escape 2.38 km/s.
@@ -279,22 +279,16 @@ const xgeoObjs=XGEO.map(s=>{
   const g=new THREE.Group(); g.add(line,dot); scene.add(g);
   return {def:s, group:g, dot, a:s.a, e:s.e, incl:s.incl*Math.PI/180, period:2*Math.PI*Math.sqrt(s.a**3/398600.4418)/86400}; });
 
-/* --- Lagrange point markers (Earth–Moon), shown at EM scale in rotating frame --- */
-const LPTS=[['L1',0.849],['L2',1.168],['L3',-1.005]];  // fractions of D_EM along Earth–Moon line
-const lagGroup=new THREE.Group(); scene.add(lagGroup); lagGroup.visible=false;
-LPTS.forEach(([nm,f])=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(6000,10,8),new THREE.MeshBasicMaterial({color:0xff5a52}));
-  m.position.set(D_EM*f,0,0); m.userData.name=nm; lagGroup.add(m); });
-// L4/L5 (equilateral) — 60° ahead/behind the Moon in the orbital (x-z) plane
-[[Math.cos(Math.PI/3),-Math.sin(Math.PI/3),'L4'],[Math.cos(Math.PI/3),Math.sin(Math.PI/3),'L5']].forEach(([cx,cz,nm])=>{
-  const m=new THREE.Mesh(new THREE.SphereGeometry(6000,10,8),new THREE.MeshBasicMaterial({color:0xffa24d}));
-  m.position.set(D_EM*cx,0,D_EM*cz); lagGroup.add(m); });
+/* NOTE: Lagrange-point markers and the effective-potential surface were removed from Module 5 —
+   that material (and the correct rotating-rod treatment of L1/L2) is deferred to Module 6. */
 
 /* --- transfer trajectory (TLI) --- */
 const tliLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0x39d353}));
 tliLine.frustumCulled=false; tliLine.visible=false; scene.add(tliLine);
 const tliShip=new THREE.Mesh(new THREE.SphereGeometry(2500,10,8),new THREE.MeshBasicMaterial({color:0x39d353}));
 tliShip.visible=false; scene.add(tliShip);
-let tli=null;   // {t0, arrive, leadDeg, ok}
+let tli=null;         // {armed, launched, t0, tof, a, rp, ra, leadDeg, done}
+let tliMoonOffset=0;  // days added to simT for the Moon's phase, so the lead angle positions it
 
 /* ------------------------- positions (analytic) --------------------------- */
 // Moon position around Earth at time t (days) — y-up inertial frame, tilted to ecliptic
@@ -315,10 +309,8 @@ function buildToggles(){ const host=$('toggles'); host.innerHTML='';
     ['emline','Earth–Moon line',0xff5a52,()=>emLine.visible,v=>emLine.visible=v, scale!=='es'],
     ['geo','GEO belt (reference)',0xffcf4d,()=>geoRing.visible,v=>geoRing.visible=v, scale!=='es'],
     ['hill','Moon’s Hill sphere (lunar-orbit boundary)',0x39d353,()=>hill.visible,v=>hill.visible=v, scale==='em'||scale==='moon'],
-    ['zoi','Earth’s zone (meets Hill sphere at L1)',0x5fd0ff,()=>earthZoi.visible,v=>earthZoi.visible=v, scale==='em'],
+    ['zoi','Earth’s zone (meets the Moon’s Hill sphere)',0x5fd0ff,()=>earthZoi.visible,v=>earthZoi.visible=v, scale==='em'],
     ['moonorbit','Moon’s orbit around Earth',0x8fb4ff,()=>moonOrbit.visible,v=>moonOrbit.visible=v, scale!=='moon'],
-    ['lag','Lagrange points (rotating frame)',0xff5a52,()=>lagGroup.visible,v=>lagGroup.visible=v, scale==='em'],
-    ['pot','Potential surface (rotating frame)',0x8a7dff,()=>potMesh.visible,v=>potMesh.visible=v, scale==='em'],
   ];
   for(const [id,lab,c,get,set,show] of structural){ if(!show) continue;
     const l=document.createElement('label'); l.className='chk';
@@ -332,32 +324,6 @@ function buildToggles(){ const host=$('toggles'); host.innerHTML='';
     xgeoObjs.forEach(o=>add(o,o.def.name,o.def.c)); }
 }
 
-/* -------------------- potential surface (rotating frame) ------------------ */
-// A qualitative effective-potential "height field" over the Earth–Moon plane, so
-// satellites appear to "roll" in wells with saddles at the Lagrange points.
-let potMesh;
-(function buildPotential(){
-  // Qualitative CR3BP effective potential in NONDIMENSIONAL units (distance = Earth–Moon dist),
-  // Earth at x=-mu, Moon at x=1-mu. The Moon's term (mu=0.0123) is ~80× shallower than Earth's,
-  // so a single linear scale hides the Moon entirely. We clamp EACH body's 1/r term separately
-  // (capE, capM) — chosen so both wells and the L1 saddle at ~0.85 are all clearly visible.
-  const N=90, mu=0.0123, span=1.6, capE=3.0, capM=1.2, rmin=0.02;
-  const geo=new THREE.PlaneGeometry(span*2,span*2,N,N);
-  const pos=geo.attributes.position;
-  for(let i=0;i<pos.count;i++){ const x=pos.getX(i), y=pos.getY(i);   // nondimensional
-    const r1=Math.max(rmin,Math.hypot(x+mu,y)), r2=Math.max(rmin,Math.hypot(x-(1-mu),y));
-    const eE=Math.min((1-mu)/r1,capE), eM=Math.min(mu/r2,capM);
-    const U=-eE - eM - 0.5*(x*x+y*y);            // gravity + centrifugal, all NEGATIVE
-    pos.setZ(i, U*D_EM*0.14);                     // scale back to scene km; wells dip DOWN
-  }
-  // scale the plane's x-y from nondimensional to scene km (barycenter ~ Earth center at this mu)
-  geo.scale(D_EM,D_EM,1);
-  geo.computeVertexNormals();
-  potMesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0x8a7dff,wireframe:true,transparent:true,opacity:0.4,side:THREE.DoubleSide}));
-  // built in x-y with height along +z; rotate to lie in the world x-z plane (height = world y)
-  potMesh.rotation.x=-Math.PI/2;
-  potMesh.visible=false; scene.add(potMesh);
-})();
 
 /* ------------------------------ cameras ----------------------------------- */
 /* Each reference frame gets its OWN camera + view params (pan/zoom/rotate), so
@@ -415,6 +381,7 @@ relTrail.frustumCulled=false; relTrail.visible=false; scene.add(relTrail);
 const L1_FRAC=0.849;   // Earth–Moon L1 as a fraction of the Earth–Moon distance
 let rel=null;
 $('rel').addEventListener('input',()=>$('relV').textContent=+$('rel').value);
+$('lead').addEventListener('input',()=>{ $('leadV').textContent=+$('lead').value; applyLeadPreview(); });
 function releaseOnLine(){
   // don't disturb the camera — the released object sits on the Earth–Moon line, visible in the
   // current view. Just make sure the line is shown; leave scale, frame, and all four views as-is.
@@ -424,15 +391,17 @@ function releaseOnLine(){
   relDot.visible=true; relTrail.visible=true; $('banner').style.display='none';
   warp=21600; showWarp(); paused=false;
   $('relMsg').innerHTML = f<L1_FRAC
-    ? 'Released at <b>'+(f*100).toFixed(0)+'%</b> — that’s <b>inside</b> L1 (85%), so Earth’s pull wins: it drifts back toward <b>Earth</b>.'
-    : (f>0.87? 'Released at <b>'+(f*100).toFixed(0)+'%</b> — <b>beyond</b> L1 (85%), so the Moon’s pull wins: it falls toward the <b>Moon</b>.'
-             : 'Released at <b>'+(f*100).toFixed(0)+'%</b> — right near the <b>L1 knife-edge</b> (~85%); it barely drifts, then tips one way.'); }
+    ? 'Released at <b>'+(f*100).toFixed(0)+'%</b> — that’s <b>inside</b> the balance point (~85%), so Earth’s pull wins: it drifts back toward <b>Earth</b>.'
+    : (f>0.87? 'Released at <b>'+(f*100).toFixed(0)+'%</b> — <b>beyond</b> the balance point (~85%), so the Moon’s pull wins: it falls toward the <b>Moon</b>.'
+             : 'Released at <b>'+(f*100).toFixed(0)+'%</b> — right on the <b>balance-point knife-edge</b> (~85%); it barely drifts, then tips one way.'); }
 
 /* --------------------------- scale & frame -------------------------------- */
 function setScale(s){ scale=s;
   document.querySelectorAll('#scaleSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.scale===s));
   const titles={moon:'🌙 Low lunar orbit',em:'🌍🌙 The Earth–Moon system',es:'☀ The Sun–Earth system'};
   $('stitle').textContent=titles[s];
+  // leaving the Earth–Moon view abandons any armed/flown transfer and clears the Moon phase offset
+  if(s!=='em' && tli){ tli=null; tliMoonOffset=0; tliLine.visible=false; tliShip.visible=false; $('tliPanel').style.display='none'; }
   // Per-frame camera distance. Moon-centred frames (MCI, Moon-fixed) zoom in tighter so you
   // genuinely "ride the Moon" — that's what distinguishes Moon-fixed from the synodic frame,
   // which otherwise also freezes the Earth–Moon line (they share a rate because the Moon is
@@ -469,33 +438,49 @@ function applyScaleDefaults(){
   emLine.visible     = (scale!=='es');
   geoRing.visible    = (scale==='em');
   earthZoi.visible   = false;            // off by default; a toggle turns it on at EM scale
-  lagGroup.visible   = false;
-  potMesh.visible    = false;
 }
 function updateVisibility(){ /* per-frame: nothing to force; toggles own it now */ }
-function resetView(){ const ph=(scale==='em'&&potMesh.visible)?0.5:1.0;
-  for(const f of FRAMES){ views[f].th=0.7; views[f].ph=ph; views[f].target.set(0,0,0); } }
+function resetView(){
+  for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].target.set(0,0,0); } }
 
 /* ------------------------------ TLI transfer ------------------------------ */
-function startTLI(){ setScale('em'); if(!quad) setFrame('eci'); $('tliPanel').style.display='block';
-  $('banner').style.display='none'; }
-function fireTLI(){
-  const leadDeg=+$('lead').value; simT=0; paused=false;
-  // transfer ellipse: perigee ~ LEO (300 km alt), apogee ~ Moon distance
-  const rp=R_EARTH+300, ra=D_EM, a=(rp+ra)/2;
-  const tof=Math.PI*Math.sqrt(a**3/398600.4418)/86400;  // half-period (days) — coast to apogee
-  // Moon must ARRIVE at the apogee point (fixed at +? we put apogee 180° from perigee).
-  // We fix perigee on +X; apogee is on -X. Moon must be at -X after 'tof' days.
-  // Moon angle at fire time = leadDeg ahead. "Correct" lead ≈ 180° - Moon's travel during tof.
-  const moonTravelDeg=360*(tof/T_MOON);
-  const idealLead=180-moonTravelDeg;
-  tli={t0:0, tof, a, rp, ra, leadDeg, idealLead, arrive:tof};
-  // build the transfer half-ellipse (perigee +X to apogee −X) in the orbit (x-z) plane
-  const e=(ra-rp)/(ra+rp), pts=[];
-  for(let k=0;k<=120;k++) pts.push(orbPoint(a,e,0,Math.PI*k/120));
+// Transfer geometry (perigee ~LEO, apogee at the Moon's distance). Perigee is fixed on +X, apogee
+// on −X, so the ship arrives at the −X point after half a transfer period ("time of flight").
+const TLI_RP=R_EARTH+300, TLI_RA=D_EM, TLI_A=(TLI_RP+TLI_RA)/2;
+const TLI_TOF=Math.PI*Math.sqrt(TLI_A**3/398600.4418)/86400;          // days, perigee → apogee
+const TLI_MOON_TRAVEL=360*(TLI_TOF/T_MOON);                            // how far the Moon moves during the flight
+const TLI_IDEAL_LEAD=180-TLI_MOON_TRAVEL;                              // lead that puts the Moon at −X on arrival
+
+function startTLI(){ setScale('em'); if(!quad) setFrame('eci');
+  $('tliPanel').style.display='block'; $('banner').style.display='none';
+  paused=true; $('pauseBtn').textContent='▶';   // hold time until the student launches
+  // ARM (not launched): park the ship at LEO perigee (+X) and preview the Moon at the chosen lead.
+  tli={armed:true, launched:false, done:false, t0:0};
+  const e=(TLI_RA-TLI_RP)/(TLI_RA+TLI_RP), pts=[];
+  for(let k=0;k<=120;k++) pts.push(orbPoint(TLI_A,e,0,Math.PI*k/120));
   tliLine.geometry.setFromPoints(pts); tliLine.visible=true; tliShip.visible=true;
-  $('tliMsg').innerHTML = 'Fired with a <b>'+leadDeg+'°</b> lead. Ideal is about <b>'+idealLead.toFixed(0)+'°</b>. Watch the ship coast to apogee (~'+tof.toFixed(1)+' days) and see if the Moon is there to meet it.';
-  warp=86400; showWarp();
+  tliShip.position.copy(orbPoint(TLI_A,e,0,0));   // at perigee
+  applyLeadPreview();
+}
+// Position the Moon (via phase offset) so it currently sits `leadDeg` ahead of the ship's launch point (+X).
+function applyLeadPreview(){
+  if(!tli||tli.launched) return;
+  const leadDeg=+$('lead').value;
+  // want moonPos(simT + off) to be at angle +leadDeg (measuring like emAzimuth: atan2(-z,x)).
+  // moonPos angle = 2π·(t/T_MOON); solve for the offset that yields leadDeg at the current simT.
+  const targetAng=leadDeg*Math.PI/180;
+  tliMoonOffset = targetAng/(2*Math.PI)*T_MOON - simT;
+  $('tliMsg').innerHTML='Armed. The Moon is <b>'+leadDeg+'°</b> ahead of your launch point. Ideal lead ≈ <b>'+
+    TLI_IDEAL_LEAD.toFixed(0)+'°</b> (so the Moon reaches your apogee in ~'+TLI_TOF.toFixed(1)+' days). '+
+    'Adjust the slider, then press <b>launch</b> — and speed up time to watch the coast.';
+}
+function fireTLI(){
+  if(!tli||!tli.armed) startTLI();
+  applyLeadPreview();                 // lock in the current lead
+  tli.launched=true; tli.armed=false; tli.done=false; tli.t0=simT;   // launch clock starts NOW
+  paused=false; $('pauseBtn').textContent='⏸'; warp=86400; showWarp();
+  $('tliMsg').innerHTML='🔥 Launched! Coasting to apogee over ~'+TLI_TOF.toFixed(1)+
+    ' days. Watch whether the Moon arrives at the apogee point to meet you.';
 }
 
 /* ------------------------------ Moon phase -------------------------------- */
@@ -519,14 +504,14 @@ function updateReadouts(){
        '<div class="kv"><span>sidereal month</span><span>27.32 d</span></div>'+
        '<div class="kv"><span>phase cycle</span><span>29.53 d</span></div>',
     es:'<div class="kv"><span>Earth–Sun dist</span><span>150 M km</span></div>'+
-       '<div class="kv"><span>Sun–Earth L1</span><span>1.5 M km</span></div>'+
+       '<div class="kv"><span>Earth’s Hill edge</span><span>1.5 M km</span></div>'+
        '<div class="kv"><span>Earth year</span><span>365.25 d</span></div>',
   };
   $('scaleFacts').innerHTML=facts[scale];
   const zones={
     moon:'You are inside the <b>Moon’s Hill sphere</b> (~61,500 km): here the Moon’s gravity wins and objects orbit the Moon. These are <b>elliptical orbits</b>, just like around Earth.',
-    em:'Between Earth and Moon, gravity is a tug-of-war. Inside ~61,500 km of the Moon you orbit the Moon; beyond that you orbit the Earth. The crossover sits near <b>Earth–Moon L1</b>. <b>xGEO</b> fills the space from the GEO belt out to the Moon and beyond.',
-    es:'Zoom out and the Moon is just another Earth satellite, and the whole Earth–Moon pair orbits the Sun. Inside <b>Sun–Earth L1</b> (~1.5 M km) you orbit the Earth; beyond it, the Sun takes over.',
+    em:'Between Earth and Moon, gravity is a tug-of-war. Inside ~61,500 km of the Moon you orbit the Moon; beyond that you orbit the Earth — the crossover is the <b>balance point</b> on the Earth–Moon line. <b>xGEO</b> fills the space from the GEO belt out to the Moon and beyond.',
+    es:'Zoom out and the Moon is just another Earth satellite, and the whole Earth–Moon pair orbits the Sun. Inside the <b>edge of Earth’s Hill sphere</b> (~1.5 M km) you orbit the Earth; beyond it, the Sun takes over.',
   };
   $('zoneNote').innerHTML=zones[scale];
 }
@@ -534,7 +519,7 @@ function updateReadouts(){
 /* --------------------------------- loop ----------------------------------- */
 const MU_MOON=4902.8, MU_EARTH=398600.4418;
 function place(){
-  const mp=moonPos(simT);
+  const mp=moonPos(simT+tliMoonOffset);   // TLI can add a phase offset so the lead angle positions the Moon
   moon.position.copy(mp);
   // tidally locked: same face toward Earth. Face direction = -mp; spin about y to point it inward.
   moon.rotation.y = Math.atan2(mp.x, mp.z) + Math.PI;
@@ -561,20 +546,20 @@ function place(){
     rel.pts.push(relDot.position.clone()); if(rel.pts.length>500) rel.pts.shift();
     relTrail.geometry.setFromPoints(rel.pts);
     if(!rel.landed && (rel.cur<0.05 || rel.cur>0.97)){ rel.landed=true;
-      banner(rel.toward==='earth'?'⬇ It fell back toward EARTH — released inside L1.':'🌙 It fell onto the MOON — released beyond L1.',
+      banner(rel.toward==='earth'?'⬇ It fell back toward EARTH — released inside the balance point.':'🌙 It fell onto the MOON — released beyond the balance point.',
              rel.toward==='earth'?'#1e3a5c':'#5c3a1e', rel.toward==='earth'?'#8fb4ff':'#ffcf4d'); }
   }
-  // TLI ship: coast along the transfer half-ellipse (perigee +X → apogee −X) over 'tof' days
-  if(tli && tliLine.visible){
-    const frac=Math.min(1, simT/tli.tof), nu=Math.PI*frac;
-    const e=(tli.ra-tli.rp)/(tli.ra+tli.rp);
-    tliShip.position.copy(orbPoint(tli.a,e,0,nu));
-    if(frac>=1 && !tli.done){ tli.done=true;
-      // Moon's angle in the orbit (x-z) plane vs. the apogee point at nu=π
-      const moonAng=Math.atan2(-mp.z,mp.x), apoAng=Math.PI;
-      let d=Math.abs(moonAng-apoAng); d=Math.min(d,2*Math.PI-d);
+  // TLI ship. While ARMED it waits at perigee (+X); once LAUNCHED it coasts perigee→apogee over
+  // the time-of-flight, measured from the launch instant (simT - t0), so the student controls when.
+  if(tli && (tli.armed || tli.launched)){
+    const e=(TLI_RA-TLI_RP)/(TLI_RA+TLI_RP);
+    const frac = tli.launched ? Math.min(1,(simT-tli.t0)/TLI_TOF) : 0;
+    tliShip.position.copy(orbPoint(TLI_A,e,0,Math.PI*frac));
+    if(tli.launched && frac>=1 && !tli.done){ tli.done=true;
+      // compare the Moon's angle to the apogee point (−X, angle π)
+      const moonAng=Math.atan2(-mp.z,mp.x); let d=Math.abs(moonAng-Math.PI); d=Math.min(d,2*Math.PI-d);
       if(d<0.26) banner('🎯 Rendezvous! You led the Moon correctly — the ship meets it at apogee.','#1e5c33','#9be0af');
-      else banner('🌙 Missed — the Moon isn’t at the arrival point. Adjust the lead angle and try again.','#5c3a1e','#ffcf4d'); }
+      else banner('🌙 Missed — the Moon isn’t at the arrival point. Adjust the lead angle and launch again.','#5c3a1e','#ffcf4d'); }
   }
 }
 function banner(t,bg,fg){ const b=$('banner'); b.textContent=t; b.style.display='block'; b.style.background=bg; b.style.color=fg; b.style.border='1px solid '+fg; }
@@ -593,9 +578,9 @@ addEventListener('resize',resize);
    All four share the same simT, so the underlying dynamics are identical. */
 function frameCentersMoon(f){ return f==='mci'||f==='moonfix'; }
 function frameCorotates(f){ return f==='emrot'||f==='moonfix'; }
-function emAzimuth(){ const mp=moonPos(simT); return Math.atan2(-mp.z, mp.x); }  // Earth–Moon line angle
+function emAzimuth(){ const mp=moonPos(simT+tliMoonOffset); return Math.atan2(-mp.z, mp.x); }  // Earth–Moon line angle
 function aimCamera(f){ const v=views[f];
-  let tgt=v.target.clone(); if(frameCentersMoon(f)) tgt.add(moonPos(simT));
+  let tgt=v.target.clone(); if(frameCentersMoon(f)) tgt.add(moonPos(simT+tliMoonOffset));
   const th=v.th - (frameCorotates(f)? emAzimuth() : 0);
   v.cam.position.set(tgt.x+v.R*Math.sin(v.ph)*Math.cos(th), tgt.y+v.R*Math.cos(v.ph), tgt.z+v.R*Math.sin(v.ph)*Math.sin(th));
   v.cam.lookAt(tgt); }

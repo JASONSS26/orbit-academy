@@ -55,7 +55,7 @@ const WORKSHEET = {
   parts: [
     { title:'PART A · Why prediction breaks down', blurb:'The limits of the tidy six-number picture, and the two kinds of engine.', tasks:['a1','a2'] },
     { title:'PART B · Delta-v: the currency of maneuvers', blurb:'Every orbit change costs a change in speed. Learn to spend it wisely.', tasks:['b1','b2','b3','b4'] },
-    { title:'PART C · The two-step macro-maneuver (GTO → GEO)', blurb:'Every big orbit change is really two steps: get to the apogee you want, then match the circular speed there.', tasks:['c1','c2','c3'] },
+    { title:'PART C · Get from LEO to GEO — the challenge', blurb:'First try it your own way and tally the fuel. Then discover the efficient two-step recipe.', tasks:['c0a','c0b','c1','c2','c3'] },
     { title:'PART D · Escape velocity, unbound orbits & infall', blurb:'Burn hard enough and you never come back; cancel your sideways speed and you fall straight in.', tasks:['x1','x2','x4','x3'] },
     { title:'PART E · Atmospheric drag & disposal', blurb:'The one perturbation that ends missions — and can be used to dispose of them.', tasks:['d1','d2','d3'] },
     { title:'PART F · Radiation pressure, HAMR & solar sails', blurb:'The photon wind, and why some objects are nearly impossible to predict.', tasks:['e1','e2'] },
@@ -231,7 +231,55 @@ const WORKSHEET = {
         a:1, why:'Correct — a radial burn does almost no work on the orbit’s energy; instead it makes the orbit more eccentric, pivoting the far side downward. Push “up” hard enough and the opposite side swings down into the Earth. To actually raise an orbit you burn prograde (tangential), not radial.',
         feedback:['Radial-out does not give a higher circular orbit — it makes an ellipse with a lower far side.','','It has a big effect — it reshapes the orbit and drops perigee.','Escape needs a large prograde (tangential) burn; radial thrust is very inefficient and won’t escape here.'] } },
 
-    // ---- PART C: the two-step macro-maneuver (GTO → GEO) ----
+    // ---- PART C: get from LEO to GEO — challenge first, then the efficient recipe ----
+    { id:'c0a', title:'Challenge: get from LEO to GEO your own way',
+      teach:[
+        'Here’s a real mission problem: you’re in a <b>circular low orbit</b> (~400 km) and you need to reach a <b>circular orbit at GEO</b> (~35,800 km up). You have a thruster and a limited tank of <b>delta-v</b>. How little can you spend?',
+        'Before anyone tells you the “right” way, <b>just try it.</b> Fire burns in whatever directions you like — toward Earth, away from Earth, along your motion, against it — and watch the orbit change. The <b>⛽ Δv gauge</b> keeps a running total of everything you spend. Getting to GEO is the goal; getting there <i>cheaply</i> is the real game.',
+      ],
+      predict:'Before you touch anything: to climb from a low orbit way out to GEO, do you think it’s more efficient to push <b>outward</b> (straight away from Earth, “toward” GEO), or to push <b>along your direction of travel</b> (speeding up)?',
+      do:[
+        'Open the <b>GTO transfer</b> scenario (it starts you in a 400 km circular LEO). Note the Δv gauge reads 0.',
+        'Try to reach GEO however you like — experiment with <b>radial-out</b> (⇱, straight away from Earth) and <b>prograde</b> (⬆, along your motion) burns. Watch the apogee/perigee readouts and the running Δv total.',
+        'When you’ve either reached GEO or given up, read your <b>total Δv spent</b>. Then hit <b>↺ refuel/reset</b> and try a different strategy — can you do it for less?',
+      ],
+      observe:'burns straight “out” toward GEO barely raise your orbit for the fuel spent, while burns along your motion (prograde) lift the far side of the orbit dramatically — so how you point the thruster matters enormously.',
+      think:[
+        'Which burns moved you toward GEO the most per unit of Δv — the ones pointing outward, or the ones along your motion?',
+        'When you pushed straight “out,” what actually happened to the orbit’s shape?',
+        'What was your best (lowest) total Δv, and do you think you could still do better?',
+      ],
+      quiz:{ q:'After experimenting, which kind of burn moved you toward GEO most efficiently (most orbit-raising per unit of Δv)?',
+        opts:['Radial burns — pushing straight out toward GEO','Burns along your direction of travel (prograde) — speeding up',
+              'Burns against your motion (retrograde)','Direction made no difference to the fuel cost'],
+        a:1, why:'Correct — a burn along your motion adds orbital energy efficiently and lifts the far side of the orbit; pushing straight “out” mostly reshapes the orbit and wastes fuel. Direction is everything.',
+        feedback:['Pushing straight out barely raises the orbit for the fuel spent — it mostly reshapes it.','','Retrograde lowers your orbit, the wrong way entirely.','Direction matters enormously — that’s the key lesson here.'] } },
+    { id:'c0b', title:'The efficient way: raise apogee, then circularize',
+      teach:[
+        'Here’s the efficient recipe the pros use — the <b>two-step transfer</b>. Do it in two well-aimed burns, both <b>along your direction of travel</b>:',
+        '<b>Step 1 — raise your apogee to GEO.</b> One prograde burn at your low orbit of about <b>2,400 m/s</b> stretches your circular orbit into a tall ellipse whose far point (apogee) just reaches GEO altitude. That ellipse is the <b>Geo-Transfer Orbit (GTO)</b>. Now coast — for free — all the way out to apogee. <b>Step 2 — circularize.</b> Way out at apogee you’re moving too slowly to hold a circle there (~1.6 km/s vs. the ~3.1 km/s a GEO circle needs), so a second prograde burn of about <b>1,460 m/s</b> speeds you up and rounds the orbit off at GEO.',
+        'Total: about <b>3,900 m/s</b>. Compare that to whatever you spent flailing in the last exercise — this is almost always far less.',
+      ],
+      predict:'The efficient transfer takes two burns. Where along the orbit do you think each burn should happen — and which direction should each point?',
+      do:[
+        'Refuel/reset. In the <b>GTO transfer</b> scenario, fire a <b>prograde</b> burn at your low orbit and tune it (~2,400 m/s) until the <b>apogee readout reaches GEO altitude</b> (~35,800 km).',
+        'Speed up time and <b>coast</b> out to apogee (don’t burn during the coast — it’s free).',
+        'At apogee, fire a second <b>prograde</b> burn (~1,460 m/s) until the orbit circularizes — watch for the <b>“✓ Circular GEO reached”</b> banner. Read your total Δv (~3,900 m/s).',
+      ],
+      observe:'two clean prograde burns — one to raise apogee, one to circularize — reach GEO for about 3,900 m/s total, typically far less than free-form experimenting.',
+      think:[
+        'How does your two-step total (~3,900 m/s) compare with your best free-form attempt?',
+        'Why is it worth coasting all the way to apogee before the second burn, instead of burning early?',
+        'Both burns point the same way (prograde). Why is neither one radial?',
+      ],
+      quiz:{ q:'In the efficient LEO→GEO transfer, what are the two burns?',
+        opts:['A radial-out burn, then a radial-in burn',
+              'A prograde burn at low orbit to raise apogee to GEO, then a prograde burn at apogee to circularize',
+              'A retrograde burn, then a coast','One giant burn straight toward GEO'],
+        a:1, why:'Correct — burn 1 (prograde, at perigee) lifts apogee out to GEO; coast; burn 2 (prograde, at apogee) circularizes. About 2,400 + 1,460 ≈ 3,900 m/s total.',
+        feedback:['Radial burns are the wasteful kind you just tested.','','A retrograde burn would lower your orbit.','A single burn can’t both raise apogee AND circularize — it takes two, at opposite ends.'] } },
+
+    // ---- PART C (cont.): the two-step, formalized ----
     { id:'c1', title:'The two-step recipe: raise apogee, then match circular speed',
       teach:[
         'Now put the burns to work on a real job: moving from a low orbit all the way up to GEO. You can’t do it in one shove — and you already know why. A single prograde burn at LEO just lifts the <i>far side</i> of the orbit; the point you burned at stays low. So one burn can’t give you a nice round high orbit. It takes <b>two steps</b>.',
@@ -619,5 +667,11 @@ const WORKSHEET = {
             'It speeds up, but its orbit stays perfectly predictable forever'],
       a:2, why:'Correct — drag drops the satellite to a lower, faster orbit (the drag paradox), and such continuous perturbations make a TLE snapshot go stale.',
       feedback:['It doesn’t stop; drag drops it to a lower, faster orbit, and orbits constantly drift.','Drag alone continuously changes the orbit — no burn required for elements to go stale.','','Continuous perturbations mean the orbit is always drifting, so the fixed elements do go stale.'] },
+    { q:'To deorbit a satellite from GEO so it falls to Earth, roughly what does it take — and how does it compare to reaching GEO in the first place?',
+      opts:['Two big burns totaling ~3,900 m/s, just like the trip up',
+            'One retrograde burn of ~1,500 m/s at GEO to drop the low point into the atmosphere — roughly the time-reverse of the apogee-raising burn, and only ONE burn',
+            'No fuel at all — it falls on its own','A radial burn straight down toward Earth'],
+      a:1, why:'Correct — a single retrograde burn (~1,500 m/s) at GEO lowers the far side of the orbit until it dips into the atmosphere; gravity does the rest. It’s roughly the reverse of the GTO apogee-raising burn, and needs no second (circularizing) burn. (That’s also why GEO satellites are boosted ~11 m/s UP to a graveyard instead — deorbiting is ~140× more expensive.)',
+      feedback:['Deorbiting takes just ONE burn — you don’t circularize at the bottom, you let it hit.','','GEO is far too high for it to decay on its own in any reasonable time — it needs a burn.','A radial burn is inefficient; a retrograde burn (against the motion) cheaply lowers the far side.'] },
   ],
 };

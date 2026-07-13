@@ -1,64 +1,320 @@
-/* Worksheet 6 — Observability (SEED / not yet live).
-   ---------------------------------------------------------------------------
-   This is a parking file for Module 6. It holds observability tasks that were
-   originally prototyped inside Module 2 (resolvability, endpoint astrometry,
-   and the arcminute/arcsecond angle unit) and moved here during the v1.2/1.3
-   rebalance so Module 2 stays focused on the GEO belt, geosync, and frames.
-
-   NOT yet registered in quiz.js and NOT in the server COURSE as a buildable
-   worksheet — Module 6 needs its own tool first (see docs/MODULE_NOTES.md:
-   reflected-sunlight illumination, eclipse/shadow, telescope-FOV streaks,
-   radar 1/r⁴ link budget, four observability modes). When that tool exists,
-   flesh out the intro/parts/summary and register t6.
-
-   The `d1`/`d2` ids below are kept from their Module-2 origin; renumber freely
-   when Module 6 is built out. */
+/* Worksheet 6 — Lagrange Points & Complex Orbits.
+   Builds on Module 5's cislunar system and four reference frames. Interactive tool tut6.html:
+   the five Lagrange points, a 1-D force-balance diagram, an L2 halo orbit, TESS (2:1 resonance),
+   and a live fan-release chaos sandbox. Language rule: no fictitious-force jargon anywhere. */
 const WORKSHEET = {
-  intro: [
-    'Module 6 (Observability) — placeholder. This module will cover HOW we actually see and measure space objects: reflected sunlight and satellite illumination (the same physics as Moon phases), eclipse/shadow, radar vs. optical, the telescope field of view, and how a streaked image yields a position and a motion.',
+  objectives: [
+    'why an object at a <b>Lagrange point</b> keeps the <b>same 27.3-day period as the Moon</b>, even though it sits at a different distance from Earth.',
+    'how, along the Earth–Moon line, the Moon’s pull <b>cancels part of</b> Earth’s at L1 but <b>adds to</b> it at L2 — so both still match the lunar period.',
+    'why <b>L1 and L2 are unstable</b> (a golf ball on a basketball) so spacecraft fly looping <b>halo orbits</b> and nudge often, while <b>L4/L5</b> are stable.',
+    'what <b>orbital resonance</b> is, using <b>TESS</b> — a 2:1 lock with the Moon that keeps it stable for years.',
+    'why the tangled, time-changing <b>gravity of Earth + Moon + Sun</b> makes many trajectories <b>chaotic</b> — tiny differences blow up — and why that makes cislunar tracking hard.',
   ],
+
+  tutorial: [
+    'Until now you have orbited <b>either</b> the Earth <b>or</b> the Moon. Out in cislunar space you orbit <b>both at once</b>. What steers a spacecraft there isn’t a single tidy pull — it’s a <b>complex, ever-changing gravitational landscape</b> made by the Earth and the Moon together (and, more faintly, the Sun, and fainter still the other planets and big asteroids).',
+    'Deep inside the Earth’s or the Moon’s Hill sphere, that body is overwhelmingly in charge and everything else is a small nudge — a <b>perturbation</b>. But between them, near the boundary, the two pulls are comparable and the motion gets genuinely intricate. On top of all this, neither body is a perfect sphere: their real shapes and lumpy interiors put tiny extra crinkles in the landscape.',
+    { h: 'Lagrange points: matching the Moon’s pace' },
+    'In this landscape there are five special spots — the <b>Lagrange points</b>, named for an 18th-century French mathematician — where the combined pull of Earth and Moon lets an object circle the Earth in <b>exactly one lunar month (27.3 days)</b>, the same as the Moon. Because they keep pace with the Moon, they sit at fixed places on the rotating Earth–Moon line. (There’s an analogous set of <b>Earth–Sun</b> Lagrange points, where the period matches Earth’s <b>one-year</b> trip around the Sun.)',
+    { analogy: 'Picture a <b>bead on a rigid rod</b> that sweeps around once a month, with Earth at one end and the Moon out along it. The bead is forced to stay on the rod. Slide it to just the right spot and the leftover gravity — Earth’s pull minus or plus the Moon’s — is exactly what’s needed to swing it around with the rod. That balance spot is a Lagrange point.' },
+    'How can points at <i>different</i> distances all take 27.3 days? A moonless object closer in (like L1) would normally orbit <b>faster</b> than a month; one farther out (like L2) would orbit <b>slower</b>. The Moon fixes the mismatch. At <b>L1</b> (between Earth and Moon) the Moon pulls <i>outward</i>, partly cancelling Earth, so the pull is gentler and the object slows to a monthly pace. At <b>L2</b> (beyond the Moon) both bodies pull the same way and <i>add</i>, so the stronger pull speeds a would-be-slow object up to a monthly pace. The tool’s force-balance view shows this with arrows.',
+    { figure: '<svg viewBox="0 0 640 220" width="640" xmlns="http://www.w3.org/2000/svg"><rect width="640" height="220" fill="#f4f8fc"/>'+
+      '<line x1="40" y1="120" x2="600" y2="120" stroke="#9aa7bd" stroke-width="1.5"/>'+
+      '<circle cx="70" cy="120" r="20" fill="#2b6fb5"/><text x="70" y="124" font-size="10" fill="#fff" text-anchor="middle">Earth</text>'+
+      '<circle cx="470" cy="120" r="11" fill="#b8b2a4"/><text x="470" y="152" font-size="11" fill="#5a6270" text-anchor="middle">Moon</text>'+
+      // L1 between (blue inward long, grey outward short)
+      '<circle cx="400" cy="120" r="4" fill="#ffcf4d"/><text x="400" y="150" font-size="11" fill="#8a5a00" text-anchor="middle">L1</text>'+
+      '<path d="M400 104 l-70 0" stroke="#2b6fb5" stroke-width="2.5" marker-end="url(#ar)"/>'+
+      '<path d="M400 104 l30 0" stroke="#b8b2a4" stroke-width="2.5" marker-end="url(#ar)"/>'+
+      // L2 beyond (both inward, add)
+      '<circle cx="560" cy="120" r="4" fill="#ff8a4d"/><text x="560" y="150" font-size="11" fill="#8a5a00" text-anchor="middle">L2</text>'+
+      '<path d="M560 92 l-55 0" stroke="#2b6fb5" stroke-width="2.5" marker-end="url(#ar)"/>'+
+      '<path d="M560 92 l-30 0" stroke="#b8b2a4" stroke-width="2.5" marker-end="url(#ar)"/>'+
+      '<text x="150" y="40" font-size="12" fill="#2b6fb5">▬ Earth’s pull</text><text x="300" y="40" font-size="12" fill="#8a7f6b">▬ Moon’s pull</text>'+
+      '<text x="150" y="200" font-size="12" fill="#5a6270">At L1 the pulls oppose (gentler net); at L2 they add (stronger net) — both give a 27.3-day loop.</text>'+
+      '<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0 L7 4 L0 8 z" fill="#333"/></marker></defs></svg>',
+      caption: 'Along the Earth–Moon line: at L1 the Moon’s pull points back toward the Moon (outward from Earth), opposing Earth; at L2 both pulls point inward and add. Either way the leftover pull matches a 27.3-day orbit.' },
+    { h: 'Stable and unstable balance points' },
+    '<b>L4 and L5</b> — sixty degrees ahead of and behind the Moon — are <b>stable</b>: nudge an object and it settles back, so dust and debris can gather there on their own. <b>L1, L2, and L3</b> are <b>unstable</b> — balancing there is like a <b>golf ball perched on a basketball</b>. A real mission (like the CAPSTONE spacecraft near the Moon) can’t just park; it flies a slow looping <b>halo orbit</b> around the empty point and taps its thrusters now and then to stay. A bonus: a spacecraft this close to the Moon shows the <b>same illuminated phase the Moon does</b> at that moment — same Sun angle, so a full moon means a “full” spacecraft.',
+    { h: 'Complex orbits, resonance, and chaos' },
+    'Not everything sits at a balance point. <b>TESS</b>, a NASA telescope, rides a stretched orbit locked in a <b>2:1 resonance</b>: it laps the Earth twice for every once the Moon goes around, always meeting the Moon in the same relative spots so the Moon’s tugs cancel out over time instead of building up. That careful bookkeeping keeps it stable for years. But stray from such special paths and the Earth+Moon field turns <b>chaotic</b>: two objects released almost identically drift wildly apart within days. You’ll watch that happen — it’s the deep reason keeping track of things in cislunar space is so hard. (You’ll also recognize the Moon’s <b>tidal lock</b> here — the same face always toward Earth — as one more consequence of these gravitational tugs.)',
+  ],
+
+  // The five Lagrange points as a definitions table.
+  elements: {
+    title: 'The five Earth–Moon Lagrange points',
+    cols: ['Point', 'Where it is', 'What’s special'],
+    rows: [
+      { name:'<b>L1</b>', meaning:'Between Earth and Moon, ~83.7% of the way out (~322,000 km).',
+        tool:'Moon’s pull opposes Earth’s → gentler net pull → matches the 27.3-day period. <b>Unstable.</b>' },
+      { name:'<b>L2</b>', meaning:'Beyond the Moon, ~116% of the Earth–Moon distance (~444,000 km).',
+        tool:'Earth + Moon pulls add → stronger net pull → matches 27.3 days. <b>Unstable</b> (halo orbits + station-keeping).' },
+      { name:'<b>L3</b>', meaning:'On the far side of Earth, opposite the Moon.',
+        tool:'Matches the lunar period on the other side. <b>Unstable</b>; little practical use.' },
+      { name:'<b>L4 / L5</b>', meaning:'60° ahead of and behind the Moon along its orbit (equilateral triangle).',
+        tool:'Also match 27.3 days — and are <b>stable</b>, so dust and debris can collect there.' },
+    ],
+    foot: 'There is an analogous set of <b>Earth–Sun</b> Lagrange points, where the matching period is one <b>year</b>. Real sun-watching and deep-space telescopes park near those.',
+  },
+
   parts: [
-    { title:'PART A · What a sensor can and cannot resolve', tasks:['c4'] },
-    { title:'PART B · Getting a position from an image',      tasks:['c5'] },
-    { title:'PART C · Measuring angles (arcmin & arcsec)',    tasks:['d1','d2'] },
+    { title:'PART A · What makes cislunar space complex', blurb:'You now orbit Earth and Moon together, in an ever-changing gravity landscape.', tasks:['a1'] },
+    { title:'PART B · The five Lagrange points', blurb:'Five spots that keep the Moon’s pace — and why.', tasks:['b1','b2','b3'] },
+    { title:'PART C · Halo orbits & resonance', blurb:'How real missions live at unstable points, and what a resonance buys you.', tasks:['c1','c2'] },
+    { title:'PART D · Chaos: the fan release', blurb:'Why tiny differences blow up, slingshots and escape, and why tracking is hard.', tasks:['d1','d1b','d2'] },
   ],
-  tasks: [
-    { id:'c4', title:'Can you see its solar panels from the ground?',
-      do:'Picture a GEO satellite (~30 m across) at 36,000 km, seen through a ground telescope.',
-      observe:'a 30 m satellite at 36,000 km spans only ~0.2 arcseconds. The atmosphere blurs everything to ~1 arcsecond, so from the ground it is an unresolvable point of light — you detect it and track it, but you cannot see its shape.',
-      quiz:{ q:'Through a ground telescope, can you make out a GEO satellite’s solar panels and dish?',
-        opts:['Yes, with a big enough telescope','No — at ~0.2″ it’s far below the ~1″ atmospheric blur; it’s just a point. You’d need to fly up close (or use a space telescope)',
-              'Yes, but only at night','Only if it’s geostationary'],
-        a:1, why:'Correct — the satellite is ~0.2″ across; atmospheric “seeing” smears any ground image to ~1″, so it stays a point. From the ground you get position and brightness, not shape. Resolving components needs an inspector satellite flying alongside, or a space telescope.',
-        feedback:['Aperture can’t beat the atmosphere — seeing (~1″) blurs it regardless of telescope size.','','Darkness helps you detect it, but not resolve its ~0.2″ shape.','All GEO sats have this problem — they’re all ~36,000 km away.'] } },
-    { id:'c5', title:'How do you measure a streaked object’s position?',
-      do:'Look at a time-exposure image. A point (a tracked object) is easy to pin down — but how would you assign a position to a STREAK (a star, or an untracked satellite)?',
-      observe:'a streak records where the object was over the whole exposure. Analysts fit the streak’s two endpoints — one is the position at shutter-open, the other at shutter-close — with a precise time tagged to each, giving two timed measurements from one image (plus the direction of motion).',
-      quiz:{ q:'You have a time-exposure with a streaked object. What’s the best way to get a precise position (and even its motion) from it?',
-        opts:['You can’t — streaks are useless for position',
-              'Measure the two ENDPOINTS of the streak, each tagged with the shutter open/close time — giving two timed positions and the direction of travel',
-              'Measure only the brightest single pixel','Average the whole streak into one blurry blob'],
-        a:1, why:'Correct — the streak’s endpoints are the object’s positions at shutter-open and shutter-close. Tag each with its precise time and you get TWO position measurements (and the motion direction/rate) from a single frame. For an untracked object this is how one image yields a mini-track. (A point source, by contrast, is measured to a fraction of a pixel by finding its brightness center.)',
-        feedback:['Streaks are actually information-rich — the endpoints carry timed positions.','','The brightest pixel ignores the timing and the motion the streak records.','Averaging throws away the very information (endpoints + times) that makes a streak useful.'] } },
-    { id:'d1', title:'Arcminutes and arcseconds',
-      do:'Read carefully — this is a key vocabulary. We measure positions in the sky as ANGLES.',
-      observe:'1 full circle = 360 degrees. 1 degree = 60 arcminutes (′). 1 arcminute = 60 arcseconds (″). So 1 degree = 3,600 arcseconds. (The full Moon is about ½ degree = 30 arcminutes across.)',
-      quiz:{ q:'How many arcseconds are in one degree?',
-        opts:['60','360','3,600','86,400'],
-        a:2, why:'Correct — 60 arcminutes per degree × 60 arcseconds per arcminute = 3,600 arcseconds in a degree. Arcseconds are tiny: a satellite’s position is often pinned to a few arcseconds.',
-        feedback:['60 is arcminutes per degree — you need one more factor of 60 for arcseconds.','360 is degrees in a full circle, not arcseconds in a degree.','','86,400 is the number of SECONDS OF TIME in a day — a different thing entirely (that’s the trap in the next question!).'] } },
-    { id:'d2', title:'Don’t confuse arcseconds with seconds of TIME',
-      do:'Think about the two very different meanings of “second.”',
-      observe:'a SECOND OF TIME is 1/86,400 of a day (24 h × 60 × 60). An ARCSECOND is 1/1,296,000 of a full circle (360° × 60 × 60) — a measure of ANGLE, not time. Same word, totally different quantity. A fixed telescope watches stars drift at about 15 arcseconds of ANGLE per second of TIME.',
-      quiz:{ q:'“Arcseconds” and “seconds” sound alike but mean different things. Which statement is correct?',
-        opts:['They’re the same unit','An arcsecond measures ANGLE (1/3600 of a degree); a second measures TIME (1/86,400 of a day)','An arcsecond is 60 seconds of time','Both measure time'],
-        a:1, why:'Correct — an arcsecond is an angle (1/3600 of a degree), a second is a duration. Stars streak past a fixed telescope at ~15 arcseconds of angle per second of time — the number ties the two together but they are NOT the same unit.',
-        feedback:['They only sound alike — one is angle, one is time.','','An arcsecond has nothing to do with 60 seconds of time.','Only one of them measures time; the other measures angle.'] } },
+
+  summary: [
+    'Cislunar trajectories are set by the <b>combined, time-changing gravity of Earth + Moon</b> (with the Sun and others as smaller nudges, and even the bodies’ non-spherical shapes adding crinkles).',
+    'The five <b>Lagrange points</b> are spots where Earth + Moon together give an object the <b>Moon’s own 27.3-day period</b>, so it holds station on the rotating Earth–Moon line.',
+    'At <b>L1</b> the Moon’s pull opposes Earth’s (gentler net pull); at <b>L2</b> the two pulls add (stronger net pull). Either way the leftover pull is exactly what a 27.3-day loop needs — so “balance” does <b>not</b> mean zero pull.',
+    '<b>L1/L2/L3 are unstable</b> (a golf ball on a basketball) — missions fly small looping <b>halo orbits</b> and nudge often. <b>L4/L5 are stable</b>, so dust and debris can gather there.',
+    'There are analogous <b>Earth–Sun</b> Lagrange points with a <b>one-year</b> period.',
+    'A spacecraft near the Moon shows the <b>same illuminated phase</b> as the Moon at that moment (same Sun angle).',
+    'The Moon is <b>tidally locked</b> — one face always toward Earth — because gravity locked its spin to its orbit. In the Moon-fixed frame the Sun still circles once a month, driving the phases.',
+    '<b>Orbital resonance</b> (e.g. TESS’s 2:1 lock with the Moon) can make a complex orbit <b>stable</b> by arranging the Moon’s repeated tugs to cancel over time.',
+    'Away from such special paths, Earth+Moon gravity is <b>chaotic</b>: near-identical starts diverge within days. That sensitivity is why long-term cislunar tracking is genuinely hard.',
+    'A close lunar pass acts as a <b>gravitational slingshot</b>: it can fling an object in almost any direction, and can even add enough speed to make it <b>unbound</b> — escaping the Earth–Moon system entirely.',
   ],
-  summary: [],
+
   resources: [
-    { t:'Minute and second of arc', u:'https://en.wikipedia.org/wiki/Minute_and_second_of_arc' },
-    { t:'Astronomical seeing (atmospheric blur)', u:'https://en.wikipedia.org/wiki/Astronomical_seeing' },
-    { t:'Astrometry', u:'https://en.wikipedia.org/wiki/Astrometry' },
+    { t:'Lagrange point — Wikipedia', u:'https://en.wikipedia.org/wiki/Lagrange_point' },
+    { t:'Halo orbit — Wikipedia', u:'https://en.wikipedia.org/wiki/Halo_orbit' },
+    { t:'CAPSTONE (near-rectilinear halo orbit)', u:'https://en.wikipedia.org/wiki/CAPSTONE_(spacecraft)' },
+    { t:'TESS (Transiting Exoplanet Survey Satellite) — 2:1 lunar resonance', u:'https://en.wikipedia.org/wiki/Transiting_Exoplanet_Survey_Satellite' },
+    { t:'Orbital resonance — Wikipedia', u:'https://en.wikipedia.org/wiki/Orbital_resonance' },
+    { t:'Tidal locking (why one face) — Wikipedia', u:'https://en.wikipedia.org/wiki/Tidal_locking' },
+    { t:'Three-body problem & chaos — Wikipedia', u:'https://en.wikipedia.org/wiki/Three-body_problem' },
+    { t:'Joseph-Louis Lagrange — Wikipedia', u:'https://en.wikipedia.org/wiki/Joseph-Louis_Lagrange' },
+  ],
+
+  tasks: [
+    // ---- PART A ----
+    { id:'a1', title:'One landscape, two attractors',
+      teach:[
+        'In Module 5 you saw the tug-of-war: near the Earth, Earth wins; near the Moon, the Moon wins. Now zoom into the <b>space between</b>, where their pulls are comparable. Here there’s no single “center” to orbit — a spacecraft moves through a <b>combined gravity landscape</b> shaped by both bodies at once, and that landscape <b>turns</b> as the Moon goes around.',
+        'The Sun adds a gentler influence, and even the other planets and big asteroids nudge things at a tiny level. And because Earth and the Moon aren’t perfect spheres, their real shapes wrinkle the landscape a little more. The upshot: cislunar trajectories can be far richer than the clean ellipses of the earlier modules.',
+      ],
+      predict:'Before you look: out between Earth and the Moon, do you expect an object’s path to be a simple repeating ellipse like the ones you built earlier — or something more complicated?',
+      do:'Open the tool on the <b>five Lagrange points</b> scenario. Switch to the <b>Earth–Moon rotating (synodic)</b> frame and speed time up, then flip to <b>ECI</b> and back to feel how the whole landscape turns with the Moon.',
+      observe:'in the rotating frame the Earth, Moon, and the five marked points all hold still; in ECI the Moon (and the points) sweep around once a month.',
+      think:[
+        'Which single frame makes this system easiest to reason about, and why?',
+        'What’s the biggest influence on a spacecraft sitting halfway to the Moon — and what are the smaller “perturbations”?',
+        'Why does it help that the Lagrange points hold still in the rotating frame?',
+      ],
+      quiz:{ q:'Out in cislunar space (between Earth and Moon), what determines a spacecraft’s trajectory?',
+        opts:['Only the Earth’s gravity','The combined, ever-changing gravity of Earth and Moon together (plus smaller nudges from the Sun and others)',
+              'Only the Moon’s gravity','No gravity at all — it drifts in a straight line'],
+        a:1, why:'Correct — between the two bodies neither dominates; the path is set by their combined field, which itself turns as the Moon orbits.',
+        feedback:['Earth dominates only close in; out here the Moon matters too.','','The Moon dominates only inside its Hill sphere; out here Earth still pulls hard.','Gravity is very much in play — that’s what makes the motion complex.'] } },
+
+    // ---- PART B ----
+    { id:'b1', title:'Five points that keep the Moon’s pace',
+      teach:[
+        'Scattered through this landscape are five special spots — the <b>Lagrange points</b> — where the combined pull of Earth and Moon lets an object circle Earth in <b>exactly one lunar month</b>. Because they keep pace with the Moon, they’re fixed on the rotating Earth–Moon line: in the synodic frame they never move.',
+        'Three of them (<b>L1, L2, L3</b>) sit right on the Earth–Moon line; two (<b>L4, L5</b>) sit 60° ahead of and behind the Moon, forming equal-sided triangles with Earth and Moon. The definitions table above lists all five.',
+      ],
+      predict:'A point closer to Earth than the Moon would, on its own, want to orbit FASTER than a month; a point farther out would want to orbit SLOWER. How do you think all five points can still share the Moon’s 27.3-day period?',
+      do:'In the <b>five Lagrange points</b> scenario, switch to the synodic frame. Identify L1, L2, L3 on the line and L4/L5 off to the sides. Speed up time and confirm they hold station while everything orbits.',
+      observe:'all five markers stay locked in place in the rotating frame — each one is carrying an object around Earth at the Moon’s pace.',
+      think:[
+        'Which points are on the Earth–Moon line, and which are off it?',
+        'L4 and L5 make equal-sided triangles with Earth and the Moon — why might that symmetry matter?',
+        'What would it mean, physically, for an object to “hold still” in this rotating frame?',
+      ],
+      quiz:{ q:'What do all five Lagrange points have in common?',
+        opts:['They have zero gravity','An object placed there orbits Earth with the same 27.3-day period as the Moon, so it holds station on the rotating Earth–Moon line',
+              'They are all equally far from Earth','They are the only places a spacecraft can survive'],
+        a:1, why:'Correct — that shared lunar period is the defining feature; it’s why they sit still in the frame that turns with the Moon.',
+        feedback:['Gravity is strong there — it’s balanced to give a specific period, not zero.','','They sit at very different distances (L1 ~322,000 km, L2 ~444,000 km).','Spacecraft thrive in many orbits; L-points are just special ones.'] } },
+    { id:'b2', title:'The force balance at L1 and L2',
+      teach:[
+        'Here’s the crux — and it answers the puzzle from the last exercise. Consider a <b>bead threaded on a rigid rod</b> that sweeps around once a month, Earth at the center and the Moon out along it. The bead is <i>constrained</i> to the rod (that’s the picture the “release on the line” demo quietly assumes). Along that rod, gravity has to supply exactly the pull needed to swing the bead around with the rod.',
+        'At <b>L1</b>, between Earth and Moon, the Moon lies farther out, so its pull points <i>outward</i> — back toward the Moon, opposing Earth. The two partly cancel, leaving a <b>gentler</b> net inward pull. That’s perfect for a point this close, which would otherwise be dragged around too fast. At <b>L2</b>, beyond the Moon, both bodies pull the same way and <b>add</b>, giving a <b>stronger</b> pull — perfect for a point this far out, which would otherwise lag behind. So “balance” never means zero pull; it means the <i>leftover</i> pull matches a 27.3-day loop.',
+      ],
+      predict:'At L1, the Moon sits farther from Earth than the object does. Which way do you think the Moon’s pull points — toward Earth (adding to Earth’s pull) or away from Earth (opposing it)?',
+      do:'Open the <b>Force balance at L1 · Moon · L2</b> scenario. Compare the arrows: at L1, note the Moon’s arrow pointing back toward the Moon (opposing Earth); at L2, note both arrows pointing the same way.',
+      observe:'at L1 the Moon’s pull opposes Earth’s (net pull is reduced); at L2 the two pulls add (net pull is increased) — yet both yield the same 27.3-day period.',
+      think:[
+        'At L1, is the net inward pull bigger or smaller than Earth’s pull alone? What about at L2?',
+        'Why does a point closer in need a <i>gentler</i> pull to take a full month, while a point farther out needs a <i>stronger</i> one?',
+        'Does “balance point” mean there is no net pull on the object? (Careful!)',
+      ],
+      quiz:{ q:'At the L1 point (between Earth and the Moon), how does the Moon’s gravity affect the net pull on an object there?',
+        opts:['It adds to Earth’s pull, making the net pull stronger','It points back toward the Moon (opposing Earth), making the net inward pull gentler',
+              'It has no effect','It cancels Earth’s pull exactly, leaving zero net pull'],
+        a:1, why:'Correct — at L1 the Moon is farther out, so it pulls outward and partly cancels Earth. The gentler leftover pull is just right for a 27.3-day loop at that closer-in distance.',
+        feedback:['That’s L2, where both pulls point inward and add.','','The Moon’s pull is a big part of the story at L1.','It only partly cancels — there’s still a real inward pull, which is what carries the object around.'] } },
+    { id:'b3', title:'Stable vs. unstable balance points',
+      teach:[
+        'Not all balance points are equal. <b>L4 and L5</b> (60° ahead of and behind the Moon) are <b>stable</b>: give an object there a small nudge and it drifts back, so dust and debris naturally accumulate around them. <b>L1, L2, and L3</b> are <b>unstable</b> — parking there is like balancing a <b>golf ball on top of a basketball</b>: dead center it holds, but the slightest push and it rolls off.',
+        'That instability is why you can’t just leave a spacecraft sitting at L1 or L2. It has to fly a slow looping path <i>around</i> the empty point — a <b>halo orbit</b> — and fire its thrusters occasionally to stay near it. You’ll see one next.',
+      ],
+      predict:'If L1 and L2 are unstable like a golf ball on a basketball, what do you think a real spacecraft has to do to “stay” at one of them?',
+      do:'Back in the <b>five Lagrange points</b> scenario, picture giving a tiny nudge to an object at L4 versus at L1. (Then move on to the halo scenario to see the unstable case handled.)',
+      observe:'L4/L5 forgive a nudge (stable); L1/L2/L3 do not (unstable) — so real missions there never simply sit still.',
+      think:[
+        'Why might dust or small debris pile up at L4/L5 but not at L1/L2?',
+        'What’s the trade-off of using an unstable point like L2 anyway (why bother)?',
+        'How is “balancing a golf ball on a basketball” a good picture of an unstable equilibrium?',
+      ],
+      quiz:{ q:'Which Lagrange points are STABLE (a nudged object drifts back)?',
+        opts:['L1 and L2','L3 only','L4 and L5','All five are stable'],
+        a:2, why:'Correct — only L4 and L5 are stable; L1, L2, and L3 are unstable, so missions there fly halo orbits and nudge to stay.',
+        feedback:['L1 and L2 are the classic UNSTABLE points.','L3 is also unstable.','','L1/L2/L3 are unstable — a nudge there grows.'] } },
+
+    // ---- PART C ----
+    { id:'c1', title:'A near-rectilinear halo orbit (NRHO)',
+      teach:[
+        'Since you can’t sit still at an unstable point, the trick is to <b>loop around it</b>. A <b>halo orbit</b> is a three-dimensional loop that circles an empty Lagrange point; with occasional small thruster nudges a spacecraft can ride it for years. The exotic member of the family is the <b>near-rectilinear halo orbit (NRHO)</b> — the real path NASA’s <b>CAPSTONE</b> flew and the one the crewed <b>Gateway</b> station will use.',
+        'An NRHO is dramatically stretched and nearly <b>vertical</b>: the spacecraft <b>skims low over one lunar pole</b> (a few thousand km) and then swings <b>far out over the other pole</b> (tens of thousands of km), taking about <b>6.5 days</b> per loop. That shape is chosen on purpose — it stays in near-constant sunlight and keeps an almost unbroken radio line to Earth, while costing very little fuel to hold.',
+        'One neat consequence of being near the Moon: the spacecraft is lit by the Sun from the <b>same angle the Moon is</b>, so it shows the <b>same phase</b> — near full moon it’s a “full” spacecraft, near new moon it’s dark. Same Sun, same geometry.',
+      ],
+      predict:'A spacecraft can’t rest at an unstable Lagrange point. Before you watch: what shape of motion do you think lets it stay <i>near</i> the point without sitting exactly on it?',
+      do:'Open the <b>near-rectilinear halo (NRHO)</b> scenario. Watch the spacecraft skim low over one lunar pole and swing far out over the other. Switch frames to see how the tall loop looks from ECI vs. the synodic frame.',
+      observe:'the spacecraft never sits on the point — it rides a tall, lopsided loop, close over one pole and distant over the other, circling the empty balance point.',
+      think:[
+        'Why loop <i>around</i> the point instead of sitting on it?',
+        'Why might mission planners <i>want</i> the craft to skim one pole closely and swing far out over the other?',
+        'If the Moon is full tonight, what would this spacecraft look like to a distant observer?',
+      ],
+      quiz:{ q:'Why does a spacecraft near an unstable Lagrange point fly a looping “halo orbit” (like the NRHO) instead of parking at the point?',
+        opts:['The point is too far to reach','The point is unstable — sitting there is like balancing a golf ball on a basketball — so it loops around and nudges to stay near',
+              'Halo orbits use no fuel at all','The Moon blocks the point'],
+        a:1, why:'Correct — because the point is unstable, the spacecraft can’t rest there; a halo loop plus occasional small burns keeps it in the neighborhood.',
+        feedback:['It’s reachable — CAPSTONE did it.','','It still needs occasional station-keeping nudges; the halo just makes them small.','The point isn’t blocked; the issue is instability.'] } },
+    { id:'c2', title:'TESS and orbital resonance',
+      teach:[
+        'Some complex orbits stay stable not by balancing forces but by clever <b>timing</b>. NASA’s <b>TESS</b> telescope rides a stretched, high orbit in a <b>2:1 resonance</b> with the Moon: it goes around Earth <b>twice</b> for every <b>once</b> the Moon does. Because it always returns to the same places relative to the Moon, the Moon’s repeated tugs <b>average out</b> instead of piling up and wrecking the orbit — so TESS holds its path for years with almost no fuel.',
+        'Resonance is a recurring trick in the solar system (it also sculpts the asteroid belt and Saturn’s rings). TESS is a clean, modern cislunar example — and a good one to view in different frames, since the same path looks strikingly different depending on what you hold still.',
+      ],
+      predict:'TESS circles Earth twice for every one lunar orbit, always meeting the Moon in the same spots. Do you think the Moon’s repeated tugs will build up and wreck the orbit, or cancel out over time?',
+      do:'Open the <b>TESS</b> scenario. Watch its stretched orbit, then flip through the four frames — or use the <b>2×2 compare</b> — to see how differently the same 2:1 path reads in each.',
+      observe:'TESS traces a large ellipse that comes back to the same geometry relative to the Moon each cycle; the Moon’s tugs repeat in a way that cancels rather than accumulates.',
+      think:[
+        'What does “2:1” literally count — orbits of what, versus what?',
+        'Why does always meeting the Moon in the same places keep the orbit stable?',
+        'Which frame makes the 2:1 pattern easiest to see?',
+      ],
+      quiz:{ q:'TESS is in a 2:1 resonance with the Moon. What does that mean, and why does it help?',
+        opts:['It orbits twice as fast as light; it avoids the Moon',
+              'It laps the Earth twice for each single lunar orbit, always meeting the Moon in the same spots so the Moon’s tugs average out — keeping the orbit stable for years',
+              'It stays exactly at L2','It never comes near the Moon'],
+        a:1, why:'Correct — the 2:1 timing makes the Moon’s repeated pulls cancel over each cycle instead of accumulating, so the orbit is stable with almost no fuel.',
+        feedback:['Nothing orbits near light speed; 2:1 is a ratio of orbital periods.','','TESS is on a resonant HEO, not at a Lagrange point.','It does approach the Moon’s distance — the resonance is what keeps that safe.'] } },
+
+    // ---- PART D ----
+    { id:'d1', title:'Release a cluster — watch it scatter',
+      teach:[
+        'Away from these special stable paths, the combined Earth+Moon field is <b>chaotic</b>: a hallmark of chaos is that <b>tiny differences in starting conditions blow up</b>. Two spacecraft released almost identically will follow nearly the same path at first — then peel apart, and within days be nowhere near each other.',
+        'The <b>fan release</b> lets you see this directly. It drops a tight cluster of objects, all launched almost the same, and lets you watch how fast they scatter. The tool integrates their real motion live under Earth + Moon gravity.',
+      ],
+      predict:'You’re about to release seven objects launched within a fraction of a percent of each other. Do you think they’ll stay clustered, or spread apart — and if they spread, how quickly: hours, days, or years?',
+      do:[
+        'Open the <b>Fan release</b> scenario. Choose a release spot (try <b>near L1</b>) and a small <b>cluster spread</b> (~0.4%), then press <b>release the cluster</b>.',
+        'Watch the “current scatter” readout climb. Then try again from a <b>different spot</b> (at L2, or far out) and compare how fast they diverge.',
+        'Tighten the spread to 0.1% and release again — does starting closer together delay the blow-up much?',
+      ],
+      observe:'the cluster holds together briefly, then scatters — and once scattered, the objects’ paths are effectively uncorrelated.',
+      think:[
+        'How long (in the sim) did the cluster stay tight before blowing apart?',
+        'Did a tighter starting spread buy you much more time, or only a little?',
+        'Did the release spot change how fast things diverged?',
+      ],
+      quiz:{ q:'You release a tight cluster of nearly-identical objects in the Earth–Moon field. What happens?',
+        opts:['They stay together forever — identical starts stay identical','They hold together briefly, then scatter until their paths are uncorrelated — tiny initial differences blow up',
+              'They immediately fly apart in straight lines','They all fall into the Moon at once'],
+        a:1, why:'Correct — that sensitivity to tiny initial differences is chaos: near-identical starts diverge, quickly becoming unpredictable relative to one another.',
+        feedback:['They’re NOT identical — tiny differences are what chaos amplifies.','','They start together and diverge over time, not instantly in straight lines.','They scatter to many fates, not one shared crash.'] } },
+    { id:'d1b', title:'Lunar scatter — slingshots and escape',
+      teach:[
+        'The cluster you just released stayed near the Earth. Now launch a fan of objects on a <b>transfer orbit whose far point just reaches the Moon</b> — spread by a few degrees in aim (and slightly <b>out of the orbital plane</b>). They first <b>coast up one clean arc</b> for about nine days, then all arrive near the Moon at once. When an object passes <b>close to the Moon</b>, the Moon’s gravity swings it hard — a <b>gravitational slingshot</b> (the same trick real missions like the Voyagers used to pick up speed). A near-miss can whip an object off in almost any direction; a direct hit ends the trip.',
+        'Here’s the striking part: some of those slingshots hand an object <b>so much extra speed</b> that it exceeds Earth’s escape speed and leaves the Earth–Moon system for good — it becomes <b>unbound</b>. Whether that happens is exquisitely sensitive to the exact aim: two objects launched a few degrees apart can end up one crashing into the Moon and the other flung out of the system entirely.',
+        'The test for “unbound” is <b>energy</b>: an object is bound (stuck orbiting) if its orbital energy is negative, and unbound (escaping) once a slingshot pushes that energy to zero or above. The tool watches this for you and tallies an <b>“unbound so far”</b> count.',
+      ],
+      predict:'You’ll launch seven objects on nearly-identical transfer orbits toward the Moon, spread by just a few degrees, then let it run. Every one makes a close pass by the Moon. <b>Predict first:</b> after that slingshot, how many of the seven do you think will <b>stay bound</b> (keep looping in the system) versus get <b>flung out completely (unbound)</b>? Write down your guess before you run it.',
+      do:[
+        'Open the <b>Fan release</b> scenario and switch the <b>mode</b> to <b>🌙 lunar scatter</b>. It sets up the transfer orbits for you — the release-spot controls disappear because they’re not needed.',
+        'Press <b>▶ release</b> and watch them <b>coast up one clean arc together</b> (~9 days) before they reach the Moon and scatter. Use <kbd>,</kbd><kbd>.</kbd> to adjust the speed and let it run for <b>many months</b> afterward.',
+        'Watch the <b>“unbound so far”</b> readout. Note when an object escapes (a green banner announces each one) and roughly how long after release it happened.',
+        'Run it again. Because the outcome is so sensitive to aim, watch which paths change the most between runs.',
+      ],
+      observe:'all seven make a close lunar pass, then split fates: most stay looping (bound) but a couple are slingshotted onto escape trajectories — the “unbound” count climbs as those get flung out.',
+      think:[
+        'How close did your prediction come to the actual tally of bound vs. unbound?',
+        'What gives an escaping object its extra speed — where does that energy come from? (Hint: the Moon is moving.)',
+        'Why can two objects launched only a few degrees apart end up with completely different fates?',
+        'How is this the same physics a mission uses to get a “free” speed boost from a flyby?',
+      ],
+      quiz:{ q:'In the lunar-scatter release, several objects end up “unbound.” What does that mean, and how did it happen?',
+        opts:['Their tracking data was lost, so we can’t label them',
+              'A close pass slingshotted them past Earth’s escape speed, so they leave the Earth–Moon system for good',
+              'They ran out of fuel and drifted off','The Moon captured them into lunar orbit'],
+        a:1, why:'Correct — a close lunar flyby can add enough speed (a gravity assist) to push an object’s orbital energy above zero, so it escapes the system entirely.',
+        feedback:['“Unbound” is a physical state (positive orbital energy), not a data problem.','','These objects have no engines — the Moon’s slingshot supplies the energy.','Capture is the opposite outcome; unbound objects leave rather than settling into lunar orbit.'] } },
+    { id:'d2', title:'Why cislunar tracking is hard',
+      teach:[
+        'Put the pieces together. In simple Earth orbit, a handful of numbers (the elements from Module 3) predict where something will be far into the future. In the tangled, chaotic cislunar field, that breaks down: a small uncertainty in where an object <b>is now</b> becomes a <b>huge</b> uncertainty in where it will be later — exactly the fan-release behavior.',
+        'That’s why keeping <b>custody</b> of objects in cislunar space (a theme from Module 4) is so demanding: you must observe them <b>often</b>, because predictions go stale fast. It’s a frontier problem for space domain awareness, and it’s the practical payoff of this whole module.',
+      ],
+      predict:'Given what the fan release showed, do you expect it to be easier or harder to predict a cislunar object’s future position than a simple Earth-orbiting satellite’s — and why?',
+      do:'Reflect on the fan release you just ran. Imagine each dot is a real object you’re trying to track, and you only get to measure its position occasionally.',
+      observe:'because paths diverge so fast, a position measured today tells you less and less about tomorrow — you have to keep re-observing.',
+      think:[
+        'How does chaos turn a small “where is it now?” error into a big “where will it be?” error?',
+        'Why does that force you to observe cislunar objects more often than Earth-orbit satellites?',
+        'How does this connect to “custody” from Module 4?',
+      ],
+      quiz:{ q:'Why is predicting a cislunar object’s future position so much harder than for a simple Earth-orbiting satellite?',
+        opts:['Cislunar space has no gravity to model','The chaotic Earth+Moon field amplifies tiny “where is it now” errors into huge future errors, so predictions go stale fast and you must re-observe often',
+              'Cislunar objects move faster than light','There is no way to observe them at all'],
+        a:1, why:'Correct — chaos means small present-day uncertainties explode into large future ones, so cislunar tracking demands frequent re-observation to keep custody.',
+        feedback:['There’s plenty of gravity — it’s the complex, chaotic field that’s the problem.','','Nothing moves near light speed; the issue is sensitivity to initial conditions.','They can be observed — just not predicted far ahead without frequent updates.'] } },
+  ],
+
+  exam: [
+    { q:'What is a Lagrange point?',
+      opts:['A place with no gravity',
+            'A spot where Earth and Moon together give an object the same 27.3-day period as the Moon, so it holds station on the rotating Earth–Moon line',
+            'The point where a rocket runs out of fuel',
+            'The center of the Moon'],
+      a:1, why:'Correct — the five Lagrange points share the Moon’s orbital period, so they stay fixed relative to the Earth–Moon line.',
+      feedback:['Gravity is strong there; it’s balanced to a specific period, not zero.','','It has nothing to do with fuel.','It’s a point in space, not inside a body.'] },
+    { q:'At L1 the Moon’s pull opposes Earth’s; at L2 the two pulls add. Yet both points share the 27.3-day lunar period. Why does that work?',
+      opts:['It doesn’t — the periods are actually different',
+            'A closer-in point (L1) needs a gentler pull to take a full month, so opposing pulls help; a farther-out point (L2) needs a stronger pull, so adding pulls help',
+            'The Moon has no effect at either point',
+            'Both points are the same distance from Earth'],
+      a:1, why:'Correct — the Moon adjusts the net pull in exactly the direction each distance needs to match a monthly orbit.',
+      feedback:['They genuinely share the Moon’s period — that’s the definition.','The Moon’s pull is essential at both.','','L1 (~322,000 km) and L2 (~444,000 km) are at very different distances.'] },
+    { q:'Which statement about stability is correct?',
+      opts:['All five Lagrange points are stable','L1 and L2 are stable; L4 and L5 are unstable',
+            'L4 and L5 are stable; L1, L2, and L3 are unstable (a golf ball on a basketball)','None of them are stable'],
+      a:2, why:'Correct — only L4/L5 are stable; the collinear points L1/L2/L3 are unstable, so missions there fly halo orbits and nudge to stay.',
+      feedback:['Only L4/L5 are stable.','It’s the reverse.','','L4/L5 are genuinely stable — debris can gather there.'] },
+    { q:'L3 sits on the far side of Earth, directly opposite the Moon. Is it at a smaller or larger orbital radius than the Moon?',
+      opts:['Exactly the same radius as the Moon',
+            'A slightly LARGER radius — it lies a bit outside the Moon’s orbit',
+            'A much smaller radius, down near Earth',
+            'Its radius keeps changing, so there’s no answer'],
+      a:1, why:'Correct — measured from the barycenter (the point Earth and Moon both circle), L3 sits about 6,600 km OUTSIDE the Moon’s orbital radius. The Moon’s small extra pull, plus the fact that Earth itself circles the barycenter, means L3 must sit a touch farther out to keep the 27.3-day period. The diagram shows it just past the Moon’s ring on the opposite side.',
+      feedback:['Close, but not exact — the Moon’s pull and Earth’s own circling shift it outward.','','L3 is far out, opposite the Moon — not near Earth.','It holds a fixed radius; it shares the Moon’s steady period.'] },
+    { q:'In the lunar-scatter release, some objects become “unbound.” What happened to them?',
+      opts:['They lost radio contact','A close pass gave them a gravitational slingshot past Earth’s escape speed, so they leave the Earth–Moon system',
+            'They were captured into a stable lunar orbit','They slowed down and fell to Earth'],
+      a:1, why:'Correct — a close lunar flyby is a gravity assist; it can add enough speed to push an object’s orbital energy above zero, and it escapes the system.',
+      feedback:['“Unbound” is about orbital energy, not communications.','','Capture is the opposite outcome.','Escape means gaining speed and leaving, not slowing and falling.'] },
+    { q:'TESS stays on its complex orbit for years because it is…',
+      opts:['sitting exactly at L1','in a 2:1 resonance with the Moon, so the Moon’s repeated tugs average out instead of building up',
+            'beyond all gravity','burning its thrusters continuously'],
+      a:1, why:'Correct — the 2:1 timing arranges the Moon’s pulls to cancel over each cycle, keeping the orbit stable with almost no fuel.',
+      feedback:['TESS is on a resonant orbit, not at a Lagrange point.','Gravity is what shapes the resonance.','','The resonance is what avoids the need for constant thrusting.'] },
+    { q:'You release two nearly-identical objects in cislunar space. What does the fan-release demo show, and why does it matter?',
+      opts:['They stay together, so tracking is easy',
+            'They diverge quickly (chaos), so small “where is it now” errors explode into big future errors — making cislunar tracking hard',
+            'They orbit the Moon forever','They immediately crash'],
+      a:1, why:'Correct — chaotic divergence means predictions go stale fast, which is exactly why cislunar custody requires frequent re-observation.',
+      feedback:['They diverge — that’s the whole point of the demo.','','They scatter to many fates rather than settling into one orbit.','They don’t crash immediately; they drift apart unpredictably.'] },
   ],
 };

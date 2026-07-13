@@ -4,6 +4,18 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v2.4 — audit result: **PASS**
+The v2.4 change set is **Module 6** (three new client files — `tut6.html`, `worksheet6.html`,
+`worksheet6.data.js`), Module 4/5 worksheet content edits, and **one small `server.js` change**: an
+`'error'` handler that exits cleanly on `EADDRINUSE` (port already in use). That handler touches no
+request path, auth, session, role, or input logic — the entire auth/gating/DoS surface is unchanged.
+Module 6 is static client-side files rendered by the already-audited worksheet engine through the
+same trusted-author HTML path used since v1.0; its simulator (`tut6.html`) is self-contained with
+Three.js from the SRI-pinned CDN, no network calls, no untrusted-data DOM sinks. `t6` was added to
+`COURSE` (server-side prereq chain) — exercised by the suite (course length now 8, prereq gating
+green). Re-ran the full suite on fresh isolated servers — **34 functional + 22 security checks + DoS
+guard, all passing**. `academy_data.json` confirmed gitignored. Cleared to ship v2.4.
+
 ## v2.3 — audit result: **PASS** (re-run)
 The v2.3 change set is **four worksheet data files** (`worksheet2/3a/4/5.data.js`) only — enriched
 author-authored exercise content (`teach`/`predict`/`think`/`do` prose), rendered by the already-

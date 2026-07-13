@@ -37,13 +37,42 @@ while building Tutorial 1. Pull these in when building each module.
   tidally locked); three tilted planes → eclipses; **xGEO definition**; lead-the-Moon transfer.
 - The big learning objective = reference-frame fluency. Verified physics (see git commit / release).
 
-## Module 6 — Lagrange Points & Complex Orbits  (NEW — split out of the old mega-module 5)
-- **Potential-surface "marble" sandbox**: the effective (rotating-frame) potential with the five
-  wells/saddles; drop objects and let them roll; **release a cluster from L1** and watch it roll
-  down different sides — explore when trajectories become uncorrelated (chaos onset; unknown a priori).
-- **L1 vs L2 framing (user):** L1 is the physically-meaningful Earth–Moon balance point; **L2 is
-  NOT a force-balance saddle in the intuitive sense — it's where the orbital period matches the
-  parent body**, so a satellite stays co-linear. Say this explicitly.
+## Module 6 — Lagrange Points & Complex Orbits  ✅ BUILT (v2.5)
+- Files: `tut6.html`, `worksheet6.html`, `worksheet6.data.js`. Registered t6 (prereq t5) in quiz.js,
+  resources.html, gallery.html. 8 enriched tasks + 5-question exam.
+- Tool: five L-points (rotate with the Earth–Moon line), a 1-D force-balance arrow diagram at
+  L1/Moon/L2, an L2 halo orbit, TESS (2:1 HEO), and a LIVE RK4 fan-release chaos sandbox
+  (inertial-frame integration, no fictitious forces). Reuses Module 5's 4 frames + 2×2 compare.
+- Honors the rules: bead-on-rotating-rod framing, "balance ≠ zero pull," L1 opposes/L2 adds,
+  L4/L5 stable / L1-3 unstable, satellite-near-Moon shares the Moon's phase, no forbidden words.
+- Original detailed spec/physics for this module retained below for reference.
+
+### (original planning notes)
+- **ALL Lagrange content lives HERE** — it was fully removed from Module 5 (v2.4). Module 5 now
+  only discusses the Earth–Moon and Earth–Sun boundaries as a plain "gravity tug-of-war" / Hill
+  sphere, with a pointer to this module. The 5 markers + potential surface exist in tut5.html but
+  are hidden; reuse or move them here.
+- **LANGUAGE RULES (hard constraints, user):**
+  - NEVER use the words "centripetal" or "centrifugal" anywhere. Those fictitious forces are
+    banished course-wide. Explain motion via real gravity + the object's sideways motion.
+  - Frame L1/L2 as a **BEAD ON A ROTATING ROD**: the object is *constrained* to stay on the
+    Earth–Moon line as that line sweeps around once per month. That constraint is what's implicitly
+    imposed in the "release on the line" picture — say so explicitly. Along the rod, the balance is
+    between Earth's inward pull, the Moon's pull, and the pull needed to swing around with the rod.
+- **The L1/L2 period story (verified numbers, keep qualitative in text):**
+  - A *moonless* (Earth-only) circular orbit would take **21.5 days** at the L1 distance (326,000 km)
+    and **34.7 days** at the L2 distance (449,000 km); the actual lunar period is **27.3 days**.
+  - **L2** (beyond the Moon): from there, BOTH Earth and Moon lie on the same (inward) side, so both
+    pull inward → their pulls ADD → MORE inward pull than Earth alone → the bead must swing around
+    FASTER than the moonless 34.7 d → speeds up to match the 27.3-d lunar period. (Verified.)
+  - **L1** (between Earth and Moon): Earth pulls inward, but the Moon is farther out along the rod so
+    it pulls OUTWARD → the pulls PARTIALLY CANCEL → LESS inward pull than Earth alone → the bead
+    swings around SLOWER than the moonless 21.5 d → slows to match the 27.3-d lunar period. (Verified.)
+  - **Resolves the paradox** (user's question): "balance" at L1 does NOT mean zero net pull. On the
+    rotating rod, the leftover inward gravity (Earth minus Moon) is exactly what's needed to carry the
+    bead around once per month at that radius. Show the 21.5 / 27.3 / 34.7-day comparison as a table.
+  - Double-check the L2 add/cancel wording against geometry when building; state it plainly without
+    the forbidden words.
 - **Halo orbits**: L2 halo (CAPSTONE / near-rectilinear), Lissajous; gallery of real cislunar
   examples. **Chaotic / complex orbits** like TESS (2:1 lunar-resonant HEO); low-energy transfers.
 - **Scattering / gravity assist**: hyperbolic flyby swinging past the Moon.
@@ -59,7 +88,8 @@ while building Tutorial 1. Pull these in when building each module.
 - Builds directly on Module 4's two-step macro-maneuver and Module 5's lead-the-Moon TLI.
 
 ## Module 8 — Observability  ⭐ (was Module 6/5; most parked ideas land here)
-- **SEED CONTENT ALREADY WRITTEN:** `public/worksheet6.data.js` holds 4 tasks moved out of
+- **SEED CONTENT ALREADY WRITTEN:** `public/worksheet8.data.js` (moved from worksheet6.data.js in
+  v2.5 when Module 6 was built) holds 4 tasks moved out of
   Module 2 during the readability/balance pass — resolvability ("can you see the panels", `c4`),
   streak-endpoint astrometry (`c5`), and the arcminute/arcsecond angle unit + arcsec-vs-second-of-
   time trap (`d1`,`d2`). Fold these in (renumber ids + rename file to worksheet8.data.js) when

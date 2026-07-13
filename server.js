@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* ORBIT ACADEMY v2.3 — course-management backend. Zero external dependencies.
+/* ORBIT ACADEMY v2.4 — course-management backend. Zero external dependencies.
    - Accounts (scrypt-hashed passwords), session cookies (random tokens).
    - Per-user progress, prerequisite gating, instructor dashboard.
    - JSON file store (academy_data.json). Suitable for a training cohort, not web-scale.
@@ -167,7 +167,16 @@ const server=http.createServer((req,res)=>{
   if(url.pathname.startsWith('/api/')) return api(req,res,url).catch(err=>{ console.error(err); send(res,500,{error:'server error'}); });
   serveStatic(req,res,url.pathname);
 });
+server.on('error',err=>{
+  if(err.code==='EADDRINUSE'){
+    console.error('\n  Port '+PORT+' is already in use — Orbit Academy is probably ALREADY running.');
+    console.error('  Open http://localhost:'+PORT+' in your browser, or stop the other copy first');
+    console.error('  (find it with:  lsof -nP -iTCP:'+PORT+' -sTCP:LISTEN ).\n');
+    process.exit(1);
+  }
+  throw err;
+});
 server.listen(PORT,()=>{
-  console.log('ORBIT ACADEMY on http://localhost:'+PORT);
+  console.log('ORBIT ACADEMY on http://localhost:'+PORT+'  (fixed port — set PORT env only if you must)');
   console.log('First account registered becomes the instructor.');
 });

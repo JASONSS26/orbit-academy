@@ -2,6 +2,31 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.4 — 2026-07-12
+Adds **Module 6 — Lagrange Points & Complex Orbits** (new simulator + worksheet), completes the
+Module 4/5 physics polish, and hardens the dev server. Security audit: **PASS** (34 functional +
+22 security + DoS, all green; the only backend change is a port-conflict guard — no new auth surface).
+
+- **New Module 6** (`tut6.html`, `worksheet6.html`, `worksheet6.data.js`; registered `t6`, prereq `t5`
+  in `server.js`, `quiz.js`, `gallery.html`, `resources.html`):
+  - The **five Lagrange points** shown as ▲ markers (distinct from round bodies/satellites), with an
+    independent "show ▲ Lagrange points" overlay and a **1-D force-balance** view at L1 · Moon · L2.
+  - A **near-rectilinear halo orbit (NRHO)** — the CAPSTONE/Gateway shape — wrapping the Moon, with a
+    Kepler-timed marker that whizzes through perilune and lingers at apolune.
+  - **TESS** in 2:1 lunar resonance, and the shared 4-frame / 2×2 compare view from Module 5.
+  - A **live RK4 fan-release** chaos sandbox with two modes: *mixed fan* (a cluster blows apart) and
+    **🌙 lunar scatter** — objects launched on transfer orbits that coast one clean arc, then get a
+    gravitational slingshot off the Moon (with out-of-plane / inclination spread); some are flung
+    **unbound**, tallied live. Extended worksheet exercise (`d1b`) + exam question on slingshots/escape.
+  - Physics honored course-wide: bead-on-rotating-rod framing, "balance ≠ zero pull," L3 sits slightly
+    outside the Moon's orbit, stars fixed in inertial frames, no forbidden words.
+- **Module 4:** GTO challenge exercises (radial-vs-tangential Δv tally → the two-step transfer) and a
+  GEO-deorbit exam question (time-reverse of GTO).
+- **Module 5:** all Lagrange content removed (deferred to Module 6); "balance point" framing; TLI
+  reworked to arm→aim→launch.
+- **Server:** fixed to port **8080**; refuses to start with a clear message if the port is already in
+  use (no more silent port drift). The 4-frame compare view now starts at a sensible time rate.
+
 ## v2.3 — 2026-07-12
 Brings the whole course to the Module-1 gold standard.
 

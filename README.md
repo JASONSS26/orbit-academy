@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v2.3
+# 🛰 ORBIT ACADEMY — v2.4
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -23,7 +23,7 @@ your browser; use the main hub at `http://localhost:8080/` if you want to create
 **Even simpler, no Node at all:** open `academy/public/gallery.html` directly in a browser — every
 page works, progress saves locally. (A couple of features degrade without the server; see below.)
 
-## What's here (v2.3)
+## What's here (v2.4)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
@@ -37,7 +37,11 @@ page works, progress saves locally. (A couple of features degrade without the se
 - **Module 5 — xGEO / Cislunar Space & Reference Frames** (complete): the Earth–Moon–Sun system,
   four reference frames (ECI / synodic / MCI / Moon-fixed) with a 2×2 compare view, Hill spheres
   & Lagrange points, the potential surface, xGEO defined, and "lead-the-Moon" lunar transfers.
-- The **live simulators** (`tut1.html`–`tut5.html`) with matching camera/time controls.
+- **Module 6 — Lagrange Points & Complex Orbits** (complete): the five Lagrange points
+  (drawn as ▲ markers, with a 1-D force-balance view), near-rectilinear halo orbits (NRHO,
+  à la CAPSTONE/Gateway), TESS's 2:1 orbital resonance, and a live **RK4 fan-release** chaos
+  sandbox — including a lunar-scatter mode (transfer-orbit slingshots, some flung unbound).
+- The **live simulators** (`tut1.html`–`tut6.html`) with matching camera/time controls.
 - **Interactive worksheets** (shared engine): each opens beside its simulator with learning
   **objectives**, a one-page **tutorial** (analogy + diagram), and **numbered exercises** built on a
   **predict → act → analyze** loop — teaching prose, a "predict first" prompt, hands-on steps that
@@ -49,7 +53,7 @@ page works, progress saves locally. (A couple of features degrade without the se
 - **Backend** (`server.js`, optional): accounts, login/sessions, per-task progress, prerequisite
   gating, instructor dashboard. Zero dependencies.
 
-Modules 6–8 (Lagrange points & complex orbits; lunar transfers & Artemis; observability) are
+Modules 7–8 (lunar transfers & Artemis; observability) are
 planned — see `docs/MODULE_NOTES.md`. **Instructors:** see `docs/INSTRUCTOR_GUIDE.md` for
 download, install, hosting options, and teaching notes. (Note: standard GitHub Pages is
 world-readable even for a private repo — for authorized-only access, have reviewers clone & run
@@ -103,7 +107,7 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.3: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.4: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. All modules and the v2.x worksheet engine are
 static client-side files (no new server surface). For internet-facing use, front it with HTTPS +
