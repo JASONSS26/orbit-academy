@@ -7,6 +7,16 @@
    The server independently records the score and enforces prerequisites, so the client
    cannot unlock ahead by tampering. */
 const TUTORIALS = {
+  t7: {
+    worksheet: 'worksheet7.html',   // Module 7 — Observability
+    tool: 'tut7.html',
+    blurb: 'Radar (range⁴), optical reflected-sunlight, thermal-IR, custody & cadence, RA/DEC, parallax, and intent.',
+  },
+  t8: {
+    worksheet: 'worksheet8.html',   // Module 8 — Lunar Transfers & Artemis (capstone flight sim)
+    tool: 'tut8.html',
+    blurb: 'Fly an Artemis-class mission: plan the burns, then fly the cockpit to GEO or the Moon.',
+  },
   t6: {
     worksheet: 'worksheet6.html',   // Module 6 — Lagrange Points & Complex Orbits
     tool: 'tut6.html',
@@ -22,9 +32,9 @@ const TUTORIALS = {
     tool: 'tut4.html',
     blurb: 'Δv burns, GTO→GEO transfers, drag, radiation pressure, and sun-synchronous orbits.',
   },
-  t3a: {
-    worksheet: 'worksheet3a.html',  // Module 3 — Naming Orbits & TLEs
-    tool: 'tut3a.html',
+  t3: {
+    worksheet: 'worksheet3.html',   // Module 3 — Naming Orbits & TLEs
+    tool: 'tut3.html',
     blurb: 'The six Keplerian elements, TLEs, and why orbits like Molniya are chosen.',
   },
   t2: {

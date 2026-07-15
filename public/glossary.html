@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Glossary</title>
+<style>
+  :root{--bg:#070d18;--card:#0e1a2e;--fg:#dfe9f7;--dim:#8ba6c9;--line:#22344f;--accent:#5fd0ff;--gold:#ffcf4d;}
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(ellipse at 50% -10%,#12294a,#050a14 60%);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.55}
+  a{color:var(--accent)}
+  header{position:sticky;top:0;z-index:10;background:rgba(7,13,24,.96);border-bottom:1px solid var(--line);
+    backdrop-filter:blur(6px);padding:16px 24px}
+  .logo{font-size:20px;font-weight:bold;letter-spacing:1px;background:linear-gradient(90deg,#5fd0ff,#ffcf4d,#39d353);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-size:22px;margin:2px 0 10px}
+  .searchrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  #q{flex:1;min-width:220px;background:#0a1526;border:1px solid #2b4a70;color:#fff;font:inherit;font-size:17px;padding:11px 14px;border-radius:9px}
+  #q:focus{outline:none;border-color:var(--accent);box-shadow:0 0 12px rgba(95,208,255,.25)}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .filters button{background:#0a1526;border:1px solid #2b4a70;color:var(--dim);font:inherit;font-size:15px;padding:6px 11px;border-radius:20px;cursor:pointer}
+  .filters button.sel{background:#1f4a7a;border-color:var(--accent);color:#fff;font-weight:bold}
+  .wrap{max-width:900px;margin:0 auto;padding:20px 24px 80px}
+  .count{color:var(--dim);font-size:16px;margin:14px 0}
+  .entry{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 18px;margin:10px 0}
+  .entry .t{font-size:18px;font-weight:bold;color:#fff}
+  .entry .tag{font-size:11px;color:#04121f;background:var(--gold);border-radius:5px;padding:1px 7px;margin-left:8px;vertical-align:middle;font-weight:bold}
+  .entry .also{color:var(--dim);font-size:15px;margin-left:8px}
+  .entry .d{margin-top:6px;font-size:18px;color:var(--fg)}
+  .entry .d b{color:#fff}
+  mark{background:#ffcf4d;color:#04121f;border-radius:2px;padding:0 1px}
+  .empty{color:var(--dim);text-align:center;padding:40px;font-size:18px}
+  .util{margin-top:20px}
+  .util a{background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:8px 13px;font-size:15px;font-weight:600;text-decoration:none;margin-right:8px;display:inline-block;margin-top:6px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">◈ ORBIT ACADEMY</div>
+  <h1>📖 Glossary</h1>
+  <div class="searchrow">
+    <input id="q" type="search" placeholder="Search terms and definitions… (e.g. delta-v, parallax, Molniya)" autofocus/>
+  </div>
+  <div class="filters" id="filters"></div>
+</header>
+<div class="wrap">
+  <div class="count" id="count"></div>
+  <div id="list"></div>
+  <div class="util">
+    <a href="gallery.html">← Gallery</a>
+    <a href="resources.html">📚 Resources</a>
+    <a href="index.html">🏠 Hub</a>
+  </div>
+</div>
+
+<script src="glossary.data.js"></script>
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const MODNAMES={1:'M1 Orbits',2:'M2 Geosync',3:'M3 TLEs',4:'M4 Maneuvers',5:'M5 Cislunar',6:'M6 Lagrange',7:'M7 Transfers',8:'M8 Observability'};
+let activeMod=0;   // 0 = all
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// build module filter chips
+(function(){ const mods=[...new Set(GLOSSARY.map(e=>e.mod))].sort((a,b)=>a-b);
+  const f=$('filters'); f.innerHTML='<button data-m="0" class="sel">All ('+GLOSSARY.length+')</button>'+
+    mods.map(m=>'<button data-m="'+m+'">'+MODNAMES[m]+'</button>').join('');
+  f.querySelectorAll('button').forEach(b=>b.onclick=()=>{ activeMod=+b.dataset.m;
+    f.querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b)); render(); });
+})();
+function hl(text, q){ if(!q) return text; // highlight matches OUTSIDE html tags
+  try{ const re=new RegExp('('+q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig');
+    return text.replace(/(<[^>]+>)|([^<]+)/g,(m,tag,txt)=> tag? tag : txt.replace(re,'<mark>$1</mark>')); }
+  catch(e){ return text; } }
+function render(){ const q=$('q').value.trim().toLowerCase();
+  let items=GLOSSARY.filter(e=>activeMod===0||e.mod===activeMod);
+  if(q){ items=items.filter(e=> e.term.toLowerCase().includes(q)
+    || (e.also||[]).some(a=>a.toLowerCase().includes(q))
+    || e.defn.toLowerCase().includes(q)); }
+  items.sort((a,b)=>a.term.localeCompare(b.term));
+  $('count').textContent = items.length+' term'+(items.length===1?'':'s')+(q?' matching “'+q+'”':'')+(activeMod?' in '+MODNAMES[activeMod]:'');
+  if(!items.length){ $('list').innerHTML='<div class="empty">No terms match. Try a shorter word, or clear the filter.</div>'; return; }
+  $('list').innerHTML=items.map(e=>{
+    const also=(e.also&&e.also.length)?'<span class="also">also: '+esc(e.also.join(', '))+'</span>':'';
+    return '<div class="entry"><div class="t">'+hl(esc(e.term),q)+'<span class="tag">'+MODNAMES[e.mod].split(' ')[0]+'</span>'+also+'</div>'+
+      '<div class="d">'+hl(e.defn,q)+'</div></div>';
+  }).join('');
+}
+$('q').addEventListener('input',render);
+render();
+</script>
+</body>
+</html>

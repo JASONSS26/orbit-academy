@@ -1,23 +1,33 @@
 # Orbit Academy — deferred feature notes per module
 
 Running list of features/ideas parked for specific future tutorials, captured as they came up
-while building Tutorial 1. Pull these in when building each module.
+while building each module. Pull these in when building each module.
 
 ---
 
-## Tutorial 2 — Angular Rates & Geosync
-- Combined **top-down view + view-from-the-ground** split screen (the core teaching device).
-- Show **geosynchronous vs. geostationary** distinction explicitly.
-- Introduce **inclination / polar orbits** and their ground tracks.
-- Standard time-warp `,`/`.` with the "×N real time" indicator (already built in T1, reuse).
+## Module 1 — How Orbits Work  ✅ BUILT
+- Files: `tut1.html`, `worksheet1.html`, `worksheet1.data.js`. Registered as `t1` (no prereq — entry point).
+- Analytic-conic orbit lab: inject at a chosen altitude/speed and watch circle → ellipse → escape;
+  a marker animates via Kepler's equation (no numerical propagation, so zero drift).
+- Covers: what an orbit *is* (falling sideways fast enough to miss the Earth), speed sets the shape,
+  circular vs. escape speed, perigee/apogee, prograde vs. retrograde (CCW from the North Pole),
+  inclination, geosync/geostationary, and launch geography (eastward from Florida; polar from Vandenberg).
+- The shared time-warp `,`/`.` "×N real time" control originates here; reused by later modules.
 
-## Tutorial 3a — Naming Orbits & TLEs
+## Module 2 — Angular Rates & Geosync  ✅ BUILT
+- Files: `tut2.html`, `worksheet2.html`, `worksheet2.data.js`. Registered as `t2` (prereq t1).
+- Combined **top-down view + view-from-the-ground** split screen (the core teaching device).
+- Shows **geosynchronous vs. geostationary** explicitly; **inclination / polar orbits** & ground tracks;
+  star-vs-sat streaks with a sidereal-drive telescope. Reuses the T1 time-warp `,`/`.` control.
+
+## Module 3 — Naming Orbits & TLEs  ✅ BUILT
+- Files: `tut3.html`, `worksheet3.html`, `worksheet3.data.js`. Registered as `t3` (prereq t2).
 - Interactive TLE: drag the orbit, watch the 6 elements change (and vice-versa).
 - Orbit-regime bands: VLEO / LEO / MEO / GEO / xGEO. Define Lagrange points qualitatively
   ("past Sun–Earth L1/L2 you're mainly orbiting the Sun").
 
 ## Module 4 — Maneuvers & Perturbations  ✅ BUILT
-- Files: `tut4.html`, `worksheet4.html`, `worksheet4.data.js`. Registered as `t4` (prereq t3a).
+- Files: `tut4.html`, `worksheet4.html`, `worksheet4.data.js`. Registered as `t4` (prereq t3).
 - Burn tool (impulsive Δv: prograde/retrograde/radial), GTO→GEO Hohmann transfer, station-keeping
   (radial vs tangential), drag decay & re-entry (RK4 + exponential atmosphere), sun-sync schematic.
 - Perturbations table: drag, J2, radiation pressure, outgassing + chemical vs ion thrusters.
@@ -27,7 +37,8 @@ while building Tutorial 1. Pull these in when building each module.
 ## Module 5 — xGEO / Cislunar Space & Reference Frames  ✅ BUILT
 - Files: `tut5.html`, `worksheet5.html`, `worksheet5.data.js`. Registered as `t5` (prereq t4).
 - 3-D Cislunar Explorer: **3 zoom scales** (lunar surface / Earth–Moon / Sun–Earth) × **4 reference
-  frames** (fixed-stars, Earth co-moving, Earth–Moon rotating, Moon-locked). Real lunar-surface
+  frames** (ECI/Earth-centred inertial, Earth–Moon rotating/synodic, Moon-centred inertial/MCI,
+  ECL-EMBR/barycentric rotating). Real lunar-surface
   texture. Toggleable lunar orbiters (LRO etc.), xGEO objects, Moon Hill sphere, GEO ring,
   Lagrange points, a qualitative potential surface, Moon phases, tidal locking, and a
   "lead-the-Moon" TLI. Analytic/Keplerian motion (no live propagation).

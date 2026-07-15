@@ -14,24 +14,24 @@
   .logo{font-size:24px;font-weight:bold;letter-spacing:1px;
     background:linear-gradient(90deg,#5fd0ff,#ffcf4d,#39d353);-webkit-background-clip:text;background-clip:text;color:transparent}
   h1{font-size:22px;margin:2px 0 2px}
-  .sub{color:var(--dim);font-size:14px;margin-bottom:6px}
-  .banner{background:#123; border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:14px;color:#cfe3ff;margin:16px 0}
+  .sub{color:var(--dim);font-size:16px;margin-bottom:6px}
+  .banner{background:#123; border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:16px;color:#cfe3ff;margin:16px 0}
   .banner b{color:var(--gold)}
-  h2{font-size:15px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  h2{font-size:17px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
   .row{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start;padding:11px 0;border-bottom:1px solid #16243a}
   .row:last-child{border-bottom:0}
   .links{display:flex;flex-direction:column;gap:5px}
-  .links a{display:inline-block;background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:6px 11px;font-size:13px;font-weight:600;white-space:nowrap;width:max-content}
+  .links a{display:inline-block;background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:6px 11px;font-size:15px;font-weight:600;white-space:nowrap;width:max-content}
   .links a:hover{background:#1c3a5f;border-color:var(--accent)}
   .links a.sim{border-color:#2b6b45;color:#9be0af}
   .links a.sim:hover{background:#14331f}
-  .desc{font-size:14px;color:var(--dim)}
+  .desc{font-size:16px;color:var(--dim)}
   .desc b{color:var(--fg)}
-  .mnum{font-size:12px;color:var(--dim);letter-spacing:1px}
+  .mnum{font-size:14px;color:var(--dim);letter-spacing:1px}
   .util{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-  .util a{background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:8px 13px;font-size:13px;font-weight:600}
+  .util a{background:#12233c;border:1px solid #2b4a70;border-radius:7px;padding:8px 13px;font-size:15px;font-weight:600}
   .util a:hover{background:#1c3a5f;border-color:var(--accent)}
-  .foot{color:var(--dim);font-size:13px;margin-top:30px;line-height:1.6}
+  .foot{color:var(--dim);font-size:15px;margin-top:30px;line-height:1.6}
   code{background:#0a1526;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:12.5px;color:#cfe3ff}
 </style>
 </head>
@@ -55,6 +55,9 @@
   <div class="util">
     <a href="index.html">🏠 Main hub (sign-in, roster)</a>
     <a href="resources.html">📚 Resources by module</a>
+    <a href="final.html">🎓 Final exam &amp; certificate</a>
+    <a href="guide.html">📖 Instructor's guide</a>
+    <a href="glossary.html">📖 Glossary (searchable)</a>
     <a href="cheatsheet.html">🃏 Controls cheat sheet</a>
     <a href="controls.html">🎮 Controls reference (legacy)</a>
   </div>
@@ -74,7 +77,7 @@ const MODULES=[
    desc:'What an orbit <b>is</b> — falling sideways fast enough to keep missing the Earth. Speed sets the shape; circle vs. ellipse vs. escape; geosync; inclination.'},
   {n:2, id:'worksheet2.html', sim:'tut2.html',  title:'Angular Rates & Geosync',
    desc:'How fast a satellite <b>appears</b> to move; the geostationary belt and its 360 slots; geosync vs. geostationary; the sky from the ground; reference frames.'},
-  {n:3, id:'worksheet3a.html', sim:'tut3a.html', title:'Naming Orbits & TLEs',
+  {n:3, id:'worksheet3.html', sim:'tut3.html', title:'Naming Orbits & TLEs',
    desc:'The six numbers that <b>name</b> any orbit; perigee/apogee; the Keplerian ideal; how a Two-Line Element set encodes them; real orbits incl. Molniya/Tundra.'},
   {n:4, id:'worksheet4.html', sim:'tut4.html',  title:'Maneuvers & Perturbations',
    desc:'<b>Delta-v</b> as finite fuel; prograde vs. radial burns; the two-step transfer to GEO; escape velocity; atmospheric drag &amp; re-entry; radiation pressure; J2/sun-sync.'},
@@ -82,6 +85,10 @@ const MODULES=[
    desc:'The Earth–Moon–Sun system; the tug-of-war &amp; Hill spheres; <b>four reference frames</b> with a 2×2 compare view; defining xGEO; leading the Moon for a transfer.'},
   {n:6, id:'worksheet6.html', sim:'tut6.html',  title:'Lagrange Points & Complex Orbits',
    desc:'The five <b>Lagrange points</b> and the force balance behind them; unstable points &amp; <b>halo orbits</b>; <b>TESS</b> and orbital resonance; a live fan-release that shows cislunar <b>chaos</b>.'},
+  {n:7, id:'worksheet7.html', sim:'tut7.html',  title:'Observability',
+   desc:'How we actually <b>find and track</b> objects: <b>radar</b> (range⁴), <b>optical</b> reflected sunlight (the headlight analogy), <b>thermal-IR</b>, RA/DEC &amp; <b>parallax</b>, custody &amp; cadence, and the <b>orbitology→characterization→intent</b> ladder. This is how you’ll know the target’s orbit <i>before</i> you fly.'},
+  {n:8, id:'worksheet8.html', sim:'tut8.html',  title:'Lunar Transfers & Artemis — the capstone',
+   desc:'<b>Fly the missions you’ve trained for</b> from an Artemis-class cockpit: plan the burns in a flight computer, then execute — service a satellite at <b>GEO</b> or insert at <b>the Moon</b>. Everything from Modules 1–7 gets used in anger.'},
 ];
 const host=document.getElementById('modrows');
 host.innerHTML=MODULES.map(m=>

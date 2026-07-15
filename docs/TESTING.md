@@ -17,7 +17,7 @@ body-size guard, and prints `ALL SUITES PASSED ✅` on success (non-zero exit on
 
 **`test/functional.test.js` (28 checks)** — every page loads (incl. Modules 3 & 4 tools and
 worksheets); register → 6-module course → t1 unlocked/t2 locked → complete 11 worksheet tasks →
-t1 passes → t2 unlocks → all tasks recorded → progress persists on resume → t3a locked before
+t1 passes → t2 unlocks → all tasks recorded → progress persists on resume → t3 locked before
 t2 / unlocked after → partial progress saved → instructor roster lists users and pass state →
 logout+login round-trip.
 

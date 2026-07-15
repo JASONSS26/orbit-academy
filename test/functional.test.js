@@ -18,7 +18,7 @@ let pass=0,fail=0; const P=(n,ok,x)=>{console.log((ok?'  ✓ ':'  ✗ FAIL ')+n+
     ['/tut1.html','How orbits work'],['/controls.html','Simulator Controls'],
     ['/quiz.js','TUTORIALS'],['/worksheet1.data.js','WORKSHEET'],
     ['/tut2.html','Angular Rates'],['/worksheet2.html','Angular Rates'],['/worksheet2.data.js','WORKSHEET'],['/tut2.data.js','GEO_SATS'],
-    ['/tut3a.html','Naming Orbits'],['/worksheet3a.html','Naming Orbits'],['/worksheet3a.data.js','WORKSHEET'],
+    ['/tut3.html','Naming Orbits'],['/worksheet3.html','Naming Orbits'],['/worksheet3.data.js','WORKSHEET'],
     ['/tut4.html','Maneuvers'],['/worksheet4.html','Maneuvers'],['/worksheet4.data.js','WORKSHEET'],
     ['/tut5.html','Cislunar'],['/worksheet5.html','Cislunar'],['/worksheet5.data.js','WORKSHEET']]){
     const r=await req('GET',pg); P('page loads: '+pg,r.status===200&&r.body.includes(needle),'status '+r.status); }
@@ -38,13 +38,13 @@ let pass=0,fail=0; const P=(n,ok,x)=>{console.log((ok?'  ✓ ':'  ✗ FAIL ')+n+
   P('all 11 tasks recorded',Object.keys(p1.progress.t1.tasks).length===11,'got '+Object.keys(p1.progress.t1.tasks).length);
   P('progress persists on resume',JSON.parse((await req('GET','/api/me',null,ick)).body).user.progress.t1.passed===true);
 
-  // Module 2: t3a locked until t2 done; complete t2's 15 tasks -> t3a unlocks
-  P('t3a locked before t2',(await req('POST','/api/task',{tutorial:'t3a',task:'x',done:true,totalTasks:1},ick)).status===403);
+  // Module 2: t3 locked until t2 done; complete t2's 15 tasks -> t3 unlocks
+  P('t3 locked before t2',(await req('POST','/api/task',{tutorial:'t3',task:'x',done:true,totalTasks:1},ick)).status===403);
   const t2=['a2','a3','a4','b1','b2','b3','c1','c0','c2','c3','e1','e2','e4','e3','e5']; let l2;
   for(const t of t2) l2=await req('POST','/api/task',{tutorial:'t2',task:t,done:true,attempt:true,totalTasks:15},ick);
   const p2=JSON.parse(l2.body);
   P('t2 passed after 15 tasks',p2.progress.t2.passed===true);
-  P('t3a unlocked after t2',p2.unlocked.t3a===true);
+  P('t3 unlocked after t2',p2.unlocked.t3===true);
 
   const stu=await req('POST','/api/register',{name:'Lee',email:'lee@j.org',password:'orbits123'});
   await req('POST','/api/task',{tutorial:'t1',task:'a1',done:true,attempt:true,totalTasks:11},stu.cookie);

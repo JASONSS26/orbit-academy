@@ -43,10 +43,12 @@
 const MODS=[
   {id:'t1', num:1, title:'How Orbits Work',            file:'worksheet1.data.js'},
   {id:'t2', num:2, title:'Angular Rates & Geosync',    file:'worksheet2.data.js'},
-  {id:'t3a',num:3, title:'Naming Orbits & TLEs',       file:'worksheet3a.data.js'},
+  {id:'t3', num:3, title:'Naming Orbits & TLEs',       file:'worksheet3.data.js'},
   {id:'t4', num:4, title:'Maneuvers & Perturbations',  file:'worksheet4.data.js'},
   {id:'t5', num:5, title:'xGEO & Cislunar Space',      file:'worksheet5.data.js'},
   {id:'t6', num:6, title:'Lagrange Points & Complex Orbits', file:'worksheet6.data.js'},
+  {id:'t7', num:7, title:'Observability', file:'worksheet7.data.js'},
+  {id:'t8', num:8, title:'Lunar Transfers & Artemis', file:'worksheet8.data.js'},
 ];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function loadAll(){

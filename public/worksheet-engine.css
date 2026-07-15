@@ -71,6 +71,7 @@ table.elem tr:hover td{background:#f0f5fb}
 .opt:hover{border-color:var(--accent);background:#f0f5fb}
 .opt.correct{background:#e3f4e6;border-color:var(--grn)}
 .opt.wrong{background:#f9e2e0;border-color:var(--red)}
+.opt.sel{background:#e0ecfb;border-color:#4f86d0}
 .fb{margin-top:14px;padding:14px 16px;border-radius:6px;font-size:16px;display:none}
 .fb.ok{background:#e3f4e6;border:1px solid var(--grn);color:#124a1d;display:block}
 .fb.no{background:#f9e2e0;border:1px solid var(--red);color:#6b1712;display:block}

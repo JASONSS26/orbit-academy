@@ -26,7 +26,13 @@ Live 3-D simulator + guided worksheets + quizzes + a course-management backend.
 
 ## Release workflow (every version)
 1. Bump the version (server.js header, README, docs/CHANGELOG.md).
-2. Update docs.
+2. **Update ALL documentation — this is a definitive release gate, not optional.** Every version MUST
+   reconcile: `README.md` (title version, "What's here" heading, the FULL module list incl. any newly
+   built modules, security-audit version line, and remove stale "planned"/"in development" lines);
+   `docs/CHANGELOG.md` (new dated entry); `docs/INSTRUCTOR_GUIDE.md` (module order + per-module status);
+   `docs/MODULE_NOTES.md`, `docs/TODO.md`, `docs/SECURITY.md`. Then **grep the repo for the OLD version
+   string and for stale status words** ("planned", "in development", "coming soon", removed feature/frame
+   names) and fix every hit. A doc edit is NOT done until it is pushed — verify the rendered GitHub README.
 3. Run the **security audit** in `docs/SECURITY.md` — this backend has a real auth surface
    (accounts, sessions, roles, progress writes). Test: path traversal, unauth access, priv-esc,
    session forgery, prereq bypass, input validation, DoS body-size, XSS, secrets.

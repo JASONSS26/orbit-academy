@@ -46,7 +46,7 @@ const WORKSHEET = {
     { id:'a3', title:'Rock & Roll over the Americas',
       teach:[
         'Here’s the payoff of hovering. From 35,800 km up, a single geostationary satellite can “see” an entire continent at once — its view stretches from Canada to Chile. And because it holds over one fixed longitude, everyone underneath can point a small antenna at it once and never touch it again.',
-        'That combination is exactly what satellite radio needs. <b>SiriusXM</b>’s satellites — nicknamed <b>Rock</b> and <b>Roll</b> — are parked over the Americas so one broadcast blankets the whole hemisphere, and so the tiny fixed antenna on a car roof keeps receiving without ever having to track or re-aim as the car drives around. Park the satellite over your customers, and you cover your entire market with a single signal.',
+        'That combination is exactly what satellite radio needs. <b>SiriusXM</b>’s satellites — nicknamed <b>Rock</b> and <b>Roll</b> — are parked over the Americas so one broadcast covers a huge footprint — about a third of the globe — and so the tiny fixed antenna on a car roof keeps receiving without ever having to track or re-aim as the car drives around. Park the satellite over your customers, and you cover your entire market with a single signal.',
       ],
       predict:'Before you find them: a radio company wants millions of drivers to get their signal on a cheap little antenna that never moves. Where over the Earth would you want to park the broadcasting satellite, and why?',
       do:'Find the <b>XM “Rock”</b> and <b>“Roll”</b> satellites in the belt (SiriusXM radio), parked over the Americas. Trace the longitude straight down to the ground beneath them and note which part of the world sits in their footprint.',
@@ -137,8 +137,8 @@ const WORKSHEET = {
         'Now switch to the ground and look up through a telescope. Here’s the crucial fact: your telescope is bolted to the Earth, and the Earth is spinning. So from the telescope’s point of view, everything that <i>doesn’t</i> share the Earth’s spin appears to sweep across the sky.',
         'The distant <b>stars</b> don’t turn with the Earth, so over a long exposure they smear into <b>streaks</b>. But a <b>geostationary satellite</b> does share the Earth’s spin — it turns in lockstep with the ground and the telescope — so it stays put in the frame as a single still <b>dot</b>. This contrast is not just a curiosity: it’s exactly how ground sensors hunt for GEO satellites. Take a time exposure, and the one thing that stays a sharp dot against a field of star-streaks is your target.',
       ],
-      predict:'Before you speed up time: your telescope is fixed to the spinning Earth. In a long exposure, which will smear into streaks — the distant stars, the geostationary satellite, both, or neither?',
-      do:'Look at the <b>telescope view</b> (right) with <b>track</b> OFF (fixed to the ground). Speed up time and let the exposure build up so you can clearly see which points stay sharp and which trail.',
+      predict:'Before you take the picture: your telescope is fixed to the spinning Earth. In a long exposure, which will smear into streaks — the distant stars, the geostationary satellite, both, or neither?',
+      do:'In the <b>telescope view</b> (right), leave the drive on <b>track a GEO SATELLITE</b> (a GEO sat is bolted to the same spinning Earth as the scope, so this holds it still). Press <b>📷 TAKE A PICTURE (4 min exposure)</b> and see which points stay sharp and which trail into streaks.',
       observe:'the stars smear into streaks while the geostationary satellite stays a single still dot.',
       think:[
         'Why can’t the stars stay as sharp dots when the telescope is bolted to a spinning Earth?',
@@ -155,7 +155,7 @@ const WORKSHEET = {
         'The reason is that the Earth itself spins <b>west-to-east</b> beneath you. Because you’re riding on that turning ground, everything out in the sky <i>appears</i> to slide the opposite way — from <b>east to west</b> — making one complete lap in a single day. So the star-streaks in your telescope all drift the same direction the Sun does.',
       ],
       predict:'Before you watch the drift: the Sun and Moon rise in the east and set in the west. Which way do you predict the star-streaks in the telescope field will move — east to west, or west to east?',
-      do:'With the telescope <b>fixed to the ground</b> (track OFF) and time sped up, watch the direction the star streaks move across the 5°×5° field. Slow time back down and speed it up again to confirm the direction holds steady.',
+      do:'With the drive on <b>track a GEO SATELLITE</b> (scope fixed to the ground), let time run and watch the direction the star streaks drift across the 5°×5° field. Speed time up and slow it down to confirm the drift direction holds steady.',
       observe:'the whole field of stars drifts steadily in one horizontal direction across the frame.',
       think:[
         'Which way does the Earth spin — and why does that make the sky appear to move the opposite way?',
@@ -172,7 +172,7 @@ const WORKSHEET = {
         'But here’s the catch you can’t escape: the stars and a GEO satellite move differently across your sky, so you can only ever freeze <i>one</i> of them. Turn the sidereal drive on and the stars snap into sharp points — but now the geostationary satellite, which moves with the Earth and not the stars, trails into a streak. Whichever you choose to follow, the other one smears. There’s no setting that freezes both at once.',
       ],
       predict:'Before you flip the switch: you saw the stars streak while the satellite held still. If you now turn the telescope to follow the stars instead, which one do you predict will streak?',
-      do:'Turn <b>track</b> ON (a <i>sidereal</i> drive — “sidereal” just means “relative to the stars,” so the scope slowly turns to follow them). Watch what changes. Toggle <b>track</b> OFF and ON a few times and note how the dot and the streak swap each time.',
+      do:'Switch the drive to <b>track the STARS (sidereal drive)</b> — “sidereal” just means “relative to the stars,” so the scope slowly turns to follow them. Watch what changes. Flip between <b>track the STARS</b> and <b>track a GEO SATELLITE</b> a few times and note how the dot and the streak swap each time.',
       observe:'with the drive on, the stars freeze into sharp points and the geostationary satellite now trails into a streak.',
       think:[
         'When you follow the stars, why does the satellite — which moves with the Earth, not the stars — start to streak?',
@@ -185,12 +185,12 @@ const WORKSHEET = {
         feedback:['You’re now following the stars, so they’re frozen.','','Something always moves — the two don’t share the same motion.','Only one streaks — the one you’re NOT following.'] } },
     { id:'c3', title:'Sky rotation vs. latitude',
       teach:[
-        'How fast the sky appears to spin overhead isn’t the same everywhere on Earth — it depends on your <b>latitude</b>. The whole sky turns around an invisible axis, the extension of Earth’s spin axis, and where that axis sits in your sky changes everything about the view.',
+        'How fast a star <b>directly overhead</b> appears to move isn’t the same everywhere on Earth — it depends on your <b>latitude</b>. The whole sky turns around an invisible axis, the extension of Earth’s spin axis, and where that axis sits in your sky changes everything about the view.',
         'At the <b>North Pole</b>, that axis points straight up, so the sky wheels around the point directly overhead. The star sitting almost exactly on that axis — <b>Polaris</b>, the North Star — barely moves at all, while everything else circles slowly around it. At the <b>equator</b>, that same axis lies flat on the horizon, so stars rise straight up in the east, arc all the way overhead, and set in the west — the fastest, most sweeping motion you can see. Your latitude decides which of these skies you get.',
       ],
-      predict:'Before you move the slider: as you travel from the equator up to the North Pole, do you expect the stars directly overhead to move faster, slower, or the same — and what do you think happens to the star right at the pole?',
-      do:'Drag the <b>observer latitude</b> slider from 0° (equator) up to 90° (North Pole) and watch the star motion in the scope. Sweep the slider back and forth between the two extremes and compare how the overhead motion changes.',
-      observe:'at the equator the overhead stars sweep across fastest; near the pole they circle a fixed point, and the pole star barely moves.',
+      predict:'As you imagine traveling from the equator up to the North Pole, do you expect the stars directly overhead to move faster, slower, or the same — and what do you think happens to the star right at the pole?',
+      do:'In the scope, watch the stars drift with the <b>sidereal drive</b> off — that sweep is the sky you’d see from near the equator, where the rotation axis lies on the horizon. Now reason it through: at the North Pole the same axis points straight up, so the sky instead wheels around the zenith. Picture that wheeling motion, then take the check below.',
+      observe:'the drift you see in the scope is the fast, sweeping equatorial sky (axis on the horizon); from the pole the sky would instead rotate around the point straight overhead, so the star nearest the axis — Polaris — would barely move.',
       think:[
         'At the North Pole, why does Polaris sit nearly still while other stars circle around it?',
         'At the equator, where is the sky’s rotation axis — and why does that make overhead stars sweep by so fast?',

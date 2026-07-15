@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Orbit Academy — Module 7: Observability</title>
+<style>
+  :root{--fg:#dfe9f7;--dim:#93aacb;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--red:#ff6b6b;--bg:#060b16;}
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% -20%,#122a4c,#05080f 55%);
+    color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:21px;line-height:1.55}
+  header{background:rgba(6,12,24,.92);border-bottom:1px solid #23406a;padding:16px 26px;position:sticky;top:0;z-index:20;backdrop-filter:blur(6px)}
+  header h1{margin:0;font-size:32px;color:#fff;letter-spacing:.5px}
+  header .sub{color:var(--dim);font-size:19px;margin-top:3px}
+  .wrap{max-width:2000px;width:98vw;margin:0 auto;padding:22px}
+  /* scenario tabs */
+  .tabs{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:20px}
+  .tabs button{background:rgba(20,40,66,.8);border:1px solid #2b5686;color:#dfe9f7;font:inherit;font-size:19px;
+    padding:11px 18px;border-radius:9px;cursor:pointer;transition:.15s}
+  .tabs button:hover{border-color:var(--cyan)}
+  .tabs button.sel{background:linear-gradient(#1f5a8a,#12406a);border-color:var(--cyan);color:#fff;font-weight:bold;box-shadow:0 0 14px rgba(95,208,255,.25)}
+  .scene{display:none}
+  .scene.on{display:block;animation:fade .3s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .card{background:rgba(9,17,32,.82);border:1px solid #23406a;border-radius:12px;padding:22px 24px;margin-bottom:18px;box-shadow:0 4px 24px rgba(0,0,0,.35)}
+  .card h2{margin:0 0 6px;font-size:29px;color:var(--accent)}
+  .card .lede{color:var(--fg);font-size:21px;margin-bottom:16px;line-height:1.6}
+  .card .lede b{color:#fff}
+  canvas{width:100%;background:#020509;border:1px solid #1a3252;border-radius:10px;display:block}
+  .ctl{display:flex;align-items:center;gap:16px;margin-top:16px;flex-wrap:wrap}
+  .ctl label{font-size:20px;color:var(--dim);display:flex;align-items:center;gap:9px}
+  input[type=range]{accent-color:var(--cyan);width:240px;height:22px}
+  .kv{display:inline-flex;gap:7px;font-size:20px;background:#0b1930;border:1px solid #2b4a70;border-radius:8px;padding:7px 14px}
+  .kv b{color:#fff}
+  .btn{background:linear-gradient(#26436b,#173154);border:1px solid var(--cyan);color:#fff;font:inherit;font-size:20px;font-weight:bold;padding:11px 20px;border-radius:9px;cursor:pointer}
+  .btn:hover{box-shadow:0 0 14px rgba(95,208,255,.35)}
+  .btn.gold{background:linear-gradient(#5a4210,#3a2a08);border-color:var(--accent);color:#ffe38a}
+  .seg{display:inline-flex;gap:0;border:1px solid #2b4a70;border-radius:9px;overflow:hidden}
+  .seg button{background:#0b1930;border:0;border-right:1px solid #2b4a70;color:#cfe3ff;font:inherit;font-size:18px;padding:9px 16px;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.sel{background:#1f4a7a;color:#fff;font-weight:bold}
+  .note{color:var(--dim);font-size:19px;margin-top:14px;line-height:1.6}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  a{color:var(--cyan)}
+  .foot{text-align:center;color:var(--dim);font-size:19px;margin:26px 0}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous" referrerpolicy="no-referrer" onerror="window.__noThree=true"></script>
+</head>
+<body>
+<header>
+  <h1>⑦ Observability — how we actually see space</h1>
+  <div class="sub">Take telescope pictures · watch satellite phases · read RA/DEC coordinates · tag &amp; fit an orbit · radar range⁴ &amp; integration</div>
+</header>
+<div class="wrap">
+  <div class="tabs" id="tabs">
+    <button data-s="phase" class="sel" onclick="showScene('phase')">🌒 GEO phases</button>
+    <button data-s="radec" onclick="showScene('radec')">🌐 RA / DEC coordinates</button>
+    <button data-s="cam"   onclick="showScene('cam')">📷 Take a picture</button>
+    <button data-s="iod"   onclick="showScene('iod')">🎯 Tag &amp; fit an orbit</button>
+    <button data-s="radar" onclick="showScene('radar')">📡 Radar sim</button>
+  </div>
+
+  <!-- ============ SCENE: TAKE A PICTURE (streaks) ============ -->
+  <div class="scene" id="s-cam">
+    <div class="card">
+      <h2>📷 Take a picture — the two kinds of streaking</h2>
+      <div class="lede">A tracking telescope takes a <b>time exposure</b>. What streaks depends on what the mount tracks. <b>Hold on the stars</b> and satellites draw streaks; <b>lock onto a satellite</b> and the stars streak instead. Either way, the streak is data — its endpoints are two timed positions.</div>
+      <div class="seg" style="margin-bottom:10px">
+        <button id="modeStars" class="sel" onclick="setCamMode('stars')">mount tracks the STARS</button>
+        <button id="modeSat" onclick="setCamMode('sat')">mount tracks a SATELLITE</button>
+      </div>
+      <canvas id="cam" height="380" style="width:100%;height:380px"></canvas>
+      <div class="ctl">
+        <button class="btn gold" id="shutter" onclick="takePicture()">📷 TAKE A 4-MIN EXPOSURE</button>
+        <span class="kv">exposure drift: <b>1°</b> = one GEO slot</span>
+      </div>
+      <div class="note" id="camNote">Live, everything is a moving point. Press <b>TAKE A PICTURE</b> to develop a 4-minute exposure and see what streaks. In 4 minutes the sky drifts exactly 1° (the width of one geostationary slot).</div>
+    </div>
+  </div>
+
+  <!-- ============ SCENE: SATELLITE ILLUMINATION (real rendered frames) ============ -->
+  <div class="scene on" id="s-phase">
+    <div class="card">
+      <h2>🌒 The phases of a satellite — reflected sunlight</h2>
+      <div class="lede">A satellite shines only by <b>reflected sunlight</b>, so — exactly like the Moon — it shows <b>phases</b>. Slide the <b>Sun angle</b> and watch a real rendered GEO satellite go from <b>fully lit</b>, through a bright <b>specular glint</b>, to nearly <b>dark</b> when back-lit. The inset shows the geometry: where the Sun is, and that <b>you are looking up at it from the ground</b>.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:16px;align-items:start">
+        <div>
+          <img id="satFrame" src="satellite_orbit_frames/f0000.png" alt="satellite illumination" style="width:100%;max-height:300px;object-fit:contain;background:#000;border:1px solid #1a3252;border-radius:10px;display:block"/>
+          <div class="note">A real GEO satellite (gold-foil bus, dish, solar wing), lit from the Sun angle you choose below.</div>
+        </div>
+        <div>
+          <canvas id="geoDiagram" height="300" style="width:100%;max-height:300px"></canvas>
+          <div class="note"><b>Top view:</b> the <b style="color:#ffcf4d">incident sunlight</b> arrow, and <b style="color:#5fd0ff">your eye</b> looking up from the ground. The angle between them is the <b>phase angle</b>.</div>
+        </div>
+        <div>
+          <canvas id="magPlot" height="300" style="width:100%;max-height:300px"></canvas>
+          <div class="note"><b>Light curve:</b> apparent <b>magnitude</b> vs phase angle (fainter = higher up). The <b style="color:#ff5a52">red dot</b> is the current geometry. Glint ≈ mag 4, faintest back-lit ≈ mag 14 — a <b>10-magnitude</b> swing, 10,000× in brightness (5 mag = 100×).</div>
+        </div>
+      </div>
+      <div class="ctl">
+        <label>☀ Sun angle <input id="sunAngle" type="range" min="0" max="215" value="0" style="width:320px"></label>
+        <span class="kv">phase angle: <b id="phaseAng">0°</b></span>
+        <span class="kv">lit fraction: <b id="phaseLit">100%</b></span>
+        <span class="kv">apparent mag: <b id="phaseMag">—</b></span>
+        <span class="kv" id="phaseName">full — brightest</span>
+      </div>
+      <div class="seg" style="margin-top:10px">
+        <button onclick="setSun(0)">☀ full-lit</button>
+        <button onclick="setSun(32)">✦ specular glint</button>
+        <button onclick="setSun(54)">◑ half (quarter phase)</button>
+        <button onclick="setSun(108)">🌑 back-lit (near-dark)</button>
+        <button onclick="toggleSunPlay()" id="sunPlayBtn">▶ auto-sweep</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCENE: RA/DEC ============ -->
+  <div class="scene" id="s-radec">
+    <div class="card">
+      <h2>🌐 Right Ascension &amp; Declination — latitude &amp; longitude for the sky</h2>
+      <div class="lede">Astronomers paint a coordinate grid on the sky, just like latitude/longitude on the Earth. <b>Declination (Dec)</b> is the north–south angle (like latitude): +90° at the north celestial pole, 0° on the celestial equator, −90° at the south. <b>Right Ascension (RA)</b> is the east–west angle around the equator (like longitude). Here the <b style="color:#2a9cf0">Earth</b> sits at the center of the <b>celestial sphere</b>; drag to rotate the whole view. The green ray is the direction to one object, tagged with its (RA, Dec) in <b>decimal degrees</b>.</div>
+      <canvas id="radec" height="440" style="width:100%;height:440px"></canvas>
+      <div class="ctl">
+        <label>RA <input id="raSel" type="range" min="0" max="360" step="0.5" value="60"></label><span class="kv">RA <b id="raV">60.0°</b></span>
+        <label>Dec <input id="decSel" type="range" min="-89" max="89" step="0.5" value="30"></label><span class="kv">Dec <b id="decV">+30.0°</b></span>
+      </div>
+      <div class="note"><b>RA/Dec are fixed on the sky</b> — they label a direction among the stars, not a spot over the ground. In this inertial (star-fixed) frame the <b>Earth rotates</b> underneath: a telescope bolted to the ground has its sight-line <b>sweep through RA</b> (right ascension) as the night goes on — but its <b>Dec stays constant</b>, because spinning about the polar axis changes only the east–west angle. A single image still gives just a <b>direction</b> (RA, Dec) — no distance; that needs parallax or radar.</div>
+    </div>
+  </div>
+
+  <!-- ============ SCENE: IOD — TAG & FIT AN ORBIT ============ -->
+  <div class="scene" id="s-iod">
+    <div class="card">
+      <h2>🎯 Initial orbit determination — tag the satellite, watch the orbit converge</h2>
+      <div class="lede">This is how it really works. The telescope <b>tracks the satellite</b>, so in each exposure the <b>stars trail into streaks</b> and the satellite stays a crisp <b>point</b>. <b>Click that point.</b> The plate-solver finds the <b>centers of ~10 star streaks</b> (their known catalog positions define the sky grid) and reads off the satellite's <b>time, RA and Dec</b> — each with a small <b>±σ ≈ 0.05″</b> measurement error. Each direction is a <b>line of sight</b> from Earth. <b>Two</b> sight-lines already pin the orbit's <b>plane</b> (their common plane through Earth's center); a <b>third and beyond over-determine</b> it, so the tiny measurement scatter turns into a finite <b>uncertainty band</b> — the translucent smear that <b>tightens onto one orbit</b> as you tag more exposures across the night.</div>
+      <div style="display:grid;grid-template-columns:1.15fr 0.85fr;gap:18px;align-items:start">
+        <div>
+          <canvas id="iodMain" height="380" style="width:100%;height:380px;cursor:crosshair"></canvas>
+          <div class="ctl">
+            <button class="btn" id="iodPrev" onclick="iodStep(-1)">◀ prev</button>
+            <span class="kv">exposure <b id="iodFrameN">1</b> / <b id="iodFrameTot">6</b></span>
+            <span class="kv">time <b id="iodFrameT">t + 0.0 h</b></span>
+            <button class="btn" id="iodNext" onclick="iodStep(1)">next ▶</button>
+          </div>
+          <div class="note" id="iodTagState">The telescope tracks the target, so <b>stars streak</b> and the satellite is the lone <b>point</b> — click it to plate-solve this exposure.</div>
+          <div style="font-weight:bold;color:var(--accent);margin:14px 0 4px">Astrometry — the satellite’s measured directions</div>
+          <table id="iodTable" style="width:100%;border-collapse:collapse;font-size:17px"></table>
+        </div>
+        <div>
+          <canvas id="iodOrbit" height="440" style="width:100%;height:440px;cursor:grab"></canvas>
+          <div class="ctl">
+            <span class="kv" id="iodFamState"><b style="color:#ff9b52">STATUS: INDETERMINATE</b> — 0 / 3+ sight-lines</span>
+            <button class="btn" onclick="iodReset()">↺ start over</button>
+          </div>
+          <div class="note">Top-down view: <b style="color:#2a9cf0">Earth</b> (to scale) at center; each tag casts a <b style="color:#5fd0ff">line of sight</b>. The translucent gold <b>band</b> is the orbit's <b>uncertainty</b> (its angular thickness = the current ±1σ); it narrows onto the <b style="color:#ffcf4d">best orbit</b> as tags accumulate, with <b style="color:#ff5a52">dots</b> where each sight-line pierces it. Left-drag pan · shift/right-drag rotate · wheel zoom.</div>
+          <div id="iodResult" class="note" style="font-size:18px;line-height:1.6;margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCENE: RADAR SIM ============ -->
+  <div class="scene" id="s-radar">
+    <div class="card">
+      <h2>📡 Radar — watch the pulse go out and the echoes come back</h2>
+      <div class="lede">A ground radar (bottom) fires a pulse — the expanding arc. Its strength <b>fades as it spreads</b>. When it reaches a target, an echo returns down its own sightline, and the <b>scope</b> (right) shows the ping at its <b>range = round-trip time</b>. The echoes span a <b>huge dynamic range</b>: by the two-way range⁴ law, LEO (800 km) returns ~7.7 <b>million</b>× stronger than GEO (42,164 km). <b>Turn up the gain</b> and you'll see the catch — the noise floor rises right along with the signal, so cranking gain <b>never</b> pulls GEO out of the grass; it only decides what <b>saturates</b>. The one thing that works is <b>pulse integration</b>: set N &gt; 1, press <b>START AVERAGING</b>, and watch the signal add up while the noise partly cancels — SNR climbs as <b>√(pulses)</b>, pulse by pulse, until the buried target finally stands clear.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+        <div><canvas id="radarSky" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">Top view: Earth at the bottom, the radar pulse expanding outward (fading as it spreads), and targets at LEO / MEO / GEO ranges. The echo returns down its sightline — GEO's round-trip is ~2× MEO's.</div></div>
+        <div><canvas id="radarScope" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">Scope: vertical axis is <b>dB</b>, horizontal is <b>range / round-trip time</b> (linear — GEO sits at ~2× MEO). Green = noise floor. Spikes above the rail are <b>saturated</b>; spikes under the noise are undetectable.</div></div>
+      </div>
+      <div class="ctl">
+        <button class="btn gold" id="radarFire" onclick="fireRadar()">📡 FIRE PULSE</button>
+        <label><input type="checkbox" id="radarAuto" onchange="0"> auto-fire</label>
+        <label>🔊 receiver gain <input id="radarGain" type="range" min="0" max="100" value="20" style="width:260px"></label>
+        <span class="kv">gain: <b id="radarGainV">+8 dB</b></span>
+      </div>
+      <div class="ctl">
+        <label>📚 integrate N pulses <input id="radarAvg" type="range" min="0" max="100" value="0" style="width:240px" oninput="radarAvgChanged()"></label>
+        <span class="kv">N = <b id="radarAvgV">1</b></span>
+        <button class="btn" id="radarStart" onclick="startAveraging()" style="display:none">▶ START AVERAGING</button>
+        <span class="kv" id="radarMsg">gain lifts signal AND noise — try integrating</span>
+      </div>
+      <div class="note">This is <b>monostatic</b> radar (transmit and receive at the same site). The lesson: <b>gain is not sensitivity.</b> Amplifying the receiver raises signal and noise together, so it can't dig a target out of the noise — only <b>integration</b> (or more transmit power, a bigger dish, or a closer target) improves the signal-to-noise ratio. Just as an optical sensor can only see a <b>sunlit</b> target, a radar can only detect an echo whose SNR clears its threshold.</div>
+    </div>
+  </div>
+
+  <div class="foot">Back to the <a href="worksheet7.html">Module 7 worksheet</a> · every scene here maps to an exercise.</div>
+</div>
+
+<script src="tut7.js"></script>
+</body>
+</html>

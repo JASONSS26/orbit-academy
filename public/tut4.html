@@ -9,17 +9,17 @@
   :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--red:#ff5a52;}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
-    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
-  #app{display:grid;grid-template-columns:330px minmax(0,1fr) 290px;height:100vh;gap:8px;padding:8px}
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
+  #app{display:grid;grid-template-columns:436px minmax(0,1fr) 383px;height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
-  h2{margin:0 0 6px;font-size:19px;color:#fff}
+  h2{margin:0 0 6px;font-size:24px;color:#fff}
   .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
-  .lab{display:flex;justify-content:space-between;font-size:14px}
+  .lab{display:flex;justify-content:space-between;font-size:18px}
   .lab b{color:var(--cyan)}
-  .q{color:var(--dim);font-size:12px;margin-bottom:2px}
-  input[type=range]{width:100%;accent-color:var(--cyan);height:20px}
-  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+  .q{color:var(--dim);font-size:16px;margin-bottom:2px}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:22px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:17px;
     padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
   button:hover{background:#1f4a7a;border-color:var(--cyan)}
   button.go{background:#1e5c33;border-color:#39d353}
@@ -28,16 +28,16 @@
   .burnrow button{margin-top:0}
   .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
   .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.7);padding:4px 9px;border-radius:6px;border:1px solid #234}
-  #banner{position:absolute;top:8px;right:10px;z-index:3;font-size:13px;padding:5px 11px;border-radius:6px;font-weight:bold;display:none;max-width:60%}
-  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.7);padding:6px 10px;border-radius:6px;border:1px solid #234}
-  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:14px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:17px;color:#fff;background:rgba(6,12,24,.7);padding:4px 9px;border-radius:6px;border:1px solid #234}
+  #banner{position:absolute;top:8px;right:10px;z-index:3;font-size:17px;padding:5px 11px;border-radius:6px;font-weight:bold;display:none;max-width:60%}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:16px;color:var(--dim);background:rgba(6,12,24,.7);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:18px;border-bottom:1px solid #12263f;padding-bottom:4px}
   .kv span:last-child{color:#fff;font-weight:bold}
-  .big{font-size:15px;color:var(--accent);font-weight:bold;margin-bottom:6px}
-  .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
-  .scen{font-size:12.5px;text-align:left;line-height:1.4;padding:9px}
+  .big{font-size:19px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  .note{color:var(--dim);font-size:16px;margin-top:8px;line-height:1.5}
+  .scen{font-size:16.5px;text-align:left;line-height:1.4;padding:9px}
   .warp{display:flex;gap:6px;align-items:center;margin-top:6px}
-  .warp button{width:34px;font-size:16px;padding:4px}
+  .warp button{width:34px;font-size:20px;padding:4px}
   .dv{color:var(--grn);font-weight:bold}
 </style>
 </head>
@@ -89,13 +89,13 @@
     </div>
 
     <div class="sec warp">
-      <span style="font-size:12px;color:var(--dim)">time&nbsp;warp</span>
+      <span style="font-size:16px;color:var(--dim)">time&nbsp;warp</span>
       <button onclick="warpDown()">−</button>
-      <span id="warpV" style="font-size:13px;color:#fff;min-width:70px;text-align:center">1×</span>
+      <span id="warpV" style="font-size:17px;color:#fff;min-width:70px;text-align:center">1×</span>
       <button onclick="warpUp()">+</button>
       <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸ pause</button>
     </div>
-    <div class="sec" style="color:var(--dim);font-size:12px">
+    <div class="sec" style="color:var(--dim);font-size:16px">
       <b style="color:var(--fg)">Controls:</b> drag = pan · shift/right-drag = rotate · wheel = zoom · arrows = rotate ·
       <b>,</b> / <b>.</b> = slow/speed time · space = pause · <b>R</b> = reset view
     </div>
@@ -114,15 +114,15 @@
     <!-- Δv gas gauge (top of panel so it's always visible) -->
     <div style="border:1px solid #24466e;border-radius:7px;padding:9px 10px;background:#0c1a2b">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
-        <span class="big" style="font-size:14px;color:var(--grn);margin:0">⛽ Δv budget</span>
-        <span style="font-size:12px;color:var(--dim)"><b id="rDv" style="color:#fff">0</b> / <span id="dvBudget">10,000</span> m/s used</span>
+        <span class="big" style="font-size:18px;color:var(--grn);margin:0">⛽ Δv budget</span>
+        <span style="font-size:16px;color:var(--dim)"><b id="rDv" style="color:#fff">0</b> / <span id="dvBudget">10,000</span> m/s used</span>
       </div>
-      <div style="color:var(--dim);font-size:11px;margin:3px 0 5px">A satellite launches with a fixed “tank” of delta-v. Every burn draws it down — when it’s empty, the mission is over.</div>
+      <div style="color:var(--dim);font-size:15px;margin:3px 0 5px">A satellite launches with a fixed “tank” of delta-v. Every burn draws it down — when it’s empty, the mission is over.</div>
       <div style="position:relative;height:22px;background:#0a1a2b;border:1px solid #1d3350;border-radius:5px;overflow:hidden">
         <div id="gaugeFill" style="position:absolute;left:0;top:0;bottom:0;width:100%;background:#39d353;transition:width .2s,background .2s"></div>
-        <div id="gaugeTxt" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#03210c;font-weight:bold;text-shadow:0 1px 1px rgba(255,255,255,.3)">FULL</div>
+        <div id="gaugeTxt" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;color:#03210c;font-weight:bold;text-shadow:0 1px 1px rgba(255,255,255,.3)">FULL</div>
       </div>
-      <div style="text-align:right;margin-top:3px"><button id="refuel" style="width:auto;font-size:11px;padding:3px 8px;margin:0">↺ refuel / reset budget</button></div>
+      <div style="text-align:right;margin-top:3px"><button id="refuel" style="width:auto;font-size:15px;padding:3px 8px;margin:0">↺ refuel / reset budget</button></div>
     </div>
 
     <div class="big" style="margin-top:12px">Orbit right now</div>
@@ -136,10 +136,10 @@
     <div class="kv"><span>elapsed time</span><span id="rT">—</span></div>
 
     <div class="sec" style="border-top:1px solid #1d3350;padding-top:8px">
-      <div class="big" style="font-size:13px;color:var(--cyan);margin-bottom:3px">📈 Altitude vs. time</div>
-      <div style="color:var(--dim);font-size:11px;margin-bottom:4px">Auto-scaled — small changes you can’t see on the globe show up clearly here. Red = apogee, green = perigee, cyan = now.</div>
+      <div class="big" style="font-size:17px;color:var(--cyan);margin-bottom:3px">📈 Altitude vs. time</div>
+      <div style="color:var(--dim);font-size:15px;margin-bottom:4px">Auto-scaled — small changes you can’t see on the globe show up clearly here. Red = apogee, green = perigee, cyan = now.</div>
       <canvas id="plot" style="width:100%;height:150px;display:block;background:#00121f;border:1px solid #16304e;border-radius:6px"></canvas>
-      <div id="plotAxis" style="display:flex;justify-content:space-between;color:var(--dim);font-size:10px;margin-top:2px"><span id="plotY0">—</span><span id="plotX">—</span></div>
+      <div id="plotAxis" style="display:flex;justify-content:space-between;color:var(--dim);font-size:12px;margin-top:2px"><span id="plotY0">—</span><span id="plotX">—</span></div>
     </div>
 
     <div id="goal" class="note" style="background:#12233a;border:1px solid #24466e;border-radius:6px;padding:9px;color:#cfe3ff;display:none"></div>
@@ -161,7 +161,7 @@
    radial-burn paradox, escape→unbound (hyperbola/scattering), radial infall,
    and sun-synchronous (circular + elliptical). Physics verified against
    textbook Hohmann Δv, escape velocity, and realistic decay lifetimes.
-   Camera: drag=rotate, shift/right-drag=pan, wheel=zoom.  Time: , . space R.
+   Camera: left-drag=pan, shift/right-drag=rotate, wheel=zoom, arrows=rotate, R=reset.  Time: , . space.
    ============================================================================ */
 const MU=398600.4418, Re=6371;
 const $=id=>document.getElementById(id);
@@ -356,7 +356,7 @@ function scenario(m){ mode=m;
   [trailLine,predLine,sat,apoM,periM].forEach(o=>o.visible=(m!=='sunsync'));
   if(m!=='sunsync'){ ssSun.visible=ssSunGlow.visible=ssRay.visible=false; sunLight.position.set(6,3,6); }
   if(m==='drag'){ $('alt').value=300; BCset(0.02); $('stitle').textContent='🌫 Drag decay & re-entry';
-    g.innerHTML='<b>Goal:</b> place a low circular orbit (try 250–400 km) and watch drag spiral it in. Note how long it survives and the impact speed (~7.8 km/s ≈ 15,000 mph). Try a lighter, higher-area object (raise area-to-mass) and watch it decay faster.'; }
+    g.innerHTML='<b>Goal:</b> place a low circular orbit (try 250–400 km) and watch drag spiral it in. Note how long it survives and the impact speed (~7.8 km/s ≈ 17,500 mph). Try a lighter, higher-area object (raise area-to-mass) and watch it decay faster.'; }
   else if(m==='gto'){ $('alt').value=400; BCset(0.005); $('stitle').textContent='🚀 GTO → GEO transfer';
     g.innerHTML='<b>The two-step macro-maneuver.</b> Any big orbit-raising follows the same recipe: <b>(1) get to the desired apogee</b> — a prograde burn low (~2,400 m/s) stretches your orbit until apogee reaches the dashed GEO ring (this ellipse is the <b>Geo-Transfer Orbit</b>). <b>(2) change speed to match the circular rate there</b> — coast to apogee, then a second prograde burn (~1,460 m/s) speeds you up to the local circular speed, rounding the orbit off at GEO. Too little → still elliptical; too much → overshoot.'; }
   else if(m==='keep'){ $('alt').value=350; BCset(0.05); $('stitle').textContent='🛰 Station-keeping: radial vs tangential';
@@ -470,6 +470,8 @@ function drawPlot(){
 /* --------------------------------- loop ----------------------------------- */
 let lastReadout=0, lastFrame=performance.now();
 function loop(ts){
+  requestAnimationFrame(loop);
+  try {
   const wall=Math.min((ts-lastFrame)/1000,0.05); lastFrame=ts;
   // arrow keys rotate the view (same as Modules 1 & 2)
   const rot=2.2*wall;
@@ -517,7 +519,8 @@ function loop(ts){
                    camTarget.y+camR*Math.cos(camPh),
                    camTarget.z+camR*Math.sin(camPh)*Math.sin(camTh));
   cam.lookAt(camTarget);
-  r3.render(scene,cam); requestAnimationFrame(loop);
+  r3.render(scene,cam);
+  } catch(e){ if(!loop._warned){loop._warned=true; console.error('tut4 loop error:',e);} }
 }
 resize(); showWarp(); bcLabel(); scenario('drag'); requestAnimationFrame(loop);
 </script>

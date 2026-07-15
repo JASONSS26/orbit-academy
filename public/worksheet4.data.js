@@ -22,7 +22,7 @@ const WORKSHEET = {
     {figure:'<svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="180" fill="#eef4fb"/><circle cx="110" cy="90" r="22" fill="#2b6fb5"/><circle cx="110" cy="90" r="60" fill="none" stroke="#1a4c8b" stroke-width="1.5" stroke-dasharray="4 3"/><ellipse cx="150" cy="90" rx="100" ry="60" fill="none" stroke="#1a4c8b" stroke-width="2"/><circle cx="110" cy="150" r="4" fill="#1a4c8b"/><path d="M110 150 l26 0" stroke="#1a4c8b" stroke-width="2" marker-end="url(#ar)"/><defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#1a4c8b"/></marker></defs><circle cx="250" cy="90" r="4" fill="#1a4c8b"/><text x="120" y="168" font-size="10" fill="#1a4c8b">prograde burn</text><text x="205" y="86" font-size="10" fill="#1a4c8b">new apogee</text></svg>', caption:'A prograde burn (arrow) leaves your burn point as the low point and lifts the far side into a taller ellipse — a higher apogee.'},
     {h:'Big moves take two steps'},
     'To reach a much higher orbit you (1) burn <b>prograde</b> to raise your apogee out to the target distance, then (2) at that apogee, burn again to <b>match the circular speed</b> there. That’s the LEO→GTO→GEO transfer. Burn hard enough (about <b>11.2 km/s</b> from the surface, less from orbit) and you reach <b>escape velocity</b>: the orbit opens up and you never come back.',
-    'Finally, in low orbits the thin upper air causes <b>drag</b>, shrinking the orbit until re-entry (~7.8 km/s, about 15,000 mph). The twist: drag drops you to a lower, <b>faster</b> orbit — so friction actually speeds you up. Because drag, sunlight, and Earth’s bulge act continuously, a satellite’s orbit is always drifting — which is why a TLE snapshot goes stale.',
+    'Finally, in low orbits the thin upper air causes <b>drag</b>, shrinking the orbit until re-entry (~7.8 km/s, about 17,500 mph). The twist: drag drops you to a lower, <b>faster</b> orbit — so friction actually speeds you up. Because drag, sunlight, and Earth’s bulge act continuously, a satellite’s orbit is always drifting — which is why a TLE snapshot goes stale.',
   ],
 
   // The perturbations reference table (reusing the worksheet's `elements` renderer).
@@ -72,7 +72,7 @@ const WORKSHEET = {
     'A big orbit change is a <b>two-step macro-maneuver</b>: <b>(1)</b> burn to raise your apogee out to the desired distance; <b>(2)</b> at that apogee, change speed to match the <b>circular speed</b> there, which circularizes the orbit. Same recipe for any Hohmann-type transfer.',
     'A <b>GTO (geo-transfer orbit)</b> is the ellipse of step 1: low perigee, apogee at GEO. The step-2 <b>“goldilocks” prograde burn (~1.46 km/s)</b> at apogee circularizes it. LEO→GEO totals ~3.9 km/s.',
     '<b>Escape velocity</b> = √2 × the local circular speed: <b>11.2 km/s from the surface</b> (~10 km/s from a 1,500 km orbit). Reach it and eccentricity hits 1.0 — the closed ellipse opens into an <b>unbound hyperbola</b> and the object leaves forever (the geometry of a flyby / scattering). Escaping <b>prograde</b> is far cheaper than escaping <b>radially</b>.',
-    '<b>Atmospheric drag</b> shrinks a LEO orbit until re-entry; lower orbits decay far faster (400 km ≈ months, 250 km ≈ days). Objects re-enter at ~7.8 km/s (~15,000 mph). This is used to <b>dispose</b> of LEO satellites by burning them up.',
+    '<b>Atmospheric drag</b> shrinks a LEO orbit until re-entry; lower orbits decay far faster (400 km ≈ months, 250 km ≈ days). Objects re-enter at ~7.8 km/s (~17,500 mph). This is used to <b>dispose</b> of LEO satellites by burning them up.',
     'The drag “paradox”: losing energy to drag drops the satellite to a lower orbit where orbital speed is <i>higher</i> — so drag effectively makes it speed up.',
     '<b>Radiation pressure</b> and drag both scale with <b>area ÷ mass</b>. <b>HAMR</b> objects (high area-to-mass — foil, insulation, bags) are flung around by sunlight and, being flimsy and tumbling, change their area unpredictably, so their orbits are notoriously hard to forecast. The same physics is the basis of <b>solar sails</b>.',
     'Earth’s bulge (<b>J2</b>) torques the orbit plane so it swivels. Choosing an inclination (~98°) makes it swivel <b>0.9856°/day = one turn per year</b>: a <b>sun-synchronous</b> orbit that crosses each place at the same local sun time — ideal for consistent-lighting imagery.',
@@ -447,7 +447,7 @@ const WORKSHEET = {
         'Use the <b>Drag decay</b> scenario. Place a circular orbit at ~300 km and speed up time warp. Watch the spiral tighten and plunge.',
         'Reset and try ~250 km, then ~400 km, comparing how long each one survives before re-entry.',
       ],
-      observe:'the orbit slowly shrinks into a tighter spiral, then plunges. Lower starting altitudes decay dramatically faster (250 km in days; 400 km in months). At re-entry the speed is ~7.8 km/s — about 15,000 mph.',
+      observe:'the orbit slowly shrinks into a tighter spiral, then plunges. Lower starting altitudes decay dramatically faster (250 km in days; 400 km in months). At re-entry the speed is ~7.8 km/s — about 17,500 mph.',
       think:[
         'Did the survival times scale gently with altitude, or did a small drop in height make a huge difference?',
         'Why does the air get so much thicker over just a few hundred kilometers of descent?',
@@ -563,15 +563,15 @@ const WORKSHEET = {
     { id:'f2', title:'Sun-synchronous orbits: a perturbation as a feature',
       teach:[
         'Most perturbations are nuisances to fight. J2 is the rare one engineers <b>welcome</b> — because if you can’t beat the swivel, you can aim it. The trick is to make the orbit plane precess at exactly the right rate to stay locked to the Sun.',
-        'Earth goes once around the Sun per year, so the Sun’s direction shifts by about <b>0.9856° per day</b>. Pick your orbit’s inclination just right (near <b>98°</b>, a slightly-past-polar orbit) and J2 will swivel your plane by that exact amount — <b>one full turn per year</b>. Now your orbit keeps a constant angle to the Sun as the year goes by. That’s a <b>sun-synchronous</b> orbit, and it works for circular and elliptical orbits alike — what matters is the inclination, not the shape.',
+        'Earth goes once around the Sun per year, so the Sun’s direction shifts by about <b>0.9856° per day</b>. J2’s precession rate depends on the orbit’s <b>altitude, shape, and inclination</b> together — so for a <b>given altitude</b> you pick the inclination that makes the plane precess by exactly that amount (near <b>98°</b>, a slightly-past-polar orbit, for typical low sun-sync orbits) — <b>one full turn per year</b>. Now your orbit keeps a constant angle to the Sun as the year goes by. That’s a <b>sun-synchronous</b> orbit.',
         'The payoff: the satellite crosses over every location at the <b>same local sun time</b> on every pass. Same sun angle, same shadow lengths, every single time. For imaging, weather, and change-detection that consistency is gold — you can lay two images side by side and trust that differences are real changes on the ground, not just the Sun having moved.',
       ],
       predict:'Before you run the year: two sun-sync orbits (a cyan circular one and a gold elliptical one) are tilted near 98°. As a full year of J2 precession plays out, do you predict their planes will drift away from the Sun, or stay locked at the same angle to it?',
       do:[
         'In the <b>Sun-synchronous</b> scenario, speed up time and watch a full year go by. Two sun-sync orbits are drawn — a <b>circular</b> one (cyan) and an <b>elliptical</b> one (gold) — and the arriving-sunlight arrow shows the Sun’s direction.',
-        'Watch whether both planes keep the same angle to the Sun as the year turns, and note that shape (circular vs. elliptical) doesn’t change the effect — only the inclination does.',
+        'Watch whether both planes keep the same angle to the Sun as the year turns — each was given the inclination that makes its own altitude and shape precess at the sun-sync rate.',
       ],
-      observe:'if the plane swivels 0.9856°/day (one full turn per year), the orbit keeps a constant orientation to the Sun. This works for both circular and elliptical sun-sync orbits — what matters is the inclination (~98°), not the shape. The satellite crosses every location at the same local sun time, so lighting and shadows are consistent every pass.',
+      observe:'if the plane swivels 0.9856°/day (one full turn per year), the orbit keeps a constant orientation to the Sun. Both the circular and elliptical orbits stay locked because each was given the right inclination for its own altitude and shape — the designer tunes the inclination (~98° for typical low sun-sync orbits) to the precession rate. The satellite crosses every location at the same local sun time, so lighting and shadows are consistent every pass.',
       think:[
         'Did the circular and elliptical orbits both stay Sun-locked? What does that tell you about which orbital element actually sets sun-synchronicity?',
         'Why is crossing each place at the same local sun time so valuable for comparing images taken weeks apart?',
@@ -582,7 +582,7 @@ const WORKSHEET = {
               'It images every location under consistent, repeatable lighting — same sun angle and shadows each pass — which is ideal for imagery and change-detection',
               'It removes the need for any station-keeping fuel',
               'It keeps the satellite in constant sunlight so it never needs batteries'],
-        a:1, why:'Correct — crossing each place at the same local solar time means consistent illumination and shadow lengths every pass, which makes it far easier to compare images over time (weather, reconnaissance, mapping). Designers set the inclination (~98°) so J2 precesses the plane exactly one turn per year.',
+        a:1, why:'Correct — crossing each place at the same local solar time means consistent illumination and shadow lengths every pass, which makes it far easier to compare images over time (weather, reconnaissance, mapping). For a given altitude, designers set the inclination (~98° for typical low sun-sync orbits) so J2 precesses the plane exactly one turn per year.',
         feedback:['Sun-sync orbits are near-polar LEO, not hovering GEO.','','It still needs station-keeping; the benefit is lighting consistency.','It does pass through Earth’s shadow — it’s about sun angle, not constant sunlight.'] } },
 
     // ---- PART G: custody & targeted observations (moved from Module 3) ----
@@ -669,9 +669,9 @@ const WORKSHEET = {
       feedback:['It doesn’t stop; drag drops it to a lower, faster orbit, and orbits constantly drift.','Drag alone continuously changes the orbit — no burn required for elements to go stale.','','Continuous perturbations mean the orbit is always drifting, so the fixed elements do go stale.'] },
     { q:'To deorbit a satellite from GEO so it falls to Earth, roughly what does it take — and how does it compare to reaching GEO in the first place?',
       opts:['Two big burns totaling ~3,900 m/s, just like the trip up',
-            'One retrograde burn of ~1,500 m/s at GEO to drop the low point into the atmosphere — roughly the time-reverse of the apogee-raising burn, and only ONE burn',
+            'One retrograde burn of ~1,500 m/s at GEO to drop the low point into the atmosphere — roughly the time-reverse of the circularizing burn at apogee (burn 2), and only ONE burn',
             'No fuel at all — it falls on its own','A radial burn straight down toward Earth'],
-      a:1, why:'Correct — a single retrograde burn (~1,500 m/s) at GEO lowers the far side of the orbit until it dips into the atmosphere; gravity does the rest. It’s roughly the reverse of the GTO apogee-raising burn, and needs no second (circularizing) burn. (That’s also why GEO satellites are boosted ~11 m/s UP to a graveyard instead — deorbiting is ~140× more expensive.)',
+      a:1, why:'Correct — a single retrograde burn (~1,500 m/s) at GEO lowers the far side of the orbit until it dips into the atmosphere; gravity does the rest. It’s roughly the reverse of the GTO circularizing burn at apogee (burn 2), and needs no second burn. (That’s also why GEO satellites are boosted ~11 m/s UP to a graveyard instead — deorbiting is ~140× more expensive.)',
       feedback:['Deorbiting takes just ONE burn — you don’t circularize at the bottom, you let it hit.','','GEO is far too high for it to decay on its own in any reasonable time — it needs a burn.','A radial burn is inefficient; a retrograde burn (against the motion) cheaply lowers the far side.'] },
   ],
 };

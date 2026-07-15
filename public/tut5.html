@@ -9,36 +9,41 @@
   :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--moon:#d8d2c4;}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
-    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
-  #app{display:grid;grid-template-columns:340px minmax(0,1fr) 285px;height:100vh;gap:8px;padding:8px}
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
+  #app{display:grid;grid-template-columns:449px minmax(0,1fr) 376px;height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
-  h2{margin:0 0 6px;font-size:19px;color:#fff}
+  h2{margin:0 0 6px;font-size:24px;color:#fff}
   .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
-  .big{font-size:14px;color:var(--accent);font-weight:bold;margin-bottom:6px}
-  .q{color:var(--dim);font-size:12px;margin-bottom:4px}
-  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+  .big{font-size:18px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  .q{color:var(--dim);font-size:16px;margin-bottom:4px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:17px;
     padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
   button:hover{background:#1f4a7a;border-color:var(--cyan)}
   button.on{background:#1f5a3a;border-color:var(--grn)}
   .seg{display:grid;gap:5px;margin-top:5px}
   .seg.two{grid-template-columns:1fr 1fr}
-  .seg button{margin-top:0;font-size:12px;padding:7px 5px}
+  .seg button{margin-top:0;font-size:16px;padding:7px 5px}
   .seg button.sel{background:#1f4a7a;border-color:var(--cyan);color:#fff;font-weight:bold}
-  label.chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:5px 0;cursor:pointer}
+  label.chk{display:flex;align-items:center;gap:7px;font-size:17px;margin:5px 0;cursor:pointer}
   label.chk .sw{width:11px;height:11px;border-radius:3px;flex:0 0 auto}
   .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
   .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234;max-width:70%}
-  #frameTag{position:absolute;top:8px;right:10px;z-index:3;font-size:12px;color:var(--cyan);background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234}
-  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.72);padding:6px 10px;border-radius:6px;border:1px solid #234}
-  #banner{position:absolute;bottom:44px;left:10px;right:10px;z-index:3;font-size:13px;padding:6px 11px;border-radius:6px;font-weight:bold;display:none;text-align:center}
-  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:13px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:17px;color:#fff;background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234;max-width:70%}
+  #frameTag{position:absolute;top:8px;right:10px;z-index:3;font-size:16px;color:var(--cyan);background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:16px;color:var(--dim);background:rgba(6,12,24,.72);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  #banner{position:absolute;bottom:44px;left:10px;right:10px;z-index:3;font-size:17px;padding:6px 11px;border-radius:6px;font-weight:bold;display:none;text-align:center}
+  /* 2×2 compare-view dividers: a thick white cross separating the four panels (shown only in quad mode) */
+  #quadDivH,#quadDivV{position:absolute;z-index:4;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.6);display:none;pointer-events:none}
+  #quadDivH{left:0;right:0;top:50%;height:3px;transform:translateY(-50%)}
+  #quadDivV{top:0;bottom:0;left:50%;width:3px;transform:translateX(-50%)}
+  .stage.quad #quadDivH,.stage.quad #quadDivV{display:block}
+  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:17px;border-bottom:1px solid #12263f;padding-bottom:4px}
   .kv span:last-child{color:#fff;font-weight:bold;text-align:right}
-  .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
+  .note{color:var(--dim);font-size:16px;margin-top:8px;line-height:1.5}
   .warp{display:flex;gap:6px;align-items:center;margin-top:6px}
-  .warp button{width:34px;font-size:16px;padding:4px}
-  kbd{background:#13273f;border:1px solid #274266;border-radius:4px;padding:0 5px;color:#fff;font-size:12px}
+  .warp button{width:34px;font-size:20px;padding:4px}
+  kbd{background:#13273f;border:1px solid #274266;border-radius:4px;padding:0 5px;color:#fff;font-size:16px}
 </style>
 </head>
 <body>
@@ -66,7 +71,7 @@
         <button data-frame="eci"   onclick="setFrame('eci')">Earth-centred inertial (ECI) — Moon orbits Earth</button>
         <button data-frame="emrot" onclick="setFrame('emrot')">Earth–Moon rotating (synodic) — line fixed</button>
         <button data-frame="mci"   onclick="setFrame('mci')">Moon-centred inertial (MCI) — Earth orbits Moon</button>
-        <button data-frame="moonfix" onclick="setFrame('moonfix')">Moon-fixed — ride the tidally-locked Moon</button>
+        <button data-frame="embr" onclick="setFrame('embr')">ECL-EMBR — barycentric rotating (Lagrange frame)</button>
       </div>
       <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames at once (2×2)</button>
     </div>
@@ -85,7 +90,7 @@
         <!-- balance-point tick: slider spans 5–95, so the ~85% mark sits at (85-5)/90 = 88.9% of the track -->
         <div style="position:absolute;left:88.9%;top:-2px;transform:translateX(-50%);pointer-events:none;text-align:center">
           <div style="width:2px;height:22px;background:#ff5a52;margin:0 auto"></div>
-          <div style="font-size:10px;color:#ff8a84;margin-top:1px">balance</div>
+          <div style="font-size:12px;color:#ff8a84;margin-top:1px">balance</div>
         </div>
       </div>
       <button id="relBtn" onclick="releaseOnLine()" style="margin-top:18px">▶ release &amp; watch it drift</button>
@@ -106,13 +111,13 @@
     </div>
 
     <div class="sec warp">
-      <span style="font-size:12px;color:var(--dim)">time&nbsp;</span>
+      <span style="font-size:16px;color:var(--dim)">time&nbsp;</span>
       <button onclick="warpDown()">−</button>
-      <span id="warpV" style="font-size:13px;color:#fff;min-width:64px;text-align:center">1×</span>
+      <span id="warpV" style="font-size:17px;color:#fff;min-width:64px;text-align:center">1×</span>
       <button onclick="warpUp()">+</button>
       <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸</button>
     </div>
-    <div class="sec" style="color:var(--dim);font-size:12px">
+    <div class="sec" style="color:var(--dim);font-size:16px">
       drag = pan · shift/right-drag = rotate · wheel = zoom · arrows = rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset
     </div>
   </div>
@@ -120,6 +125,7 @@
   <!-- 3D VIEW -->
   <div class="stage" id="stage">
     <canvas id="c"></canvas>
+    <div id="quadDivH"></div><div id="quadDivV"></div>
     <div class="stitle" id="stitle">🌙 Low lunar orbit</div>
     <div id="frameTag">frame: Moon-locked</div>
     <div id="banner"></div>
@@ -133,7 +139,7 @@
     <div class="kv"><span>Moon phase</span><span id="rPhase">—</span></div>
     <div id="scaleFacts"></div>
     <div class="sec">
-      <div class="big" style="font-size:13px;color:var(--cyan)">Cislunar zones</div>
+      <div class="big" style="font-size:17px;color:var(--cyan)">Cislunar zones</div>
       <div class="note" id="zoneNote"></div>
     </div>
     <div class="sec">
@@ -176,7 +182,7 @@ const MOON_ECL_INC=5.14*Math.PI/180;
 const T_MOON=27.32;         // sidereal month (days)
 const MOON_E=0.0549;
 
-let scale='moon', frame='moonfix', simT=0, warp=60, paused=false;
+let scale='moon', frame='eci', simT=0, warp=60, paused=false;
 let last=performance.now();
 
 /* ------------------------------- renderer -------------------------------- */
@@ -254,6 +260,26 @@ const emLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.
 emLine.frustumCulled=false;   // its endpoint moves every frame; don't let a stale bounding sphere cull it
 scene.add(emLine);
 
+/* --- ECL-EMBR frame furniture (shown only when the barycentric frame is active) ---------------
+   • baryMark: the Earth–Moon barycenter (a labeled cross). At true scale it's ~4670 km from Earth's
+     centre (inside the Earth); we exaggerate its offset (BARY_EXAG) so students SEE Earth wobble
+     about it as the Moon goes around.
+   • eclPlane / eqPlane: two reference disks — the ECLIPTIC (the bodies' orbital plane, our world x-z)
+     and Earth's EQUATOR, tilted by the obliquity ε≈23.4°. Seeing the two planes apart is the whole
+     point of the "ECL" label: cislunar dynamics are naturally referenced to the ecliptic, not the
+     equator we used for GEO. */
+const OBLIQ = 23.44*Math.PI/180;
+const baryMark=new THREE.Group();
+{ const s=D_EM*0.06;   // cross size
+  const mkBar=(dx,dy,dz)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-dx,-dy,-dz),new THREE.Vector3(dx,dy,dz)]),new THREE.LineBasicMaterial({color:0xff9b52}));
+  baryMark.add(mkBar(s,0,0), mkBar(0,s,0), mkBar(0,0,s)); }
+baryMark.frustumCulled=false; baryMark.visible=false; scene.add(baryMark);
+const eclPlane=new THREE.Line(ringGeom(D_EM*1.15,0,0,120),new THREE.LineBasicMaterial({color:0x5fd0ff,transparent:true,opacity:0.55}));  // ecliptic = bodies' plane (x-z)
+const eqPlane =new THREE.Line(ringGeom(D_EM*1.05,0,0,120),new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.5}));
+eqPlane.rotation.x = OBLIQ;    // Earth's equator, tilted from the ecliptic by the obliquity
+eclPlane.frustumCulled=false; eqPlane.frustumCulled=false; eclPlane.visible=false; eqPlane.visible=false;
+scene.add(eclPlane); scene.add(eqPlane);
+
 /* --- lunar orbiters (representative real missions; analytic). An elliptical one is ON
    by default so the very first thing a student sees is an ellipse around the Moon. --- */
 const LUNAR=[
@@ -329,8 +355,8 @@ function buildToggles(){ const host=$('toggles'); host.innerHTML='';
 /* Each reference frame gets its OWN camera + view params (pan/zoom/rotate), so
    in 2×2 compare mode all four can be aimed independently. They share ONE scene
    and ONE simulation clock, so the same dynamics play in every panel. */
-const FRAMES=['eci','emrot','mci','moonfix'];
-const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',moonfix:'Moon-fixed (rotating)'};
+const FRAMES=['eci','emrot','mci','embr'];
+const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',embr:'ECL-EMBR — barycentric rotating'};
 const views={};
 for(const f of FRAMES){ views[f]={R:R_MOON*5, th:0.7, ph:1.0, target:new THREE.Vector3(0,0,0),
   cam:new THREE.PerspectiveCamera(50,1,0.5,4e9)}; }
@@ -408,8 +434,8 @@ function setScale(s){ scale=s;
   // tidally locked). The tighter zoom also shows the big elliptical lunar orbit clearly.
   const base = s==='moon'? R_MOON*6 : s==='em'? D_EM*1.9 : D_ES*0.6;
   for(const f of FRAMES){ views[f].R = (frameCentersMoon(f) && s!=='es') ? Math.min(base, HILL_MOON*1.4) : base; }
-  if(!quad){ if(s==='moon'&&(frame==='eci'||frame==='emrot')) setFrame('moonfix');
-    else if(s==='em'&&(frame==='mci'||frame==='moonfix')) setFrame('emrot');
+  if(!quad){ if(s==='moon'&&(frame==='eci'||frame==='emrot')) setFrame('mci');
+    else if(s==='em'&&frame==='mci') setFrame('emrot');
     else if(s==='es'&&frame!=='eci') setFrame('eci'); }
   applyScaleDefaults(); buildToggles(); resetView();
 }
@@ -423,6 +449,7 @@ function toggleQuad(){ quad=!quad;
   document.querySelectorAll('#frameSeg button').forEach(b=>b.style.opacity=quad?0.4:1);
   $('frameTag').textContent = quad? 'comparing 4 frames — same time, same satellites' : 'frame: '+FRAME_NAMES[frame];
   $('stitle').style.display = quad?'none':'block';
+  $('stage').classList.toggle('quad',quad);   // shows the white 2×2 divider cross
   // the wireframe Hill/zone spheres are cluttered across four small panels — hide them on entering quad
   if(quad){ hill.visible=false; earthZoi.visible=false; hillEarth.visible=false; buildToggles(); }
   resize();
@@ -434,12 +461,16 @@ function applyScaleDefaults(){
   earthOrbit.visible = (scale==='es');
   hillEarth.visible  = (scale==='es');
   sun.visible        = (scale==='es');
-  hill.visible       = (scale==='moon'||scale==='em');
+  hill.visible       = false;            // off by default; the toggle turns it on at moon/EM scale
   emLine.visible     = (scale!=='es');
   geoRing.visible    = (scale==='em');
   earthZoi.visible   = false;            // off by default; a toggle turns it on at EM scale
 }
-function updateVisibility(){ /* per-frame: nothing to force; toggles own it now */ }
+function updateVisibility(){
+  // ECL-EMBR furniture shows when the barycentric frame is active (single or quad mode).
+  const showEmbr = quad || frame==='embr';
+  baryMark.visible=showEmbr; eclPlane.visible=showEmbr; eqPlane.visible=showEmbr;
+}
 function resetView(){
   for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].target.set(0,0,0); } }
 
@@ -527,6 +558,8 @@ function place(){
   // Moon's Hill sphere follows the Moon; red Earth–Moon line + Earth zone-of-influence track the Moon
   hill.position.copy(mp);
   emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);
+  // barycenter marker + ecliptic/equator reference planes ride the (exaggerated) barycenter
+  const bc=baryPos(simT); baryMark.position.copy(bc); eclPlane.position.copy(bc); eqPlane.position.copy(bc);
   // lunar orbiters ride around the Moon (show at lunar AND Earth–Moon scale)
   lunarObjs.forEach(o=>{ o.group.position.copy(mp); o.group.visible=((scale==='moon'||scale==='em')&&o.def.on);
     const per=2*Math.PI*Math.sqrt(o.a**3/MU_MOON)/86400;
@@ -576,11 +609,18 @@ addEventListener('resize',resize);
                  ECI & MCI do NOT co-rotate (so the Moon sweeps around Earth in ECI,
                  and the Earth sweeps around the Moon in MCI).
    All four share the same simT, so the underlying dynamics are identical. */
-function frameCentersMoon(f){ return f==='mci'||f==='moonfix'; }
-function frameCorotates(f){ return f==='emrot'||f==='moonfix'; }
+function frameCentersMoon(f){ return f==='mci'; }
+function frameCorotates(f){ return f==='emrot'||f==='embr'; }
+function frameCentersBary(f){ return f==='embr'; }
+// Earth–Moon barycenter position (world coords): Earth at origin, Moon at moonPos → COM = Moon*μ,
+// μ = m_moon/(m_earth+m_moon) ≈ 0.01215. At true scale COM is ~4670 km from Earth (inside it).
+const BARY_MU = 0.01215;           // mass fraction of the Moon
+const BARY_EXAG = 6.0;             // exaggerate the barycenter offset so Earth's wobble is visible
+function baryPos(t){ return moonPos(t+tliMoonOffset).clone().multiplyScalar(BARY_MU*BARY_EXAG); }
 function emAzimuth(){ const mp=moonPos(simT+tliMoonOffset); return Math.atan2(-mp.z, mp.x); }  // Earth–Moon line angle
 function aimCamera(f){ const v=views[f];
   let tgt=v.target.clone(); if(frameCentersMoon(f)) tgt.add(moonPos(simT+tliMoonOffset));
+  else if(frameCentersBary(f)) tgt.add(baryPos(simT));
   const th=v.th - (frameCorotates(f)? emAzimuth() : 0);
   v.cam.position.set(tgt.x+v.R*Math.sin(v.ph)*Math.cos(th), tgt.y+v.R*Math.cos(v.ph), tgt.z+v.R*Math.sin(v.ph)*Math.sin(th));
   v.cam.lookAt(tgt); }
@@ -602,6 +642,8 @@ function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.update
   r3.render(scene,v.cam); }
 
 function loop(ts){
+  requestAnimationFrame(loop);
+  try {
   const wall=Math.min((ts-last)/1000,0.05); last=ts;
   const rotv=2.0*wall;   // arrow keys rotate the panel under the cursor (quad) or the current frame
   const vv=views[quad? panelFrameAt(curX,curY) : frame];
@@ -617,10 +659,10 @@ function loop(ts){
     renderView('eci',     0,  hh, hw, hh);
     renderView('emrot',   hw, hh, hw, hh);
     renderView('mci',     0,  0,  hw, hh);
-    renderView('moonfix', hw, 0,  hw, hh);
+    renderView('embr',    hw, 0,  hw, hh);
     r3.setScissorTest(false);
   } else { renderView(frame, 0,0,CW,CH); r3.setScissorTest(false); }
-  requestAnimationFrame(loop);
+  } catch(e){ if(!loop._warned){loop._warned=true; console.error('tut5 loop error:',e);} }
 }
 
 /* -------------------------------- init ------------------------------------

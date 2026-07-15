@@ -8,3 +8,12 @@ _*.html
 *.log
 .DS_Store
 node_modules/
+# scratch analysis artifacts (never part of the course)
+phase_strip.png
+geo_*.png
+geo_*.svg
+geo_*.js
+*.mov
+satellite_illumination*.gif
+satellite_illumination*.mp4
+*.mp4

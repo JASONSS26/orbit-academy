@@ -274,7 +274,7 @@ const WORKSHEET = {
       quiz:{ q:'What makes an orbit circular rather than elliptical?',
         opts:['Releasing at exactly the local circular speed','Releasing as slow as possible','Releasing at escape speed','Any speed works'],
         a:0, why:'Correct — at exactly circular speed the object neither climbs nor falls; slower or faster makes an ellipse.',
-        feedback:['As slow as possible crashes it — you need the specific circular speed.','','Escape speed leaves Earth entirely.','Only one specific speed gives a circle at a given altitude.'] } },
+        feedback:['','As slow as possible crashes it — you need the specific circular speed.','Escape speed leaves Earth entirely.','Only one specific speed gives a circle at a given altitude.'] } },
     { id:'b3', title:'Faster: an ellipse that climbs',
       teach:[
         'Now go the other direction from the crash — release <b>faster</b> than circular. The extra speed carries the object outward, so instead of falling back it swings up and away on the far side of the Earth, tracing a stretched oval, an <b>ellipse</b>.',
@@ -331,7 +331,8 @@ const WORKSHEET = {
     { id:'esc1', title:'Too much speed: escape (an unbound orbit)',
       teach:[
         'So far, faster release has meant a bigger and bigger ellipse — but the object always came back. There’s a limit to that. Push the speed high enough and the object gains more energy than Earth’s gravity can ever claw back, and it leaves for good. That threshold is <b>escape speed</b>: about 11.2 km/s right at the surface, and a bit less — around 10.4 km/s — up at 1000 km, because gravity is a little weaker up there.',
-        'Below escape speed the path is <b>bound</b>: a closed loop (circle or ellipse) that repeats forever. At or above escape speed the path <b>opens up</b> — it stops being a closed loop and becomes a <b>hyperbola</b>, a one-way curve that heads outward and never returns. The object leaves its release point once and is simply gone.',
+        'Below escape speed the path is <b>bound</b>: a closed loop (circle or ellipse) that repeats forever. Above escape speed the path <b>opens up</b> — it stops being a closed loop and becomes a <b>hyperbola</b>, a one-way curve that heads outward and never returns (exactly at escape speed it’s a parabola, the knife-edge case). The object leaves its release point once and is simply gone.',
+        'The panel also reports an <b>eccentricity</b> — a single number for the orbit’s shape: 0 = a circle, between 0 and 1 = an ellipse, and 1 or more = an open escape path (1 exactly is a parabola, above 1 a hyperbola). Watch it climb toward and past 1 as you cross escape speed.',
       ],
       predict:'Before you inject: you’ve seen faster release make bigger and bigger ellipses that always return. Do you think there’s a speed past which the object never comes back at all — and what would that path look like, still a closed loop or something open?',
       do:'Clear your objects. Set <b>altitude 1000 km</b> and push the <b>speed</b> slider all the way up to <b>11 km/s</b>, then <b>INJECT</b>. (Escape speed at 1000 km is ~10.4 km/s, so 11 is above it.) Watch it head out and read the panel. Then drop to ~10 km/s and inject again — that one stays a closed loop, letting you find the knife-edge between coming back and leaving forever.',

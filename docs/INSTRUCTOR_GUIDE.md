@@ -18,9 +18,12 @@ non-specialists (built for JASON / US Space Force technical-staff training). It 
   progress, prerequisite gating (you must finish Module N before N+1 unlocks), and an instructor
   roster dashboard.
 
-The course currently covers **five complete modules** (Orbital Dynamics → Angular Rates & Geosync
-→ Naming Orbits & TLEs → Maneuvers & Perturbations → xGEO / Cislunar Space), with three more
-planned (see `docs/MODULE_NOTES.md`).
+The course covers **eight modules**: Orbital Dynamics → Angular Rates & Geosync → Naming Orbits &
+TLEs → Maneuvers & Perturbations → xGEO / Cislunar Space & Reference Frames → Lagrange Points &
+Complex Orbits → **Observability** → **Lunar Transfers & Artemis** (the piloting capstone). All eight
+modules are complete. (File-id note: Observability is Module 7 = `tut7`/`worksheet7`; the flight-sim
+capstone is Module 8 = `tut8`/`worksheet8`.) There is also a **course-wide final quiz** and a
+printable **completion certificate**.
 
 ---
 
@@ -175,10 +178,49 @@ demos: the radial-burn "crash," and the drag paradox (drag speeds a satellite up
 
 **Module 5 — xGEO / Cislunar Space & Reference Frames.** The whole module is about **reference
 frames** — what you hold still changes everything. The **2×2 compare view** (all four frames at
-once, one clock) is the centerpiece; spend time there. Other key beats: the Hill sphere / L1
-boundary (L1 is ~85% of the way to the Moon, *not* the midpoint), the definition of xGEO, and
-"leading the Moon" for a transfer. Note: the tool idealizes the Moon's orbit as flat so the
+once, one clock) is the centerpiece; spend time there. The four frames are ECI, Earth–Moon rotating
+(synodic), Moon-centred inertial (MCI), and **ECL-EMBR** — the barycentric-rotating frame centered
+on the Earth–Moon barycenter, where *both* bodies freeze and the Lagrange points hold still (it sets
+up Module 6). The tool marks the barycenter (exaggerated so students see Earth wobble about it) and
+shows the ecliptic vs. equator planes tilted by the 23.4° obliquity. Other key beats: the Hill
+sphere / L1 boundary (L1 is ~85% of the way to the Moon, *not* the midpoint), the definition of xGEO,
+and "leading the Moon" for a transfer. Note: the tool idealizes the Moon's orbit as flat so the
 rotating frame reads cleanly; the real ~5° tilt is taught as the reason eclipses are occasional.
+
+**Module 6 — Lagrange Points & Complex Orbits.** The richest, most conceptually demanding module.
+Core beats: the five Lagrange points as **spots that share the Moon's 27.3-day period** (drawn as ▲
+markers, distinct from bodies); the **1-D force-balance** view (L1 the Moon opposes Earth → gentler
+pull; L2 they add → stronger pull; "balance" never means zero net pull); **L4/L5 stable, L1/L2/L3
+unstable** (golf-ball-on-a-basketball); the **near-rectilinear halo orbit (NRHO)** that CAPSTONE/
+Gateway fly; **TESS** in 2:1 resonance; the **live RK4 fan-release chaos** sandbox (including the
+lunar-scatter slingshot with some objects flung unbound); and the capstone **libration "zoo"** — the
+whole family of L1 orbits from two amplitude knobs and a frequency ratio. This module rewards an
+instructor who understands the physics deeply; **§11 below is a dedicated deep-dive on the L1 orbits**
+because the questions this module provokes are genuinely subtle. Hard language rules the module obeys:
+never say "centrifugal"/"centripetal" — motion is explained with real gravity + sideways motion.
+
+**Module 8 — Lunar Transfers & Artemis (the capstone).** The student stops studying
+orbits and **flies** one, from an Artemis-style cockpit. Two views: a **PLAN** mode (a flight
+computer where you compute each burn's Δv from vis-viva and iterate to the target, with a live
+trajectory predictor and a "run sim" playback) and a **FLY** mode (the cockpit — window with real
+Earth/Moon at correct angular size, embedded MFD screens, hold-to-thrust controls, and a BURN-NOW
+cue). Two missions: **go to GEO** (a gentle two-burn Hohmann warm-up, familiar from Modules 2–3) and
+**go to the Moon** (raise apogee → lead the Moon → capture). Launch-to-LEO is automated; victory is
+reaching the target orbit. Everything from Modules 1–6 gets used in anger.
+
+**Module 7 — Observability.** The "how do we even know where anything is?" module — the practical
+payoff of the whole course, and the bridge to space domain awareness. Core beats: **active radar**
+(received power falls as **range⁴** two-way — a GEO target returns ~(GEO/LEO)⁴ ≈ 300,000× weaker
+than a LEO one, and xGEO is hopeless for most radars); the **"headlights" analogy** for optical
+(you only see sunlit objects — you're driving at night seeing bicycles only when a passing truck's
+headlights, the Sun, catch them); **thermal-IR** self-emission (warm objects glow even in shadow);
+**cooperative vs. uncooperative** tracking; **custody and cadence** (chaotic cislunar orbits go stale
+fast, so you must re-observe often); **maneuver detection**; the crucial distinction between
+**orbitology** (where is it) vs. **characterization** (what is it) vs. **inferring intent** (why);
+**proximity operations / neighborhood watch**; how radar measures **range and range-rate** with crude
+angles; how optical gives precise **angles (RA/DEC)** but no range directly; how **parallax** across
+successive images (or two sites) constrains range (the finger-in-front-of-alternating-eyes demo); and
+**pointed custody vs. all-sky survey** tradeoffs.
 
 ---
 
@@ -221,7 +263,66 @@ a fresh file is created on next start, and the first new registration becomes th
 
 ---
 
-## 10. Credits & license
+## 11. Deep dive — the complexities of L1 (halo) orbits
+
+Module 6's libration "zoo" and NRHO scenario provoke sharp questions. This section arms you to
+field them. It is background for the instructor, pitched above the student level.
+
+**1. These are not Keplerian orbits.** A satellite in LEO or around the Moon traces an **ellipse**
+about a single dominant body, fully named by six orbital elements (a TLE). A **halo orbit around a
+Lagrange point has no single central body** — it circles an *empty point in space* where Earth's
+and the Moon's pulls, together with the motion needed to keep pace with the rotating Earth–Moon
+line, balance out. There is **no focus, no fixed ellipse, no TLE.** It is a periodic solution of the
+*restricted three-body problem*. When a student says "but it's not centered on anything!" — exactly.
+That's the whole point, and it's the single most mind-expanding idea in the course.
+
+**2. One parameter, not six.** Astonishingly, the entire family of halos around a given Lagrange
+point is labeled by **one number** — the **Jacobi constant**, the conserved energy-like quantity of
+the rotating frame (higher amplitude ↔ lower Jacobi constant). Fix it and the size, the out-of-plane
+height, and the period are all determined. Contrast the six-plus elements of an ordinary orbit. In
+the zoo, the amplitude sliders + frequency-ratio buttons expose this: at a **1:1** frequency lock the
+in-plane and out-of-plane amplitudes are tied together by a constraint (one free parameter → a true
+halo); at other ratios they're independent (a two-parameter **Lissajous/quasi-periodic** family that
+never closes). A whole-number ratio closes into a figure; an irrational ratio fills a 3-D band forever.
+
+**3. Why the near-degeneracy matters.** Near a collinear point the motion splits into an unstable
+saddle × an in-plane oscillation (ω_p) × an out-of-plane oscillation (ω_v). For Earth–Moon L1 these
+are **ω_p ≈ 2.37, ω_v ≈ 2.30** (units of the monthly rate) — very close but unequal. A generic
+bounded orbit is therefore a **Lissajous** that never closes. A **halo** is the special amplitude at
+which nonlinear terms drag ω_p and ω_v into an exact **1:1 lock** so the path closes into a single
+loop. Because the two frequencies start so close, that lock happens at modest amplitude — which is
+why real Sun–Earth L1/L2 halos (SOHO, Gaia, JWST) are rounded, moderate loops, not wild shapes.
+
+**4. The NRHO is deliberately lopsided — and that's correct.** A near-rectilinear halo (CAPSTONE,
+Gateway) skims a few thousand km over one lunar pole and swings ~70,000 km over the other. Students
+(and instructors) balk: the gravity field is mirror-symmetric top-to-bottom, so shouldn't the orbit
+be? **No.** A symmetric field yields a mirror-image *pair* of solutions — a **northern** and a
+**southern** halo — and each individual orbit picks a side (like a ball settling into one well of a
+symmetric double-well). Gateway flies a southern NRHO; its northern twin is equally valid. The orbit
+*is* still symmetric, just about the plane through the Earth–Moon line and the poles, not the orbital
+plane. **Second gem:** because it's a very eccentric loop, Kepler's second law applies locally — the
+craft **whips through the close pole pass in hours but loiters for days at the far end**, so a
+"lunar" orbit spends ~99% of its time *far* from the Moon.
+
+**5. What supplies the torque? (The subtle one.)** In the rotating frame the halo holds a fixed
+orientation, so in the inertial sky its orientation — and its angular-momentum vector — **sweeps
+around once a month.** A changing angular momentum requires a **real torque.** Where from? **The
+Moon's off-axis gravity.** Earth's pull is central about Earth (zero torque about Earth), but the
+Moon sits off to the side, so its tug does not point through Earth and exerts a genuine torque that
+swings the orbit around to keep pace with the Earth–Moon line. This is *not* a rotating-frame
+artifact — it is honest Newtonian gravity, and it vindicates the course's "banish fictitious forces"
+rule. (Numerically the Moon's torque about Earth on a representative halo point is ~0.2 in
+km²/s² per unit mass — nonzero, exactly as required.)
+
+**6. Honesty about the tool.** The zoo uses the **linearized** (Richardson) equations plus a
+lookup-table nudge for how the loop's center migrates toward the Moon at high amplitude. The shapes
+and rhythms are faithful; it is **not** a full nonlinear integration, and it is labeled as such in
+the UI. If a student asks whether they could fly one, the answer is yes — but station-keeping is
+required because L1/L2/L3 are unstable (the halo is a controlled dance around an unstable point).
+
+---
+
+## 12. Credits & license
 
 MIT licensed. Built for JASON / US Space Force training; companion to the CISLUNAR PATROL game and
 the xGEO simulator. Three.js is © its authors, loaded from a pinned CDN (SRI-checked).

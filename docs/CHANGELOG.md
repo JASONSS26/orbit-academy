@@ -2,6 +2,41 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v2.6 — 2026-07-15
+A large content + consistency release: all eight modules complete, a new reference frame taught in
+the cislunar modules, the capstone flight sim polished, a course-wide worksheet audit applied, and
+the module files renumbered to match display order. **`server.js` change is limited to the COURSE
+ordering/prereq chain** (ids now match module order) plus the version string — the auth/session/gating
+logic is unchanged. Security audit: **PASS**.
+
+- **New reference frame — ECL-EMBR (Ecliptic, Earth–Moon Barycentric, Rotating):** replaces the old
+  "Moon-fixed" frame as the 4th frame in **Modules 5 and 6** (`tut5`, `tut6`). Centered on the
+  Earth–Moon **barycenter** and co-rotating in the ecliptic, it freezes *both* bodies (Earth wobbles
+  about the marked barycenter) and is the frame in which the **five Lagrange points hold still** — the
+  natural stage for Module 6. Adds a barycenter marker (exaggerated so the wobble is visible) and, in
+  Module 5, ecliptic-vs-equator reference planes tilted by the 23.4° obliquity. Rationale: the two
+  co-rotating frames (synodic + Moon-fixed) were largely redundant; the barycentric frame is more
+  instructive and sets up the Lagrange-point material. Worksheet 5's frame table + tasks and Worksheet
+  6's summary updated to teach it.
+- **Module files renumbered to match display order:** Observability is now **Module 7**
+  (`tut7.html` / `worksheet7.*`) and the flight-sim capstone is **Module 8** (`tut8.html` /
+  `worksheet8.*`); helper scripts renamed (`flight8.js`, `sat8.js`, `tut7.js`). All cross-references
+  (COURSE ids/prereqs, `quiz.js`, `resources.html`, `gallery.html`, links, comments) updated. No user
+  progress existed under the old ids, so nothing was migrated.
+- **Module 3 (tut3) Kepler fix:** the auto-animated satellite now advances **mean anomaly** uniformly
+  in time (solved to true anomaly via Newton), so it correctly moves **fast at perigee, slow at
+  apogee** — it previously stepped true anomaly directly (wrong: fast at apogee). Also made the `,`/`.`
+  animation-speed steps finer (×1.25 instead of ×2).
+- **Capstone flight sim (Module 8) polish:** true 3-D out-the-window view (raytraced Earth/Moon +
+  projected GEO belt, inertial-sun lighting); vertical UPWARDS/FORWARDS/BACKWARDS/DOWNWARDS thruster
+  stack; tighter GEO success gate held for a full confirmation orbit; out-of-fuel "coast eternally"
+  failure; red target satellite in the belt + CAPCOM proximity alarm.
+- **Course-wide worksheet audit applied:** fixed quiz-feedback misalignment (empty rebuttal slot on
+  the wrong option) in worksheets 1/5/6; corrected a repeated unit error (7.8 km/s ≈ 17,500 mph, not
+  15,000) in Module 4; clarified sun-synchronous, deorbit-burn, and the L1 balance-point (~85% via the
+  rotating-frame effect) wording; defined "eccentricity" in Module 1; fixed Module 2 references to
+  sim controls that didn't exist; and corrected stale thruster labels + final-exam module numbers.
+
 ## v2.5 — 2026-07-13
 Deepens Module 6 with a **libration-orbit "zoo"** and a new capstone worksheet part, plus physics
 fixes. Client + docs only — **`server.js` has a zero diff** — so the auth/gating surface is unchanged.

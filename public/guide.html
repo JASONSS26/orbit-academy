@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy — Instructor's Guide</title>
+<style>
+  :root{--bg:#eef1f5;--panel:#fff;--fg:#1a1e26;--dim:#5a6474;--line:#ccd3dd;--accent:#1a4c8b;--gold:#b8860b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Georgia,serif;line-height:1.62;font-size:17px}
+  #top{position:sticky;top:0;z-index:10;background:var(--accent);color:#fff;padding:14px 26px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  #top .logo{font-weight:bold;font-size:18px;letter-spacing:.5px}
+  #top .sp{flex:1}
+  #top button{background:#fff;color:var(--accent);border:0;font:inherit;font-weight:600;padding:8px 15px;border-radius:7px;cursor:pointer}
+  #top button:hover{background:#e6eefb}
+  .layout{display:grid;grid-template-columns:270px 1fr;max-width:1180px;margin:0 auto;gap:0}
+  #toc{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;padding:22px 14px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  #toc .h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:0 0 8px 8px}
+  #toc a{display:block;color:var(--accent);text-decoration:none;padding:5px 10px;border-radius:6px;margin-bottom:2px}
+  #toc a:hover{background:#dde6f4}
+  main{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:22px 22px 80px 0;padding:34px 46px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  h1{font-size:30px;color:var(--accent);margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  h2{font-size:23px;color:var(--accent);margin:34px 0 8px;padding-top:10px;border-top:2px solid #e4e9f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  h3{font-size:19px;color:#243; margin:22px 0 6px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  h4{font-size:16px;color:#345;margin:16px 0 4px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:26px} li{margin:5px 0}
+  code{background:#eef2f7;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:#0a3}
+  a{color:var(--accent)}
+  hr{border:0;border-top:1px solid #e0e5ec;margin:22px 0}
+  blockquote{border-left:4px solid var(--gold);background:#fbf6e9;margin:14px 0;padding:10px 16px;color:#5a4a20;border-radius:0 6px 6px 0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:15px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#eaf0f8;color:var(--accent)}
+  @media print{ #top,#toc{display:none} .layout{display:block} main{border:0;box-shadow:none;margin:0;padding:0} body{background:#fff;font-size:12pt} h2{page-break-after:avoid} table,blockquote,li{page-break-inside:avoid} }
+  @media(max-width:820px){ .layout{grid-template-columns:1fr} #toc{display:none} main{margin:14px} }
+</style></head>
+<body>
+<div id="top"><span class="logo">◈ ORBIT ACADEMY</span><span>Instructor's Guide</span><span class="sp"></span>
+  <button onclick="window.print()">🖨 Print / Save PDF</button>
+  <button onclick="location.href='gallery.html'">← Gallery</button></div>
+<div class="layout">
+  <nav id="toc"><div class="h">Contents</div><a href="#sec-1-what-this-is">1. What this is</a>
+<a href="#sec-2-download-install">2. Download &amp; install</a>
+<a href="#sec-3-three-ways-to-run-it">3. Three ways to run it</a>
+<a href="#sec-4-the-data-file-server-mode">4. The data file (server mode)</a>
+<a href="#sec-5-how-a-student-uses-it">5. How a student uses it</a>
+<a href="#sec-6-teaching-notes-module-by-module">6. Teaching notes, module by module</a>
+<a href="#sec-7-instructor-dashboard-server-mode">7. Instructor dashboard (server mode)</a>
+<a href="#sec-8-updating-testing">8. Updating &amp; testing</a>
+<a href="#sec-9-troubleshooting">9. Troubleshooting</a>
+<a href="#sec-11-deep-dive-the-complexities-of-l1-halo-orbits">11. Deep dive — the complexities of L1 (halo) orbits</a>
+<a href="#sec-12-credits-license">12. Credits &amp; license</a></nav>
+  <main><h1>Orbit Academy — Instructor's Guide</h1>
+<p>A complete guide to running, hosting, and teaching with Orbit Academy. Written for an instructor or course administrator; no prior web-development experience assumed.</p>
+<hr/>
+<h2 id="sec-1-what-this-is">1. What this is</h2>
+<p>Orbit Academy is a self-contained, browser-based course that teaches orbital dynamics to non-specialists (built for JASON / US Space Force technical-staff training). It has three parts:</p>
+<ul><li><strong>Simulators</strong> (<code>tutN.html</code>) — live, interactive 3-D physics visualizations, one per module.</li><li><strong>Worksheets</strong> (<code>worksheetN.html</code>) — guided lessons that open beside each simulator: learning</li></ul>
+<p>  objectives, a one-page tutorial, numbered hands-on exercises with check questions, a final quiz,   a key-points summary, and further-reading links.</p>
+<ul><li><strong>A course-management backend</strong> (<code>server.js</code>) — optional. Provides student accounts, saved</li></ul>
+<p>  progress, prerequisite gating (you must finish Module N before N+1 unlocks), and an instructor   roster dashboard.</p>
+<p>The course covers <strong>eight modules</strong>, ordered as a mission-prep arc: Orbital Dynamics → Angular Rates &amp; Geosync → Naming Orbits &amp; TLEs → Maneuvers &amp; Perturbations → xGEO / Cislunar Space &amp; Reference Frames → Lagrange Points &amp; Complex Orbits → <strong>Observability</strong> → <strong>Lunar Transfers &amp; Artemis (the flight-sim capstone)</strong>. The whole course trains students to fly two missions — a <strong>GEO servicing</strong> rendezvous and a <strong>lunar insertion</strong> — which they execute in the Module 8 cockpit finale. There is also a <strong>course-wide final quiz</strong> and a printable <strong>completion certificate</strong>.</p>
+<hr/>
+<h2 id="sec-2-download-install">2. Download &amp; install</h2>
+<p>Everything is plain HTML/JavaScript plus one small Node.js server file. There is <strong>nothing to compile and no packages to install</strong> (the only external dependency, the Three.js 3-D library, is loaded from a pinned public CDN).</p>
+<h3 id="sec-2-1-get-the-files">2.1 Get the files</h3>
+<p><strong>Option A — download a ZIP (no tools needed):</strong></p>
+<ol><li>Go to the repository: <code>https://github.com/JASONSS26/orbit-academy</code></li><li>Click the green <strong>Code</strong> button → <strong>Download ZIP</strong>.</li><li>Unzip it anywhere (e.g. your Desktop). You'll get an <code>orbit-academy/academy/</code> folder.</li></ol>
+<p><strong>Option B — clone with git (if you have git):</strong> ``<code>bash git clone https://github.com/JASONSS26/orbit-academy.git cd orbit-academy/academy </code>``</p>
+<h3 id="sec-2-2-install-node-js-only-needed-to-run-the-tracked-server-mode">2.2 Install Node.js (only needed to run the tracked/server mode)</h3>
+<ul><li>Download the <strong>LTS</strong> installer from &lt;https://nodejs.org&gt; and run it. Any recent version works.</li><li>Verify in a terminal / command prompt:</li></ul>
+<p>  ``<code>bash   node --version   </code>`<code>   If it prints a version number (e.g. </code>v20.x`), you're set.</p>
+<blockquote>You do <strong>not</strong> need Node.js at all for the standalone (no-login) mode — see §3, Option 1.</blockquote>
+<hr/>
+<h2 id="sec-3-three-ways-to-run-it">3. Three ways to run it</h2>
+<p>Choose based on whether you need <strong>central accounts and a roster</strong>.</p>
+<h3 id="sec-option-1-standalone-zero-install-no-accounts">Option 1 — Standalone (zero install, no accounts)</h3>
+<p>The worksheets and simulators are static files. If no backend is present, each worksheet automatically runs in <strong>standalone mode</strong>: it renders normally and saves the student's progress in that browser's own storage (<code>localStorage</code>). No logins, no central roster — the course just works from a local file or any static host.</p>
+<ul><li><strong>Run it with no server at all:</strong> open <code>academy/public/gallery.html</code> (or <code>index.html</code>) directly</li></ul>
+<p>  in a browser, or serve the folder with any static server (e.g. <code>python3 -m http.server</code> from   inside <code>academy/public/</code>).</p>
+<ul><li><strong>Trade-off:</strong> progress lives in each browser, so it doesn't follow a student between devices,</li></ul>
+<p>  and there's no roster. Best for demos, self-study, and quick reviewer previews.</p>
+<blockquote>A small badge ("● standalone — saved in this browser") appears on the worksheet in this mode, so students know their progress is local.</blockquote>
+<blockquote>⚠️ <strong>A note on GitHub Pages.</strong> It's tempting to host the static site on GitHub Pages, but on standard GitHub a <strong>Pages site is readable by anyone with the URL even when the repo is private</strong> — there is no access control. Access-restricted Pages exists only on GitHub Enterprise Cloud. So do <strong>not</strong> use Pages if the material must stay limited to authorized people. For an authorized-only preview, have reviewers <strong>clone the repo and run it locally</strong> (they already have repo access), or use <strong>Codespaces</strong> (private port-forwarding), or a host behind your own SSO.</blockquote>
+<h3 id="sec-option-2-full-server-accounts-saved-progress-instructor-roster">Option 2 — Full server (accounts, saved progress, instructor roster)</h3>
+<p>Run the Node server for a managed cohort with central accounts and a dashboard.</p>
+<p>```bash cd academy node server.js            # serves http://localhost:8080</p>
+<h1>change the port:  PORT=9000 node server.js</h1>
+<h1>move the data file:  ORBIT_DATA=/path/to/academy_data.json node server.js</h1>
+<p>```</p>
+<ul><li>Open <strong>http://localhost:8080</strong>. <strong>The first account you register becomes the instructor.</strong></li></ul>
+<p>  Register yours first, then have students register their own.</p>
+<ul><li>Progress and prerequisite gating are enforced server-side; the instructor account sees a roster</li></ul>
+<p>  of all students and their module/pass status.</p>
+<ul><li>For a classroom, run it on one machine on the LAN and give students that machine's address</li></ul>
+<p>  (e.g. <code>http://10.0.0.5:8080</code>). For internet-facing use, put it behind HTTPS + a reverse proxy   with rate-limiting (see <code>docs/SECURITY.md</code>).</p>
+<h3 id="sec-option-3-both">Option 3 — Both</h3>
+<p>Publish the standalone build on GitHub Pages for broad/self-study access, <strong>and</strong> run the server for tracked cohorts. They share the same files.</p>
+<table><thead><tr><th></th><th>Standalone (Pages)</th><th>Full server</th></tr></thead><tbody><tr><td>Install</td><td>none</td><td>Node.js</td></tr><tr><td>Accounts / login</td><td>no</td><td>yes (first user = instructor)</td></tr><tr><td>Progress saved</td><td>per-browser (localStorage)</td><td>per-account (follows the student)</td></tr><tr><td>Prerequisite gating</td><td>open (all modules available)</td><td>enforced server-side</td></tr><tr><td>Instructor roster</td><td>no</td><td>yes</td></tr><tr><td>Best for</td><td>open access, demos, self-study</td><td>managed training cohorts</td></tr></tbody></table>
+<hr/>
+<h2 id="sec-4-the-data-file-server-mode">4. The data file (server mode)</h2>
+<ul><li><code>academy_data.json</code> holds all accounts (passwords are <strong>scrypt-hashed</strong>, never plaintext) and</li></ul>
+<p>  progress. It is created automatically on first run.</p>
+<ul><li>It is <strong>gitignored and must never be committed</strong> — it contains password hashes. The repo also</li></ul>
+<p>  ignores its rolling backup (<code>.bak</code>) and temp (<code>.tmp</code>) files.</p>
+<ul><li>The server writes atomically (temp file + rename) and keeps a rolling <code>.bak</code>, so an accidental</li></ul>
+<p>  crash or delete won't lose accounts. To relocate it, set the <code>ORBIT_DATA</code> environment variable.</p>
+<ul><li><strong>Back it up</strong> by copying <code>academy_data.json</code> somewhere safe periodically.</li></ul>
+<hr/>
+<h2 id="sec-5-how-a-student-uses-it">5. How a student uses it</h2>
+<ol><li>Open the hub (<code>index.html</code> / the site root). In server mode, register or log in.</li><li>Click a module. The <strong>worksheet opens in its own window</strong>; a <strong>simulator</strong> button opens the</li></ol>
+<p>   live tool. Arrange them side by side (worksheet left, simulator right works well).</p>
+<ol><li>In the worksheet: read the <strong>objectives</strong> and the one-page <strong>tutorial</strong>, then work the</li></ol>
+<p>   <strong>numbered exercises</strong> in the simulator, answering each check question (or clicking "mark done").</p>
+<ol><li>Finish with the <strong>final check</strong> (a short quiz over the whole module), review the <strong>key points</strong>,</li></ol>
+<p>   and follow any <strong>resources</strong> links.</p>
+<ol><li>Every worksheet header has buttons: <strong>🃏 Cheat sheet</strong> (keyboard/mouse controls, printable</li></ol>
+<p>   wallet card), <strong>📚 Resources</strong> (all modules' links in one page), <strong>🖨 Print</strong> (print/save the    worksheet as PDF), and <strong>↗ Simulator</strong>.</p>
+<p>Controls are the same in every simulator: <strong>left-drag = pan, shift/right-drag = rotate, wheel = zoom, arrow keys = rotate, <code>,</code>/<code>.</code> = slow/speed time, space = pause, R = reset.</strong></p>
+<hr/>
+<h2 id="sec-6-teaching-notes-module-by-module">6. Teaching notes, module by module</h2>
+<p>Each module is designed for roughly a <strong>30–50 minute</strong> session. The worksheet is self-paced; the instructor's role is to set context, watch for the common misconceptions below, and debrief.</p>
+<p><strong>Module 1 — How Orbits Work.</strong> The one idea to land: an orbit is <em>falling sideways fast enough to keep missing the ground</em>. Common misconception: "there's no gravity in space." Have them do the speed-ladder exercise (too slow → crash, right speed → circle, faster → ellipse) before discussing. Payoff: geostationary = a 24-hour orbit that keeps pace with the ground.</p>
+<p><strong>Module 2 — Angular Rates &amp; Geosync.</strong> Central skill: angular rate vs. true speed, and why the GEO belt is prime, finite real estate (360 one-degree slots). The ground-telescope view (stars streak while a tracked satellite holds, and vice-versa) previews the observability module. Watch for confusion between <em>geosynchronous</em> (24-h period) and <em>geostationary</em> (24-h <strong>and</strong> equatorial).</p>
+<p><strong>Module 3 — Naming Orbits &amp; TLEs.</strong> Goal: an orbit has a six-number "name tag" (the elements), and a TLE is just those numbers in a text format. The invariance idea is key — re-orienting an orbit (RAAN, argument of perigee) does <strong>not</strong> change its size, shape, or period. The Molniya "invent it by trial and error" exercise is a highlight; let students discover the ~12-hour period themselves.</p>
+<p><strong>Module 4 — Maneuvers &amp; Perturbations.</strong> Two big ideas: <strong>delta-v is finite currency</strong> (the fuel gauge), and <strong>tangential burns are efficient while radial burns are wasteful/paradoxical</strong>. The GTO→GEO two-step transfer and the escape/re-entry scenarios are the payoff. Great counter-intuitive demos: the radial-burn "crash," and the drag paradox (drag speeds a satellite up).</p>
+<p><strong>Module 5 — xGEO / Cislunar Space &amp; Reference Frames.</strong> The whole module is about <strong>reference frames</strong> — what you hold still changes everything. The <strong>2×2 compare view</strong> (all four frames at once, one clock) is the centerpiece; spend time there. Other key beats: the Hill sphere / L1 boundary (L1 is ~85% of the way to the Moon, <em>not</em> the midpoint), the definition of xGEO, and "leading the Moon" for a transfer. Note: the tool idealizes the Moon's orbit as flat so the rotating frame reads cleanly; the real ~5° tilt is taught as the reason eclipses are occasional.</p>
+<p><strong>Module 6 — Lagrange Points &amp; Complex Orbits.</strong> The richest, most conceptually demanding module. Core beats: the five Lagrange points as <strong>spots that share the Moon's 27.3-day period</strong> (drawn as ▲ markers, distinct from bodies); the <strong>1-D force-balance</strong> view (L1 the Moon opposes Earth → gentler pull; L2 they add → stronger pull; "balance" never means zero net pull); <strong>L4/L5 stable, L1/L2/L3 unstable</strong> (golf-ball-on-a-basketball); the <strong>near-rectilinear halo orbit (NRHO)</strong> that CAPSTONE/ Gateway fly; <strong>TESS</strong> in 2:1 resonance; the <strong>live RK4 fan-release chaos</strong> sandbox (including the lunar-scatter slingshot with some objects flung unbound); and the capstone <strong>libration "zoo"</strong> — the whole family of L1 orbits from two amplitude knobs and a frequency ratio. This module rewards an instructor who understands the physics deeply; <strong>§11 below is a dedicated deep-dive on the L1 orbits</strong> because the questions this module provokes are genuinely subtle. Hard language rules the module obeys: never say "centrifugal"/"centripetal" — motion is explained with real gravity + sideways motion.</p>
+<p><strong>Module 7 — Observability.</strong> The "how do we even know where anything is?" module — the practical payoff of the whole course, and the bridge to space domain awareness. It comes just before the flight sim on purpose: it's how you <em>find and pin down the target's orbit</em> before you ever light an engine. Core beats: <strong>active radar</strong> (received power falls as <strong>range⁴</strong> two-way — a GEO target returns ~(GEO/LEO)⁴ ≈ 300,000× weaker than a LEO one, and xGEO is hopeless for most radars); the <strong>"headlights" analogy</strong> for optical (you only see sunlit objects — you're driving at night seeing bicycles only when a passing truck's headlights, the Sun, catch them); <strong>thermal-IR</strong> self-emission (warm objects glow even in shadow); <strong>cooperative vs. uncooperative</strong> tracking; <strong>custody and cadence</strong> (chaotic cislunar orbits go stale fast, so you must re-observe often); <strong>maneuver detection</strong>; the crucial distinction between <strong>orbitology</strong> (where is it) vs. <strong>characterization</strong> (what is it) vs. <strong>inferring intent</strong> (why); <strong>proximity operations / neighborhood watch</strong>; how radar measures <strong>range and range-rate</strong> with crude angles; how optical gives precise <strong>angles (RA/DEC)</strong> but no range directly; how <strong>parallax</strong> across successive images (or two sites) constrains range (the finger-in-front-of-alternating-eyes demo); and <strong>pointed custody vs. all-sky survey</strong> tradeoffs.</p>
+<p><strong>Module 8 — Lunar Transfers &amp; Artemis (the flight-sim capstone).</strong> The finale: the student stops studying orbits and <strong>flies</strong> one, from an Artemis-style cockpit, using everything the first seven modules taught. Two views: a <strong>PLAN</strong> mode (a flight computer where you compute each burn's Δv from vis-viva — Module 4 — and iterate to the target, with a live trajectory predictor and a "run sim" playback) and a <strong>FLY</strong> mode (the cockpit — window with real Earth/Moon at correct angular size, embedded MFD screens, hold-to-thrust controls, and a BURN-NOW cue). Two missions: a <strong>GEO servicing rendezvous</strong> (target orbit handed over from the Observability module; a two-burn Hohmann built on Modules 2–4) and a <strong>lunar insertion</strong> (raise apogee → lead the Moon → a gentle capture burn, mindful of Lagrange terrain and the danger of slingshotting past — Modules 5–6). Launch-to-LEO is automated; victory is reaching the target orbit. Everything from Modules 1–7 gets used in anger.</p>
+<hr/>
+<h2 id="sec-7-instructor-dashboard-server-mode">7. Instructor dashboard (server mode)</h2>
+<p>Log in with the instructor account (the first one registered). The hub shows a <strong>roster</strong>: each student, which modules they've completed, and their pass status. Prerequisite gating means a student can't skip ahead — the server enforces it regardless of what the browser does.</p>
+<p>To reset a cohort, stop the server and archive/remove <code>academy_data.json</code> (keep a backup first); a fresh file is created on next start, and the first new registration becomes the instructor again.</p>
+<hr/>
+<h2 id="sec-8-updating-testing">8. Updating &amp; testing</h2>
+<ul><li>Pull the latest files (ZIP or <code>git pull</code>).</li><li>If you run the server, sanity-check it after updating:</li></ul>
+<p>  ``<code>bash   cd academy   bash test/run.sh      # functional + security + DoS checks, on an isolated temp data file   </code>`<code>   The tests never touch your real </code>academy_data.json`.</p>
+<ul><li>See <code>docs/CHANGELOG.md</code> for what changed, and <code>docs/SECURITY.md</code> for the per-release audit log.</li></ul>
+<hr/>
+<h2 id="sec-9-troubleshooting">9. Troubleshooting</h2>
+<ul><li><strong>"Please sign in first."</strong> — You're in server mode but not logged in. Register/log in at the</li></ul>
+<p>  hub. (If you <em>want</em> no-login use, host the static files without the server — §3 Option 1.)</p>
+<ul><li><strong>The worksheet window didn't open.</strong> — The browser blocked the pop-up. Allow pop-ups for the</li></ul>
+<p>  site, then click "Re-open the worksheet."</p>
+<ul><li><strong>3-D view is blank.</strong> — The Three.js library or a texture failed to load; it's fetched from a</li></ul>
+<p>  public CDN, so the machine needs internet access. Simulators degrade gracefully (a plain-colored   Earth) if a texture is blocked, but the CDN script itself is required.</p>
+<ul><li><strong>Progress didn't save across devices.</strong> — That's standalone mode (per-browser storage). Use the</li></ul>
+<p>  server (Option 2) for progress that follows the student.</p>
+<ul><li><strong>Lost accounts.</strong> — Restore <code>academy_data.json</code> from its <code>.bak</code> (same folder) or your backup.</li></ul>
+<hr/>
+<h2 id="sec-11-deep-dive-the-complexities-of-l1-halo-orbits">11. Deep dive — the complexities of L1 (halo) orbits</h2>
+<p>Module 6's libration "zoo" and NRHO scenario provoke sharp questions. This section arms you to field them. It is background for the instructor, pitched above the student level.</p>
+<p><strong>1. These are not Keplerian orbits.</strong> A satellite in LEO or around the Moon traces an <strong>ellipse</strong> about a single dominant body, fully named by six orbital elements (a TLE). A <strong>halo orbit around a Lagrange point has no single central body</strong> — it circles an <em>empty point in space</em> where Earth's and the Moon's pulls, together with the motion needed to keep pace with the rotating Earth–Moon line, balance out. There is <strong>no focus, no fixed ellipse, no TLE.</strong> It is a periodic solution of the <em>restricted three-body problem</em>. When a student says "but it's not centered on anything!" — exactly. That's the whole point, and it's the single most mind-expanding idea in the course.</p>
+<p><strong>2. One parameter, not six.</strong> Astonishingly, the entire family of halos around a given Lagrange point is labeled by <strong>one number</strong> — the <strong>Jacobi constant</strong>, the conserved energy-like quantity of the rotating frame (higher amplitude ↔ lower Jacobi constant). Fix it and the size, the out-of-plane height, and the period are all determined. Contrast the six-plus elements of an ordinary orbit. In the zoo, the amplitude sliders + frequency-ratio buttons expose this: at a <strong>1:1</strong> frequency lock the in-plane and out-of-plane amplitudes are tied together by a constraint (one free parameter → a true halo); at other ratios they're independent (a two-parameter <strong>Lissajous/quasi-periodic</strong> family that never closes). A whole-number ratio closes into a figure; an irrational ratio fills a 3-D band forever.</p>
+<p><strong>3. Why the near-degeneracy matters.</strong> Near a collinear point the motion splits into an unstable saddle × an in-plane oscillation (ω_p) × an out-of-plane oscillation (ω_v). For Earth–Moon L1 these are <strong>ω_p ≈ 2.37, ω_v ≈ 2.30</strong> (units of the monthly rate) — very close but unequal. A generic bounded orbit is therefore a <strong>Lissajous</strong> that never closes. A <strong>halo</strong> is the special amplitude at which nonlinear terms drag ω_p and ω_v into an exact <strong>1:1 lock</strong> so the path closes into a single loop. Because the two frequencies start so close, that lock happens at modest amplitude — which is why real Sun–Earth L1/L2 halos (SOHO, Gaia, JWST) are rounded, moderate loops, not wild shapes.</p>
+<p><strong>4. The NRHO is deliberately lopsided — and that's correct.</strong> A near-rectilinear halo (CAPSTONE, Gateway) skims a few thousand km over one lunar pole and swings ~70,000 km over the other. Students (and instructors) balk: the gravity field is mirror-symmetric top-to-bottom, so shouldn't the orbit be? <strong>No.</strong> A symmetric field yields a mirror-image <em>pair</em> of solutions — a <strong>northern</strong> and a <strong>southern</strong> halo — and each individual orbit picks a side (like a ball settling into one well of a symmetric double-well). Gateway flies a southern NRHO; its northern twin is equally valid. The orbit <em>is</em> still symmetric, just about the plane through the Earth–Moon line and the poles, not the orbital plane. <strong>Second gem:</strong> because it's a very eccentric loop, Kepler's second law applies locally — the craft <strong>whips through the close pole pass in hours but loiters for days at the far end</strong>, so a "lunar" orbit spends ~99% of its time <em>far</em> from the Moon.</p>
+<p><strong>5. What supplies the torque? (The subtle one.)</strong> In the rotating frame the halo holds a fixed orientation, so in the inertial sky its orientation — and its angular-momentum vector — <strong>sweeps around once a month.</strong> A changing angular momentum requires a <strong>real torque.</strong> Where from? <strong>The Moon's off-axis gravity.</strong> Earth's pull is central about Earth (zero torque about Earth), but the Moon sits off to the side, so its tug does not point through Earth and exerts a genuine torque that swings the orbit around to keep pace with the Earth–Moon line. This is <em>not</em> a rotating-frame artifact — it is honest Newtonian gravity, and it vindicates the course's "banish fictitious forces" rule. (Numerically the Moon's torque about Earth on a representative halo point is ~0.2 in km²/s² per unit mass — nonzero, exactly as required.)</p>
+<p><strong>6. Honesty about the tool.</strong> The zoo uses the <strong>linearized</strong> (Richardson) equations plus a lookup-table nudge for how the loop's center migrates toward the Moon at high amplitude. The shapes and rhythms are faithful; it is <strong>not</strong> a full nonlinear integration, and it is labeled as such in the UI. If a student asks whether they could fly one, the answer is yes — but station-keeping is required because L1/L2/L3 are unstable (the halo is a controlled dance around an unstable point).</p>
+<hr/>
+<h2 id="sec-12-credits-license">12. Credits &amp; license</h2>
+<p>MIT licensed. Built for JASON / US Space Force training; companion to the CISLUNAR PATROL game and the xGEO simulator. Three.js is © its authors, loaded from a pinned CDN (SRI-checked).</p></main>
+</div>
+</body></html>

@@ -1,8 +1,8 @@
-/* Worksheet 3a content: "Naming Orbits & TLEs".
+/* Worksheet 3 content: "Naming Orbits & TLEs".
    Same data-driven shape as worksheets 1 & 2, plus two optional fields the
-   3a renderer understands: `elements` (the illustration-linked definitions
+   worksheet renderer understands: `elements` (the illustration-linked definitions
    table, NO symbols) and per-task `body` (extra HTML such as a sample TLE).
-   The interactive tool is tut3a.html: six element sliders + live ellipse +
+   The interactive tool is tut3.html: six element sliders + live ellipse +
    fixed stars + period/apogee/perigee readouts + "TLE of your orbit" panel +
    clickable real orbits (ISS, GPS, GEO, Molniya, Tundra). */
 const WORKSHEET = {

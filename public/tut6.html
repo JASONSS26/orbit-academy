@@ -9,36 +9,41 @@
   :root{--fg:#cfe3ff;--dim:#6f86a8;--accent:#ffcf4d;--cyan:#5fd0ff;--grn:#39d353;--red:#ff5a52;--moon:#d8d2c4;}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
-    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:15px}
-  #app{display:grid;grid-template-columns:340px minmax(0,1fr) 285px;height:100vh;gap:8px;padding:8px}
+    font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
+  #app{display:grid;grid-template-columns:449px minmax(0,1fr) 376px;height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
-  h2{margin:0 0 6px;font-size:19px;color:#fff}
+  h2{margin:0 0 6px;font-size:24px;color:#fff}
   .sec{border-top:1px solid #1d3350;margin-top:10px;padding-top:9px}
-  .big{font-size:14px;color:var(--accent);font-weight:bold;margin-bottom:6px}
-  .q{color:var(--dim);font-size:12px;margin-bottom:4px}
-  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:13px;
+  .big{font-size:18px;color:var(--accent);font-weight:bold;margin-bottom:6px}
+  .q{color:var(--dim);font-size:16px;margin-bottom:4px}
+  button{background:rgba(20,40,66,.85);border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:17px;
     padding:8px;border-radius:7px;cursor:pointer;width:100%;margin-top:6px}
   button:hover{background:#1f4a7a;border-color:var(--cyan)}
   button.on{background:#1f5a3a;border-color:var(--grn)}
   button.go{background:#1e5c33;border-color:#39d353}
   .seg{display:grid;gap:5px;margin-top:5px}
-  .seg button{margin-top:0;font-size:12px;padding:7px 5px}
+  .seg button{margin-top:0;font-size:16px;padding:7px 5px}
   .seg button.sel{background:#1f4a7a;border-color:var(--cyan);color:#fff;font-weight:bold}
-  label.chk{display:flex;align-items:center;gap:7px;font-size:13px;margin:5px 0;cursor:pointer}
-  input[type=range]{width:100%;accent-color:var(--cyan);height:20px}
+  label.chk{display:flex;align-items:center;gap:7px;font-size:17px;margin:5px 0;cursor:pointer}
+  input[type=range]{width:100%;accent-color:var(--cyan);height:22px}
   .stage{position:relative;border:1px solid #16304e;border-radius:9px;overflow:hidden;background:#000407}
   .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:13px;color:#fff;background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234;max-width:70%}
-  #frameTag{position:absolute;top:8px;right:10px;z-index:3;font-size:12px;color:var(--cyan);background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234}
-  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:12px;color:var(--dim);background:rgba(6,12,24,.72);padding:6px 10px;border-radius:6px;border:1px solid #234}
-  #banner{position:absolute;bottom:44px;left:10px;right:10px;z-index:3;font-size:13px;padding:6px 11px;border-radius:6px;font-weight:bold;display:none;text-align:center}
-  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:13px;border-bottom:1px solid #12263f;padding-bottom:4px}
+  .stitle{position:absolute;top:8px;left:10px;z-index:3;font-size:17px;color:#fff;background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234;max-width:70%}
+  #frameTag{position:absolute;top:8px;right:10px;z-index:3;font-size:16px;color:var(--cyan);background:rgba(6,12,24,.72);padding:5px 10px;border-radius:6px;border:1px solid #234}
+  #hint{position:absolute;bottom:8px;left:10px;right:10px;z-index:3;font-size:16px;color:var(--dim);background:rgba(6,12,24,.72);padding:6px 10px;border-radius:6px;border:1px solid #234}
+  #banner{position:absolute;bottom:44px;left:10px;right:10px;z-index:3;font-size:17px;padding:6px 11px;border-radius:6px;font-weight:bold;display:none;text-align:center}
+  /* 2×2 compare-view dividers: a thick white cross separating the four panels (shown only in quad mode) */
+  #quadDivH,#quadDivV{position:absolute;z-index:4;background:#fff;box-shadow:0 0 6px rgba(0,0,0,.6);display:none;pointer-events:none}
+  #quadDivH{left:0;right:0;top:50%;height:3px;transform:translateY(-50%)}
+  #quadDivV{top:0;bottom:0;left:50%;width:3px;transform:translateX(-50%)}
+  .stage.quad #quadDivH,.stage.quad #quadDivV{display:block}
+  .kv{display:flex;justify-content:space-between;margin:5px 0;font-size:17px;border-bottom:1px solid #12263f;padding-bottom:4px}
   .kv span:last-child{color:#fff;font-weight:bold;text-align:right}
-  .note{color:var(--dim);font-size:12px;margin-top:8px;line-height:1.5}
+  .note{color:var(--dim);font-size:16px;margin-top:8px;line-height:1.5}
   .warp{display:flex;gap:6px;align-items:center;margin-top:6px}
-  .warp button{width:34px;font-size:16px;padding:4px}
-  kbd{background:#13273f;border:1px solid #274266;border-radius:4px;padding:0 5px;color:#fff;font-size:12px}
+  .warp button{width:34px;font-size:20px;padding:4px}
+  kbd{background:#13273f;border:1px solid #274266;border-radius:4px;padding:0 5px;color:#fff;font-size:16px}
 </style>
 </head>
 <body>
@@ -93,7 +98,7 @@
         <button data-frame="eci"   onclick="setFrame('eci')">Earth-centred inertial (ECI)</button>
         <button data-frame="emrot" onclick="setFrame('emrot')">Earth–Moon rotating (synodic)</button>
         <button data-frame="mci"   onclick="setFrame('mci')">Moon-centred inertial (MCI)</button>
-        <button data-frame="moonfix" onclick="setFrame('moonfix')">Moon-fixed (rotating)</button>
+        <button data-frame="embr" onclick="setFrame('embr')">ECL-EMBR — barycentric rotating (Lagrange frame)</button>
       </div>
       <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames (2×2)</button>
     </div>
@@ -124,13 +129,13 @@
     </div>
 
     <div class="sec warp">
-      <span style="font-size:12px;color:var(--dim)">time&nbsp;</span>
+      <span style="font-size:16px;color:var(--dim)">time&nbsp;</span>
       <button onclick="warpDown()">−</button>
-      <span id="warpV" style="font-size:13px;color:#fff;min-width:64px;text-align:center">1×</span>
+      <span id="warpV" style="font-size:17px;color:#fff;min-width:64px;text-align:center">1×</span>
       <button onclick="warpUp()">+</button>
       <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸</button>
     </div>
-    <div class="sec" style="color:var(--dim);font-size:12px">
+    <div class="sec" style="color:var(--dim);font-size:16px">
       drag = pan · shift/right-drag = rotate · wheel = zoom · arrows = rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset
     </div>
   </div>
@@ -138,6 +143,7 @@
   <!-- 3D VIEW -->
   <div class="stage" id="stage">
     <canvas id="c"></canvas>
+    <div id="quadDivH"></div><div id="quadDivV"></div>
     <div class="stitle" id="stitle">⚖ The five Lagrange points</div>
     <div id="frameTag">frame: Earth–Moon rotating</div>
     <div id="banner"></div>
@@ -153,7 +159,7 @@
     <div class="kv"><span>Earth–Moon L2</span><span>119% out</span></div>
     <div class="kv"><span>Earth : Moon mass</span><span>81 : 1</span></div>
     <div class="sec">
-      <div class="big" style="font-size:13px;color:var(--cyan)">This scenario</div>
+      <div class="big" style="font-size:17px;color:var(--cyan)">This scenario</div>
       <div class="note" id="scenNote"></div>
     </div>
     <div class="sec">
@@ -174,7 +180,7 @@
 "use strict";
 /* ============================================================================
    TUTORIAL 6 — Lagrange Points & Complex Orbits.
-   Builds on Module 5's four reference frames (ECI / synodic / MCI / Moon-fixed)
+   Builds on Module 5's four reference frames (ECI / synodic / MCI / ECL-EMBR)
    and 2×2 compare view. Shows: the five Earth–Moon Lagrange points; a 1-D
    force-balance diagram at L1/Moon/L2; an L2 halo orbit; TESS (a 2:1 lunar-
    resonant HEO); and a live "fan release" that demonstrates chaotic divergence.
@@ -192,7 +198,7 @@ const massFrac=MU_M/MU;                       // ≈0.0121 (Moon fraction)
 const L1F=0.8513, L2F=1.1858, L3F=-1.0051;   // true Earth–Moon libration fractions (CR3BP)
 
 let scene, cam3, r3;
-let scale='em', frame='emrot', quad=false, simT=0, warp=1, paused=false;
+let scale='em', frame='emrot', quad=false, simT=0, warp=21600, paused=false;   // ≈6 h/s so the Moon visibly moves at start
 
 /* ------------------------------- renderer -------------------------------- */
 const canvas=$('c');
@@ -229,6 +235,12 @@ const moonOrbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(
 // red Earth–Moon line (the axis the Lagrange points live on) — updated each frame to reach the Moon
 const emLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(D_EM,0,0)]),
   new THREE.LineBasicMaterial({color:0xff5a52,transparent:true,opacity:0.85})); emLine.frustumCulled=false; scene.add(emLine);
+// Earth–Moon barycenter marker (orange cross) — the origin of the ECL-EMBR frame. At true scale it's
+// ~4670 km inside the Earth; we exaggerate its offset (BARY_EXAG, defined with baryPos below) so Earth wobbles.
+const baryMark=new THREE.Group();
+{ const s=D_EM*0.05, mk=(x,y,z)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-x,-y,-z),new THREE.Vector3(x,y,z)]),new THREE.LineBasicMaterial({color:0xff9b52}));
+  baryMark.add(mk(s,0,0),mk(0,s,0),mk(0,0,s)); }
+baryMark.frustumCulled=false; scene.add(baryMark);
 
 /* --- Lagrange markers, in a group that rotates with the Earth–Moon line --- */
 const lagGroup=new THREE.Group(); scene.add(lagGroup);
@@ -355,13 +367,17 @@ function buildForceDiagram(){
 }
 
 /* ------------------------------ cameras (from Module 5) ------------------- */
-const FRAMES=['eci','emrot','mci','moonfix'];
-const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',moonfix:'Moon-fixed (rotating)'};
+const FRAMES=['eci','emrot','mci','embr'];
+const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',embr:'ECL-EMBR — barycentric rotating'};
 const views={};
 for(const f of FRAMES) views[f]={R:D_EM*1.9, th:0.7, ph:1.0, target:new THREE.Vector3(0,0,0), cam:new THREE.PerspectiveCamera(50,1,0.5,4e9)};
-function frameCentersMoon(f){ return f==='mci'||f==='moonfix'; }
-function frameCorotates(f){ return f==='emrot'||f==='moonfix'; }
-function aimCamera(f){ const v=views[f]; let tgt=v.target.clone(); if(frameCentersMoon(f)) tgt.add(moonPos(simT));
+function frameCentersMoon(f){ return f==='mci'; }
+function frameCorotates(f){ return f==='emrot'||f==='embr'; }
+function frameCentersBary(f){ return f==='embr'; }
+const BARY_MU=0.01215, BARY_EXAG=6.0;   // Moon mass fraction; exaggerate barycenter offset so Earth's wobble shows
+function baryPos(t){ return moonPos(t).clone().multiplyScalar(BARY_MU*BARY_EXAG); }
+function aimCamera(f){ const v=views[f]; let tgt=v.target.clone();
+  if(frameCentersMoon(f)) tgt.add(moonPos(simT)); else if(frameCentersBary(f)) tgt.add(baryPos(simT));
   const th=v.th - (frameCorotates(f)?emAzimuth():0);
   v.cam.position.set(tgt.x+v.R*Math.sin(v.ph)*Math.cos(th), tgt.y+v.R*Math.cos(v.ph), tgt.z+v.R*Math.sin(v.ph)*Math.sin(th));
   v.cam.lookAt(tgt); }
@@ -480,6 +496,7 @@ function toggleQuad(){ quad=!quad; $('quadBtn').classList.toggle('on',quad);
   // Entering it, make sure we're running at a rate where the Moon visibly orbits — otherwise it
   // looks frozen. Only bump if the user is still at a slow default (don't clobber a chosen rate).
   if(quad){ if(paused) togglePause(); if(warp<21600){ warp=86400; showWarp(); } }   // ≈1 day/s → Moon laps in ~27 s
+  $('stage').classList.toggle('quad',quad);   // shows the white 2×2 divider cross
   $('stitle').style.display=quad?'none':'block'; positionLabels(); }
 
 /* --- TESS: analytic 2:1 HEO (perigee ~108,000 km, apogee ~375,000 km, ~13.7 d), inclined --- */
@@ -607,7 +624,7 @@ function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.update
   r3.setViewport(x,y,w,h); r3.setScissor(x,y,w,h); r3.setScissorTest(true); r3.render(scene,v.cam); }
 
 let last=performance.now(), lastWall=0;
-function loop(ts){ const wall=Math.min((ts-last)/1000,0.05); last=ts; lastWall=wall;
+function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-last)/1000,0.05); last=ts; lastWall=wall;
   const rot=2.0*wall; const vv=views[quad?panelFrameAt(curX,curY):frame];
   if(keys['ArrowLeft'])vv.th+=rot; if(keys['ArrowRight'])vv.th-=rot;
   if(keys['ArrowUp'])vv.ph=Math.max(0.05,vv.ph-rot); if(keys['ArrowDown'])vv.ph=Math.min(Math.PI-0.05,vv.ph+rot);
@@ -617,6 +634,7 @@ function loop(ts){ const wall=Math.min((ts-last)/1000,0.05); last=ts; lastWall=w
   const mp=moonPos(simT); moon.position.copy(mp); moon.rotation.y=Math.atan2(mp.x,mp.z)+Math.PI;
   lagGroup.rotation.y=emAzimuth(); forceGroup.rotation.y=emAzimuth();
   emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);   // red Earth–Moon line
+  baryMark.position.copy(baryPos(simT)); baryMark.visible=(quad||frame==='embr');   // barycenter shown in the ECL-EMBR frame
   if(tessDot.visible) tessDot.position.copy(orbPoint(tessA,tessE,tessIncl,2*Math.PI*(simT/tessPer)));
   if(haloDot.visible && haloPtsLocal.length){ const NRHO_P=6.5;   // days per NRHO rev (Gateway-class)
     // Walk the loop by the cumulative-TIME table so the craft whizzes at perilune, lingers at apolune.
@@ -652,10 +670,10 @@ function loop(ts){ const wall=Math.min((ts-last)/1000,0.05); last=ts; lastWall=w
   }
 
   if(quad){ const hw=CW/2,hh=CH/2;
-    renderView('eci',0,hh,hw,hh); renderView('emrot',hw,hh,hw,hh); renderView('mci',0,0,hw,hh); renderView('moonfix',hw,0,hw,hh);
+    renderView('eci',0,hh,hw,hh); renderView('emrot',hw,hh,hw,hh); renderView('mci',0,0,hw,hh); renderView('embr',hw,0,hw,hh);
     r3.setScissorTest(false);
   } else { renderView(frame,0,0,CW,CH); r3.setScissorTest(false); }
-  requestAnimationFrame(loop);
+  } catch(e){ if(!loop._warned){loop._warned=true; console.error('tut6 loop error:',e);} }
 }
 function banner(t,bg,fg){ const b=$('banner'); b.innerHTML=t; b.style.display='block'; b.style.background=bg; b.style.color=fg; b.style.border='1px solid '+fg; }
 

@@ -128,12 +128,35 @@ function renderTasks(){
   maybeFinish();
 }
 function quizHtml(key,q,done){
-  let html='<div class="quiz"><div class="q">'+esc(q.q)+'</div>';
-  q.opts.forEach((o,oi)=>{ html+='<label class="opt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'>'+esc(o)+'</label>'; });
-  html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+key+'">'+(done?'✓ '+esc(q.why):'')+'</div></div>';
+  let html='<div class="quiz"><div class="q">'+esc(q.q)+(q.multi?' <span style="font-weight:400;color:var(--dim);font-size:15px">(check all that apply)</span>':'')+'</div>';
+  if(q.multi){
+    q.opts.forEach((o,oi)=>{ html+='<label class="opt mopt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'><input type="checkbox" style="margin-right:9px;pointer-events:none">'+esc(o)+'</label>'; });
+    if(!done) html+='<button class="btn" style="margin-top:10px" id="sub_'+key+'">Submit answer</button>';
+    html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+key+'">'+(done?'✓ '+esc(q.why):'')+'</div></div>';
+  } else {
+    q.opts.forEach((o,oi)=>{ html+='<label class="opt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'>'+esc(o)+'</label>'; });
+    html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+key+'">'+(done?'✓ '+esc(q.why):'')+'</div></div>';
+  }
   return html;
 }
-function wireQuiz(card,key,q){ card.querySelectorAll('.opt').forEach(el=>el.onclick=()=>answer(key,+el.dataset.o,q)); }
+function wireQuiz(card,key,q){
+  if(q.multi){ card.querySelectorAll('.mopt').forEach(el=>el.onclick=()=>{ const cb=el.querySelector('input'); cb.checked=!cb.checked; el.classList.toggle('sel',cb.checked); });
+    const sub=$('sub_'+key); if(sub) sub.onclick=()=>answerMulti(key,q);
+  } else { card.querySelectorAll('.opt').forEach(el=>el.onclick=()=>answer(key,+el.dataset.o,q)); }
+}
+function answerMulti(key,q){
+  const card=$('card_'+key), opts=card.querySelectorAll('.mopt'), fb=$('fb_'+key);
+  const picked=[]; opts.forEach(el=>{ if(el.querySelector('input').checked) picked.push(+el.dataset.o); });
+  const want=q.a.slice().sort().join(','), got=picked.slice().sort().join(',');
+  if(want===got){ opts.forEach(el=>{el.style.pointerEvents='none'; el.classList.add('correct');});
+    const sub=$('sub_'+key); if(sub) sub.remove();
+    fb.className='fb ok'; fb.innerHTML='✓ '+esc(q.why);
+    card.classList.add('done'); const nl=card.querySelector('.n'); if(nl&&!/✓/.test(nl.textContent)) nl.textContent+=' ✓';
+    save(key); updateRail(); maybeFinish();
+  } else { fb.className='fb no'; fb.innerHTML='✗ '+esc(q.whyWrong||'Not quite — reconsider which factors matter, and check all that apply.');
+    opts.forEach(el=>{ const i=+el.dataset.o, chosen=el.querySelector('input').checked, shouldBe=q.a.includes(i);
+      if(chosen!==shouldBe){ el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),1400); } }); }
+}
 function answer(key,oi,q){
   const card=$('card_'+key); const opts=card.querySelectorAll('.opt'); const fb=$('fb_'+key);
   const correct=oi===q.a;
