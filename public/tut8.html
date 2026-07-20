@@ -980,13 +980,17 @@ function drawFuel(){ const w=fuelCv.width,h=fuelCv.height,g=fuelCtx; g.clearRect
    Hold a thruster and Δv accumulates at THRUST_RATE. A live "this burn" readout
    shows how much you've added so the pilot knows when to release. A typical
    maneuver here wants ~2–20 s of burn, so the rate is tuned to that window
-   against the mission's Δv budget (release-and-re-press is fine; the meter is
-   per-continuous-burn and resets when you let go). --------------------------- */
+   against the mission's Δv budget (release-and-re-press is fine; the meter keeps
+   its running total ~5 s after you let go — and holds the final number ~5 s after
+   a completed burn — so pulsed top-ups and read-back both work; ⟲ resets). ---- */
 const THRUST_RATE=500;         // m/s per second of holding. Burns are impulsive (orbit is frozen while
                                // firing), so this just sets how long you hold: a ~2400 m/s burn ≈ 5 s.
-let firing=null, burnDv=0, lastFire=0, burnHoldUntil=0;
-const BURN_PERSIST=5000;       // ms the "THIS BURN" integrator keeps its total after you release,
-                               // so you can PULSE the thruster (tap-tap-tap) to hit a desired total.
+let firing=null, burnDv=0, lastFire=0, burnHoldUntil=0, burnDone=false;
+const BURN_PERSIST=5000;       // ms the "THIS BURN" integrator keeps its total after you release —
+                               // mid-burn so you can PULSE the thruster (tap-tap-tap) to sneak up on
+                               // the target, and after COMPLETION so you can read what you actually
+                               // flew and judge the trim. burnDone marks a completed total: it stays
+                               // on screen for the persist window, but the next press starts fresh.
 // along-velocity: fore=+, aft=−. radial (side): applyBurn's side uses the LEFT-normal n=(-uy,ux),
 // which points TOWARD Earth, so side +1 = radial-IN (DOWN) and side −1 = radial-OUT (UP).
 const DIR_SIGN={fore:1,aft:-1,up:-1,down:1}, DIR_ALONG={fore:1,aft:1,up:0,down:0};
@@ -994,8 +998,9 @@ function startBurn(dir,btn){
   if(DEV) console.log('[thrust] press '+dir+' → flying='+flying+' firing='+firing+' dvSpent='+Math.round(dvSpent));
   if(!flying){ missionMsg='⚠ Not flying yet — press 🎮 TRAIN or plan a mission and load it.'; return; }
   if(dvSpent>=dvTotal||firing) return;
-  // Do NOT zero burnDv here — pulses accumulate. It only resets after BURN_PERSIST of no firing, or on reset.
-  if(performance.now()>burnHoldUntil) burnDv=0;      // start a fresh integration only if the last one expired
+  // Do NOT zero burnDv here — pulses accumulate. A fresh integration starts only if the last one
+  // expired, or if it belonged to an already-COMPLETED burn (held on screen just for reading).
+  if(burnDone || performance.now()>burnHoldUntil){ burnDv=0; burnDone=false; }
   firing=dir; lastFire=0;   // sentinel: stepBurn seeds lastFire from ITS OWN clock next frame (avoids dt<0)
   btn&&btn.classList.add('firing'); }
 function stopBurn(){ const wasFiring=!!firing;
@@ -1007,16 +1012,18 @@ function stopBurn(){ const wasFiring=!!firing;
   if(b && burnWindow && b.got>=b.dvTarget*0.6){ const err=Math.abs(b.got-b.dvTarget)/b.dvTarget;
     b.done=true; b.err=err; nextBurn++; burnWindow=false;
     capcom('CAPCOM: '+b.name+' complete — '+Math.round(b.got)+' m/s ('+(err<0.05?'right on the numbers ✓':err<0.15?'close enough':'off by '+Math.round(err*100)+'% — watch the next one')+').'+(nextBurn<planBurns.length?' Coasting to the next burn.':' Coasting to the target now.'));
-    burnDv=0; burnHoldUntil=0; updateBurnMeter();      // burn COMPLETE → clear now so the next burn starts fresh
+    // burn COMPLETE → keep the final total on screen for ~5 s so the pilot can read what they
+    // actually flew (it supports incremental trim decisions); the next press starts fresh (burnDone).
+    burnDone=true; burnHoldUntil=performance.now()+BURN_PERSIST; updateBurnMeter();
   } else {
     burnHoldUntil=performance.now()+BURN_PERSIST;       // burn NOT done → keep total for pulsed top-ups
   }
 }
 let lastPulse=0;               // Δv accrued in the current continuous press (for crediting b.got)
-function resetBurnMeter(){ burnDv=0; lastPulse=0; burnHoldUntil=0; updateBurnMeter(); }
+function resetBurnMeter(){ burnDv=0; lastPulse=0; burnHoldUntil=0; burnDone=false; updateBurnMeter(); }
 function stepBurn(now){
   if(!firing||!fs){ // idle: once the persist window lapses, clear the running total
-    if(!firing && burnDv>0 && now>burnHoldUntil){ burnDv=0; updateBurnMeter(); } return; }
+    if(!firing && burnDv>0 && now>burnHoldUntil){ burnDv=0; burnDone=false; updateBurnMeter(); } return; }
   if(!lastFire){ lastFire=now; return; }   // first frame of a hold: seed the clock from stepBurn's own `now`
   if(dvSpent>=dvTotal){ stopBurn(); return; }             // out of fuel → stop (only reason to auto-stop)
   const dt=Math.max(0,Math.min(0.1,(now-lastFire)/1000)); lastFire=now;
