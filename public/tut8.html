@@ -64,6 +64,7 @@
     background:#3a0808;border:2px solid #ff5a52;color:#ff8a80;font-weight:bold;font-size:1.1vw;
     padding:0.4vw 1vw;border-radius:6px;letter-spacing:2px;display:none;text-shadow:0 0 8px #ff5a52}
   #burnNow.on{display:block;animation:flash .7s steps(2,end) infinite}
+  #burnNow small{display:block;font-size:0.72vw;font-weight:normal;letter-spacing:1px;color:#ffb0a8;margin-top:2px}
   @keyframes flash{50%{opacity:.25}}
   /* --- calibration overlay --- */
   .calbox{position:absolute;border:1px dashed #39d353;background:rgba(57,211,83,.12);pointer-events:none}
@@ -692,7 +693,7 @@ const TOUR=[
   {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,000 m/s; the lunar flight 4,200.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
-  {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee). Miss it and it re-alerts one orbit later.', force:true},
+  {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee) — and tells you exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARDS</b>. Miss it and it re-alerts one orbit later.', force:true},
   {sel:'#burnPad', t:'Thrust — hold to fire', b:'Press &amp; hold FORWARDS/BACKWARDS (speed up / slow down) or UPWARDS/DOWNWARDS (radial out / in) — or keys <b>A D W S</b>. Burn at the cue!'},
 ];
 function tourRectFor(sel){ const stage=$('stage').getBoundingClientRect();
@@ -1320,8 +1321,14 @@ function loop(ts){ requestAnimationFrame(loop);
   if(flying) stepFlight(dtReal); // advance the mission clock (warp coast / real-time near burns)
   if(flying) capcomElems();      // periodic TLE-style telemetry read-back (a, e, peri, apo)
   else phase = (Math.floor(t/6000)%3===0)?'leo':(Math.floor(t/6000)%3===1)?'cruise':'arrival'; // idle demo
-  // BURN NOW annunciator follows the schedule
-  $('burnNow').classList.toggle('on', flying && !training && burnWindow && !!planBurns[nextBurn]);
+  // BURN NOW annunciator follows the schedule — and tells the pilot WHAT to fly:
+  // the thruster direction and the planned Δv, e.g. "BURN NOW · 2,400 m/s FORWARDS".
+  { const bn=$('burnNow'), nb=planBurns[nextBurn];
+    const bnOn = flying && !training && burnWindow && !!nb;
+    bn.classList.toggle('on', bnOn);
+    if(bnOn){ const html='🔴 BURN NOW · '+Math.round(nb.dvTarget).toLocaleString()+' m/s '+nb.dir+
+        '<small>'+nb.name+' — hold '+nb.dir+', release at the target</small>';
+      if(bn._msg!==html){ bn._msg=html; bn.innerHTML=html; } } }
   // current speed + altitude readout
   if(flying&&fs){ const v=Math.hypot(fs[2],fs[3]); const re=Math.hypot(fs[0],fs[1]);
     $('curSpeed').textContent=v.toFixed(2);

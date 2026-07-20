@@ -134,7 +134,7 @@ const WORKSHEET = {
     // ---- PART C ----
     { id:'c1', title:'Fly it — hold each burn to its logged Δv',
       teach:[
-        'With a good plan, click <b>✈ load into cockpit & fly</b>. The mission runs on a time-warped clock: it fast-forwards the coast and eases to real time as each burn approaches. When the <b>🔴 BURN NOW</b> light flashes, <b>hold the correct thruster</b> — the "this burn Δv" readout climbs; release when it reaches your logged value.',
+        'With a good plan, click <b>✈ load into cockpit & fly</b>. The mission runs on a time-warped clock: it fast-forwards the coast and eases to real time as each burn approaches. When the <b>🔴 BURN NOW</b> light flashes it spells out the order — the planned Δv and the thruster direction, e.g. <b>"2,400 m/s FORWARDS"</b>. Hold that thruster; the "this burn Δv" readout climbs; release when it reaches the value (which should match your logbook).',
         'For this transfer both burns are <b>FORWARDS</b> (prograde). Burn 1 (~2,400 m/s) leaves LEO; hours later, at apogee, burn 2 (~1,460 m/s) circularizes. Watch your logbook come to life.',
         'Two things about <b>winning</b>. Touching the target orbit isn’t enough — CAPCOM makes you <b>hold the box for one full orbit</b> before calling it (trim burns are welcome during the hold; drifting out resets the clock). And the debrief also grades your <b>angular separation from the target satellite</b> — this is a <i>servicing</i> mission, so arriving at GEO on the wrong side of the planet is only partial credit. Watch the red 🛰 target on the nav map as you close in.',
       ],
