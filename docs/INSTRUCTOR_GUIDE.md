@@ -363,9 +363,10 @@ frames** — what you hold still changes everything. The **2×2 compare view** (
 once, one clock) is the centerpiece; spend time there. The four frames are ECI, Earth–Moon rotating
 (synodic), Moon-centred inertial (MCI), and **ECL-EMBR** — the barycentric-rotating frame centered
 on the Earth–Moon barycenter, where *both* bodies freeze and the Lagrange points hold still (it sets
-up Module 6). The tool marks the barycenter with an exaggerated orange cross (note: the sim keeps
-Earth pinned and swings the *marker*, so students should picture — not watch for — the real monthly
-Earth-wobble about that point) and
+up Module 6). The tool marks the barycenter with an orange cross at its **true position inside the
+Earth** — ~4,670 km from the center, 73% of the way to the surface, drawn through the globe (note:
+the sim keeps Earth pinned, so students should picture — not watch for — the real monthly
+Earth-wobble about that buried point) and
 shows the ecliptic vs. equator planes tilted by the 23.4° obliquity. Other key beats: the Hill
 sphere / L1 boundary (L1 is ~85% of the way to the Moon, *not* the midpoint), the definition of xGEO,
 and "leading the Moon" for a transfer. Note: the tool idealizes the Moon's orbit as flat so the

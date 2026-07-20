@@ -236,10 +236,13 @@ const moonOrbit=new THREE.Line(new THREE.BufferGeometry().setFromPoints(
 // red Earth–Moon line (the axis the Lagrange points live on) — updated each frame to reach the Moon
 const emLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(D_EM,0,0)]),
   new THREE.LineBasicMaterial({color:0xff5a52,transparent:true,opacity:0.85})); emLine.frustumCulled=false; scene.add(emLine);
-// Earth–Moon barycenter marker (orange cross) — the origin of the ECL-EMBR frame. At true scale it's
-// ~4670 km inside the Earth; we exaggerate its offset (BARY_EXAG, defined with baryPos below) so Earth wobbles.
+// Earth–Moon barycenter marker (orange cross) — the origin of the ECL-EMBR frame, drawn at its
+// TRUE position: ~4,670 km from Earth's centre, INSIDE the planet (73% of the way to the surface).
+// depthTest off + long arms keep the crossing point readable through the globe.
 const baryMark=new THREE.Group();
-{ const s=D_EM*0.05, mk=(x,y,z)=>new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-x,-y,-z),new THREE.Vector3(x,y,z)]),new THREE.LineBasicMaterial({color:0xff9b52}));
+{ const s=D_EM*0.05, mk=(x,y,z)=>{ const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-x,-y,-z),new THREE.Vector3(x,y,z)]),
+    new THREE.LineBasicMaterial({color:0xff9b52,depthTest:false,transparent:true,opacity:0.95}));
+    ln.renderOrder=10; return ln; };
   baryMark.add(mk(s,0,0),mk(0,s,0),mk(0,0,s)); }
 baryMark.frustumCulled=false; scene.add(baryMark);
 
@@ -375,7 +378,7 @@ for(const f of FRAMES) views[f]={R:D_EM*1.9, th:0.7, ph:1.0, target:new THREE.Ve
 function frameCentersMoon(f){ return f==='mci'; }
 function frameCorotates(f){ return f==='emrot'||f==='embr'; }
 function frameCentersBary(f){ return f==='embr'; }
-const BARY_MU=0.01215, BARY_EXAG=6.0;   // Moon mass fraction; exaggerate barycenter offset so Earth's wobble shows
+const BARY_MU=0.01215, BARY_EXAG=1.0;   // Moon mass fraction; barycenter at its TRUE position (inside the Earth)
 function baryPos(t){ return moonPos(t).clone().multiplyScalar(BARY_MU*BARY_EXAG); }
 function aimCamera(f){ const v=views[f]; let tgt=v.target.clone();
   if(frameCentersMoon(f)) tgt.add(moonPos(simT)); else if(frameCentersBary(f)) tgt.add(baryPos(simT));

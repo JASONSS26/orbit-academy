@@ -48,6 +48,15 @@ content improvements. Client-only (`server.js` untouched).
   Molniya flies exactly two orbits per Earth rotation. Molniya/GPS presets pinned to the exact
   semi-synchronous axis (a = 26,562 km; were 26,600/26,560, drifting ~0.4%/orbit). Both clocks
   freeze together when the animation is off.
+- **Module 5 (+6):** the Earth–Moon **barycenter is now drawn at its true position** — inside the
+  Earth, ~4,670 km from the center (73% of the way to the surface), rendered through the globe —
+  instead of a 6× exaggerated offset that floated it 4 Earth-radii out in space. In the 2×2
+  compare view each panel now marks **the origin of its own frame** (Earth's center for ECI &
+  synodic, the Moon's center for MCI, the barycenter for ECL-EMBR) instead of leaking the
+  barycenter furniture into all four panels; the ecliptic/equator reference planes appear only in
+  the ECL-EMBR panel. Dragging in tut5 now **rotates only** — panning could silently slide a
+  frame's origin off its body, wrecking the module's central lesson. Worksheet 5 and the
+  instructor guide updated to match.
 - **Module 1:** inclination now defined against **Earth's equatorial plane** (the equator extended
   into space, ⊥ the spin axis) with the rule of thumb *inclination = highest latitude reached*.
 - **Onboarding:** README/guide quick-start walks the GitHub download first (sign-in, `<> Code` →
