@@ -743,6 +743,7 @@ function startFlight(){ loadPlanFromStore();
   buildPlannedGhost();                                   // ghost path for the nav screens
   buildPlanProfile(src);                                 // speed-vs-time reference for the ILS dial
   training=false;
+  resetBurnMeter();   // fresh meter — a new mission must never show the previous run's target
   capcomLog=[]; for(const k in capcomSaid) delete capcomSaid[k];   // fresh comms each flight
   capcom(planTarget==='geo'
     ? 'Houston: you’re in the 400 km parking orbit. Optical tracking has the target GEO sat locked — cleared for the transfer. Burn prograde at the cue.'
@@ -1532,6 +1533,8 @@ function loop(ts){ requestAnimationFrame(loop);
     const mp=F7.moonPos(fsT+tShiftSec()); const rm=Math.hypot(fs[0]-mp[0],fs[1]-mp[1]);
     $('curAlt').textContent = rm<80000? ('Moon '+Math.round(rm-F7.R_M)+' km') : ('Earth '+Math.round(re-F7.R_E)+' km'); }
   else { $('curSpeed').textContent='0.00'; $('curAlt').textContent='—'; }
+  updateBurnMeter();   // meter target + full-scale track the live guidance EVERY frame (it used to
+                       // render only on thruster events, so a new flight showed the old run's target)
   drawWindow(t); drawNav(); drawFuel(); drawSide(); drawIls();
   if(DEV){ $('calHud').style.display='block'; $('calHud').textContent=
     'flying='+flying+' training='+training+' firing='+firing+' tourOn='+tourOn+' planMode='+planMode+
