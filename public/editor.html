@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Worksheet Editor · Orbit Academy</title>
+<style>
+  :root{ --bg:#0e1622; --panel:#16223300; --card:#1b2940; --ink:#e8eef7; --dim:#93a4bd;
+         --accent:#4ea1ff; --good:#39c07a; --bad:#e8635a; --line:#2b3d5a; --warn:#f0b64a; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+  header{position:sticky;top:0;z-index:20;background:#0b1220;border-bottom:1px solid var(--line);
+         padding:10px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.2px}
+  header .sp{flex:1}
+  select,button,input[type=text]{font:inherit;color:var(--ink);background:var(--card);
+         border:1px solid var(--line);border-radius:8px;padding:7px 11px}
+  button{cursor:pointer}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#04121f;font-weight:650}
+  button.primary:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:transparent}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 18px 120px}
+  .status{font-size:13px;padding:5px 10px;border-radius:6px}
+  .status.ok{background:#123524;color:var(--good)} .status.err{background:#3a1c1a;color:var(--bad)}
+  .status.dirty{background:#3a3218;color:var(--warn)}
+  section.block{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:16px 0;overflow:hidden}
+  .block>h2{margin:0;padding:12px 16px;font-size:15px;background:#12203a;border-bottom:1px solid var(--line);
+       display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .block>h2 .count{color:var(--dim);font-weight:400;font-size:13px}
+  .block>h2 .chev{margin-left:auto;color:var(--dim);transition:transform .15s}
+  .block.collapsed .chev{transform:rotate(-90deg)}
+  .block.collapsed .body{display:none}
+  .body{padding:14px 16px}
+  .field{margin:10px 0}
+  .field>label{display:block;font-size:12.5px;color:var(--dim);text-transform:uppercase;
+       letter-spacing:.4px;margin-bottom:4px}
+  .rt{min-height:38px;background:#0f1a2b;border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+      outline:none}
+  .rt:focus{border-color:var(--accent)}
+  .rt-toolbar{display:flex;gap:4px;margin-bottom:4px}
+  .rt-toolbar button{padding:2px 9px;font-size:13px;border-radius:6px}
+  .listitem{border:1px solid var(--line);border-radius:9px;padding:10px;margin:8px 0;background:#101d31;
+       position:relative}
+  .listitem .row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .listitem .grip{color:var(--dim);cursor:grab;font-size:16px}
+  .listitem .tag{font-size:12px;color:var(--accent);font-weight:650}
+  .listitem .del{margin-left:auto;background:#2a1614;border-color:#5a2a26;color:#f0a29b;padding:3px 9px;font-size:12px}
+  .task{border:1px solid var(--line);border-radius:10px;margin:10px 0;background:#101d31}
+  .task>.thead{padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;background:#13223c;border-radius:10px 10px 0 0}
+  .task>.thead .tid{font-size:12px;color:var(--dim);font-family:ui-monospace,monospace}
+  .task.collapsed .tbody{display:none}
+  .task.collapsed>.thead{border-radius:10px}
+  .tbody{padding:12px}
+  .quizbox{border:1px dashed var(--line);border-radius:9px;padding:10px;margin-top:8px;background:#0d1728}
+  .opt{display:flex;gap:8px;align-items:center;margin:5px 0}
+  .opt input[type=radio]{accent-color:var(--good);width:17px;height:17px;flex:none}
+  .opt .rt{flex:1}
+  .opt .fb{flex:2}
+  .opt .correct-badge{font-size:11px;color:var(--good);width:64px;flex:none}
+  .addbtn{background:#132a1f;border-color:#28503a;color:var(--good);font-size:13px;padding:5px 12px;margin-top:6px}
+  .hint{font-size:12.5px;color:var(--dim);margin:3px 0 0}
+  .preview{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:6px;background:#0a121f}
+  .preview .lbl{font-size:11px;color:var(--dim);text-transform:uppercase;margin-bottom:4px}
+  .gate{max-width:440px;margin:80px auto;text-align:center;background:var(--card);padding:30px;
+       border:1px solid var(--line);border-radius:14px}
+  a{color:var(--accent)}
+  .savebar{position:fixed;bottom:0;left:0;right:0;background:#0b1220;border-top:1px solid var(--line);
+       padding:11px 18px;display:flex;align-items:center;gap:14px;z-index:20}
+  .savebar .sp{flex:1}
+  code{background:#0a121f;padding:1px 5px;border-radius:4px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="gate" class="gate" style="display:none">
+  <h1>Worksheet Editor</h1>
+  <p id="gateMsg" style="color:var(--dim)">Checking your access…</p>
+  <p><a href="index.html">← Back to Academy</a></p>
+</div>
+
+<div id="app" style="display:none">
+  <header>
+    <h1>✏️ Worksheet Editor</h1>
+    <select id="pick"></select>
+    <button id="reload" class="ghost">Reload</button>
+    <span class="sp"></span>
+    <span id="who" style="font-size:13px;color:var(--dim)"></span>
+    <a href="index.html" class="ghost" style="text-decoration:none"><button class="ghost">Exit</button></a>
+  </header>
+  <div class="wrap" id="wrap"></div>
+  <div class="savebar">
+    <span id="status" class="status">No worksheet loaded</span>
+    <span class="sp"></span>
+    <span class="hint" id="verhint"></span>
+    <button id="save" class="primary" disabled>Save to Active set</button>
+  </div>
+</div>
+
+<script>
+/* ---------- tiny helpers ---------- */
+const $=id=>document.getElementById(id);
+const el=(tag,attrs,kids)=>{const n=document.createElement(tag);
+  if(attrs)for(const k in attrs){ if(k==='class')n.className=attrs[k]; else if(k==='html')n.innerHTML=attrs[k];
+    else if(k.startsWith('on'))n.addEventListener(k.slice(2),attrs[k]); else n.setAttribute(k,attrs[k]); }
+  (kids||[]).forEach(c=>n.appendChild(typeof c==='string'?document.createTextNode(c):c)); return n;};
+let DATA=null, ID=null, dirty=false;
+
+function setDirty(d){ dirty=d; const s=$('status');
+  if(d){ s.className='status dirty'; s.textContent='Unsaved changes'; $('save').disabled=false; }
+}
+function setStatus(msg,cls){ const s=$('status'); s.className='status '+(cls||''); s.textContent=msg; }
+
+window.addEventListener('beforeunload',e=>{ if(dirty){ e.preventDefault(); e.returnValue=''; } });
+
+/* ---------- rich-text field (contenteditable + toolbar) ----------
+   Stores/returns an HTML string. exec() uses execCommand — deprecated but universally
+   supported and perfect for a bold/italic/link toolbar with zero dependencies. */
+function richField(labelText, htmlValue, onInput, opts){
+  opts=opts||{};
+  const box=el('div',{class:'rt',contenteditable:'true'});
+  box.innerHTML=htmlValue||'';
+  box.addEventListener('input',()=>{ onInput(box.innerHTML); });
+  const mk=(lbl,cmd,arg)=>el('button',{type:'button',title:lbl,onmousedown:e=>{e.preventDefault();
+     if(cmd==='createLink'){const u=prompt('Link URL:','https://');if(u)document.execCommand(cmd,false,u);}
+     else document.execCommand(cmd,false,arg||null); box.focus(); onInput(box.innerHTML);}},[lbl]);
+  const tb=el('div',{class:'rt-toolbar'},[mk('B','bold'),mk('i','italic'),mk('link','createLink'),
+     mk('clear','removeFormat')]);
+  const wrap=el('div',{class:'field'});
+  if(labelText) wrap.appendChild(el('label',null,[labelText]));
+  wrap.appendChild(tb); wrap.appendChild(box);
+  return wrap;
+}
+/* plain single-line text field */
+function textField(labelText,value,onInput){
+  const inp=el('input',{type:'text',value:value||'',style:'width:100%'});
+  inp.addEventListener('input',()=>onInput(inp.value));
+  const w=el('div',{class:'field'}); if(labelText)w.appendChild(el('label',null,[labelText]));
+  w.appendChild(inp); return w;
+}
+
+/* ---------- collapsible section ---------- */
+function block(title,countText,collapsed){
+  const sec=el('section',{class:'block'+(collapsed?' collapsed':'')});
+  const body=el('div',{class:'body'});
+  const h=el('h2',null,[title]);
+  if(countText)h.appendChild(el('span',{class:'count'},[' · '+countText]));
+  h.appendChild(el('span',{class:'chev'},['▾']));
+  h.addEventListener('click',()=>sec.classList.toggle('collapsed'));
+  sec.appendChild(h); sec.appendChild(body); sec._body=body; return sec;
+}
+
+/* ---------- editable list of rich-text strings (objectives, summary, teach, think) ---------- */
+function stringListEditor(container, arr, tag){
+  container.innerHTML='';
+  arr.forEach((val,i)=>{
+    const item=el('div',{class:'listitem'});
+    const head=el('div',{class:'row'},[ el('span',{class:'tag'},[tag+' '+(i+1)]),
+      el('button',{class:'del',onclick:()=>{arr.splice(i,1);stringListEditor(container,arr,tag);setDirty(true);}},['Delete']) ]);
+    item.appendChild(head);
+    item.appendChild(richField('', val, v=>{arr[i]=v;setDirty(true);}));
+    container.appendChild(item);
+  });
+  container.appendChild(el('button',{class:'addbtn',onclick:()=>{arr.push('');stringListEditor(container,arr,tag);setDirty(true);}},['+ Add '+tag]));
+}
+
+/* ---------- quiz editor ---------- */
+function quizEditor(quiz){
+  const box=el('div',{class:'quizbox'});
+  box.appendChild(el('div',{class:'hint'},['Quiz — pick the correct option with the radio button on its left.']));
+  box.appendChild(richField('Question', quiz.q, v=>{quiz.q=v;setDirty(true);}));
+  const opts=el('div');
+  function renderOpts(){
+    opts.innerHTML='';
+    quiz.opts=quiz.opts||[]; quiz.feedback=quiz.feedback||[];
+    quiz.opts.forEach((o,oi)=>{
+      const radio=el('input',{type:'radio',name:'correct_'+Math.random().toString(36).slice(2,7)});
+      radio.checked=(quiz.a===oi);
+      radio.addEventListener('change',()=>{quiz.a=oi;setDirty(true);renderOpts();});
+      const row=el('div',{class:'opt'});
+      row.appendChild(radio);
+      row.appendChild(el('span',{class:'correct-badge'},[quiz.a===oi?'✓ correct':'']));
+      const optField=richField('',o,v=>{quiz.opts[oi]=v;setDirty(true);}); optField.classList.add('rt-wrap');
+      optField.querySelector('.rt').classList.add('optrt');
+      const fbField=richField('',quiz.feedback[oi]||'',v=>{quiz.feedback[oi]=v;setDirty(true);});
+      const optWrap=el('div',{style:'flex:1'},[el('label',null,['Option '+(oi+1)]),optField]);
+      const fbWrap =el('div',{style:'flex:1.4'},[el('label',null,[quiz.a===oi?'(correct — no wrong-answer feedback needed)':'Feedback if chosen']),fbField]);
+      const del=el('button',{class:'del',onclick:()=>{quiz.opts.splice(oi,1);quiz.feedback.splice(oi,1);
+        if(quiz.a>=quiz.opts.length)quiz.a=0; setDirty(true); renderOpts();}},['✕']);
+      const line=el('div',{class:'opt',style:'align-items:flex-start'},[radio.parentNode?radio:radio]);
+      // build one grid row
+      const grid=el('div',{style:'display:flex;gap:8px;align-items:flex-start;margin:7px 0'});
+      const left=el('div',{style:'display:flex;flex-direction:column;align-items:center;width:56px;flex:none;padding-top:22px'},[radio, el('span',{class:'correct-badge',style:'text-align:center'},[quiz.a===oi?'correct':''])]);
+      grid.appendChild(left); grid.appendChild(optWrap); grid.appendChild(fbWrap); grid.appendChild(el('div',{style:'padding-top:22px'},[del]));
+      opts.appendChild(grid);
+    });
+    opts.appendChild(el('button',{class:'addbtn',onclick:()=>{quiz.opts.push('');quiz.feedback.push('');setDirty(true);renderOpts();}},['+ Add option']));
+  }
+  renderOpts();
+  box.appendChild(opts);
+  box.appendChild(richField('Why (shown after a correct answer)', quiz.why, v=>{quiz.why=v;setDirty(true);}));
+  return box;
+}
+
+/* ---------- task editor ---------- */
+function taskEditor(task){
+  const t=el('div',{class:'task collapsed'});
+  const head=el('div',{class:'thead'},[ el('span',{class:'tid'},[task.id]),
+     el('b',null,[task.title||'(untitled task)']) ]);
+  head.addEventListener('click',()=>t.classList.toggle('collapsed'));
+  t.appendChild(head);
+  const b=el('div',{class:'tbody'});
+  b.appendChild(textField('Task title', task.title, v=>{task.title=v;head.querySelector('b').textContent=v||'(untitled task)';setDirty(true);}));
+  // teach (array or string)
+  b.appendChild(el('label',{style:'font-size:12.5px;color:var(--dim);text-transform:uppercase'},['Teach (paragraphs)']));
+  const teachBox=el('div'); if(!Array.isArray(task.teach))task.teach=task.teach?[task.teach]:[];
+  stringListEditor(teachBox,task.teach,'¶'); b.appendChild(teachBox);
+  // predict / do / observe
+  b.appendChild(richField('Predict', task.predict, v=>{task.predict=v;setDirty(true);}));
+  if(Array.isArray(task.do)){ b.appendChild(el('label',{style:'font-size:12.5px;color:var(--dim);text-transform:uppercase'},['Do (steps)']));
+     const doBox=el('div'); stringListEditor(doBox,task.do,'step'); b.appendChild(doBox); }
+  else b.appendChild(richField('Do', task.do, v=>{task.do=v;setDirty(true);}));
+  b.appendChild(richField('Observe (what to look for)', task.observe, v=>{task.observe=v;setDirty(true);}));
+  // think (array)
+  if(task.think){ b.appendChild(el('label',{style:'font-size:12.5px;color:var(--dim);text-transform:uppercase'},['Think about (questions)']));
+     const thinkBox=el('div'); if(!Array.isArray(task.think))task.think=[task.think]; stringListEditor(thinkBox,task.think,'Q'); b.appendChild(thinkBox); }
+  // quiz
+  if(task.quiz) b.appendChild(quizEditor(task.quiz));
+  t.appendChild(b); return t;
+}
+
+/* ---------- render whole worksheet ---------- */
+function render(){
+  const wrap=$('wrap'); wrap.innerHTML='';
+  // Objectives
+  if(DATA.objectives){ const s=block('Learning objectives',DATA.objectives.length+' items',true);
+    stringListEditor(s._body,DATA.objectives,'Objective'); wrap.appendChild(s); }
+  // Tutorial / context
+  if(DATA.tutorial){ const s=block('Context material (tutorial blocks)',DATA.tutorial.length+' blocks',true);
+    renderTutorial(s._body); wrap.appendChild(s); }
+  // Parts + tasks
+  const st=block('Interactive tasks & questions',(DATA.tasks||[]).length+' tasks',false);
+  (DATA.tasks||[]).forEach(task=>st._body.appendChild(taskEditor(task)));
+  wrap.appendChild(st);
+  // Exam
+  if(DATA.exam&&DATA.exam.length){ const s=block('Final check (exam questions)',DATA.exam.length+' questions',true);
+    DATA.exam.forEach(q=>s._body.appendChild(quizEditor(q))); wrap.appendChild(s); }
+  // Summary
+  if(DATA.summary){ const s=block('Summary points',DATA.summary.length+' points',true);
+    stringListEditor(s._body,DATA.summary,'Point'); wrap.appendChild(s); }
+  // Resources
+  if(DATA.resources){ const s=block('Resources (links)',DATA.resources.length+' links',true);
+    renderResources(s._body); wrap.appendChild(s); }
+}
+function renderTutorial(container){
+  container.innerHTML='';
+  DATA.tutorial.forEach((blk,i)=>{
+    const item=el('div',{class:'listitem'});
+    let kind = typeof blk==='string' ? 'text' : (blk.h?'heading':blk.analogy?'analogy':blk.figure?'figure':'text');
+    const head=el('div',{class:'row'},[el('span',{class:'tag'},[kind.toUpperCase()]),
+      el('button',{class:'del',onclick:()=>{DATA.tutorial.splice(i,1);renderTutorial(container);setDirty(true);}},['Delete'])]);
+    item.appendChild(head);
+    if(kind==='text') item.appendChild(richField('',blk,v=>{DATA.tutorial[i]=v;setDirty(true);}));
+    else if(kind==='heading') item.appendChild(textField('Section heading',blk.h,v=>{blk.h=v;setDirty(true);}));
+    else if(kind==='analogy') item.appendChild(richField('Analogy ("Picture this")',blk.analogy,v=>{blk.analogy=v;setDirty(true);}));
+    else if(kind==='figure'){
+      item.appendChild(textField('Figure SVG/HTML (raw)',blk.figure,v=>{blk.figure=v;setDirty(true);renderFigPreview();}));
+      item.appendChild(richField('Caption',blk.caption||'',v=>{blk.caption=v;setDirty(true);}));
+      const pv=el('div',{class:'preview'},[el('div',{class:'lbl'},['Live preview'])]);
+      const fig=el('div'); pv.appendChild(fig); item.appendChild(pv);
+      function renderFigPreview(){ fig.innerHTML=DATA.tutorial[i].figure||''; }
+      renderFigPreview();
+    }
+    container.appendChild(item);
+  });
+  const add=el('div',{style:'margin-top:8px;display:flex;gap:6px;flex-wrap:wrap'});
+  [['+ text','text'],['+ heading','heading'],['+ analogy','analogy']].forEach(([lbl,k])=>{
+    add.appendChild(el('button',{class:'addbtn',onclick:()=>{
+      DATA.tutorial.push(k==='text'?'':k==='heading'?{h:''}:{analogy:''}); renderTutorial(container); setDirty(true);}},[lbl]));
+  });
+  container.appendChild(add);
+}
+function renderResources(container){
+  container.innerHTML='';
+  DATA.resources.forEach((r,i)=>{
+    const item=el('div',{class:'listitem'});
+    item.appendChild(el('div',{class:'row'},[el('span',{class:'tag'},['LINK '+(i+1)]),
+      el('button',{class:'del',onclick:()=>{DATA.resources.splice(i,1);renderResources(container);setDirty(true);}},['Delete'])]));
+    item.appendChild(textField('Title',r.t,v=>{r.t=v;setDirty(true);}));
+    item.appendChild(textField('URL',r.u,v=>{r.u=v;setDirty(true);}));
+    container.appendChild(item);
+  });
+  container.appendChild(el('button',{class:'addbtn',onclick:()=>{DATA.resources.push({t:'',u:'https://'});renderResources(container);setDirty(true);}},['+ Add link']));
+}
+
+/* ---------- load / save ---------- */
+async function loadList(){
+  const r=await fetch('/api/workbook/list'); if(!r.ok)throw new Error('list failed');
+  const j=await r.json();
+  const pick=$('pick'); pick.innerHTML='';
+  j.ids.forEach(id=>pick.appendChild(el('option',{value:id},[id])));
+  $('verhint').textContent='Active set · versions: '+(j.sets.join(', ')||'active');
+  if(j.ids.length) await loadWorksheet(j.ids[0]);
+}
+async function loadWorksheet(id){
+  if(dirty && !confirm('Discard unsaved changes?')) { $('pick').value=ID; return; }
+  const r=await fetch('/api/workbook/get?id='+encodeURIComponent(id));
+  if(!r.ok){ setStatus('Load failed: '+(await r.json()).error,'err'); return; }
+  const j=await r.json(); DATA=j.data; ID=j.id; $('pick').value=ID;
+  render(); dirty=false; $('save').disabled=true; setStatus('Loaded '+ID+' — clean','');
+}
+async function save(){
+  $('save').disabled=true; setStatus('Saving…','');
+  const r=await fetch('/api/workbook/save',{method:'POST',headers:{'content-type':'application/json'},
+     body:JSON.stringify({id:ID,data:DATA})});
+  const j=await r.json();
+  if(r.ok){ dirty=false; setStatus('✓ Saved '+ID+' to Active set','ok'); }
+  else { setStatus('✗ '+j.error,'err'); $('save').disabled=false; }
+}
+
+/* ---------- boot: gate on instructor role ---------- */
+(async()=>{
+  let me; try{ me=await (await fetch('/api/me')).json(); }catch(e){}
+  if(!me||!me.user){ $('gate').style.display='block'; $('gateMsg').innerHTML='Please <a href="index.html">log in</a> first.'; return; }
+  if(me.user.role!=='instructor'){ $('gate').style.display='block';
+     $('gateMsg').textContent='This tool is for instructors only. Your account is a '+me.user.role+' account.'; return; }
+  $('app').style.display='block'; $('who').textContent=me.user.name+' · instructor';
+  $('pick').addEventListener('change',e=>loadWorksheet(e.target.value));
+  $('reload').addEventListener('click',()=>loadWorksheet(ID));
+  $('save').addEventListener('click',save);
+  try{ await loadList(); }catch(e){ setStatus('Could not list worksheets: '+e.message,'err'); }
+})();
+</script>
+</body>
+</html>

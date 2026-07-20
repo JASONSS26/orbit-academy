@@ -102,14 +102,15 @@ function planToSim(p){ const T=PLAN_TARGETS[p.target||'moon'];
     burns:[ {name:(p.target==='geo'?'Raise apogee':'Trans-Lunar Injection'), dir:'FORE', t:T.day1*86400, fore:(p.dv1||0)/1000, side:0},
             {name:(p.target==='geo'?'Circularize at GEO':'Lunar-Orbit Insertion'), dir:'FORE', t:T.day2*86400, fore:(p.dv2||0)/1000, side:0} ] }; }
 
-/* The verified reference solution (found by grid search against simulate(), above) — used by the
-   planner's "solve it for me" button and by the cockpit to time BURN-NOW cues. Total ~3990 m/s. */
+/* The verified reference solution (found by grid search against simulate(), above; re-verified
+   for v3.0: 3087 m/s TLI + 900 m/s LOI brake at day 4.18 with a 120° Moon lead → captured).
+   Matches the planner's "solve it for me" values. Total 3,987 m/s. Final circular trim is flown
+   by hand in the cockpit. */
 const SOLUTION={   // the Moon mission (kept as SOLUTION for back-compat)
-  alt:400, leoPhase:0, moonLeadDeg:124, budget:4200,   // m/s
+  alt:400, leoPhase:0, moonLeadDeg:120, budget:4200,   // m/s
   burns:[
-    { name:'Trans-Lunar Injection', dir:'FORE',  dvMS:3090, atDay:0.0  },   // prograde departure
-    { name:'Lunar-Orbit Insertion', dir:'AFT',   dvMS:900,  atDay:3.78 },   // retrograde at closest approach
-    { name:'Circularize',           dir:'AFT',   dvMS:150,  atDay:3.95 },   // tidy the ellipse (approx; tune live)
+    { name:'Trans-Lunar Injection', dir:'FORE',  dvMS:3087, atDay:0.0  },   // prograde departure
+    { name:'Lunar-Orbit Insertion', dir:'AFT',   dvMS:900,  atDay:4.18 },   // retrograde brake at closest approach
   ],
 };
 /* Two flyable missions, each with a plain-language objective + task, a target, and scoring.

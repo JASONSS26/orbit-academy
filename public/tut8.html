@@ -22,7 +22,8 @@
   /* big side NAV panel, floated over the unused upper-left area of the photo */
   #zSideNav{left:1.2%;top:2%;width:24%;height:52%;border:1px solid #2b3a52;border-radius:8px;
     background:rgba(4,9,7,.82);box-shadow:0 0 20px rgba(0,0,0,.5)}
-  #zNav{left:27%;top:61%;width:31%;height:19%}
+  /* NAV MFD sits left of the center thrust cluster (burnPad spans ~45–55%), so it is never obscured */
+  #zNav{left:13.5%;top:61%;width:31%;height:19%}
   #zFuel{left:66%;top:84%;width:15%;height:15%}
   /* --- burn control cluster (our own controls, styled to look backlit-cockpit) --- */
   #burnPad{position:absolute;left:50%;transform:translateX(-50%);bottom:1%;width:9.4%;height:31.5%;display:flex;flex-direction:column;gap:2.5%;
@@ -250,7 +251,7 @@
   <div id="planWrap">
     <div id="planLeft">
       <h2>🗺 Mission Planner — Flight Computer</h2>
-      <p class="sub">Program your burns, watch the predicted path, iterate until it threads lunar capture. Then flip to <b>✈ FLY</b> and execute.</p>
+      <p class="sub">Program your burns, watch the predicted path, iterate until the sim shows ✅ success. Then flip to <b>✈ FLY</b> and execute.</p>
       <canvas id="cPred"></canvas>
       <div id="predStat"></div>
     </div>
@@ -258,7 +259,7 @@
       <div class="q" style="color:var(--accent);font-size:15px;letter-spacing:1px;margin-bottom:8px;font-weight:bold">MISSION</div>
       <div class="seg" id="missionSeg" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px">
         <button data-m="geo"  class="sel" onclick="setMission('geo')">🛠 Service a GEO satellite</button>
-        <button data-m="moon" onclick="alert('🌙 Fly me to the Moon is coming soon — it needs a three-step plan (raise apogee, lead the Moon, then a Moon-relative insertion burn). For now, fly the two-burn GEO servicing mission.')" style="opacity:.5" title="coming soon">🌙 Fly me to the Moon (soon)</button>
+        <button data-m="moon" id="moonBtn" onclick="tryMoon()">🌙 Fly me to the Moon</button>
       </div>
       <div id="targetCard" class="tcard"></div>
 
@@ -282,8 +283,8 @@
 
       <!-- STEP 2: circularize at apogee. Learner types Δv2 = (circular speed) − (arrival speed). -->
       <div class="step">
-        <div class="sh">STEP 2 · Circularize (burn at apogee)</div>
-        <div class="crow"><span>circular speed needed there</span><b id="needV">—</b></div>
+        <div class="sh" id="sh2">STEP 2 · Circularize (burn at apogee)</div>
+        <div class="crow"><span id="needLbl">circular speed needed there</span><b id="needV">—</b></div>
         <div class="dvstep">Your Δv&#8322;:
           <span class="digitpad" data-for="dv2">
             <span class="col"><button onclick="bump('dv2',1000)">▲</button><b class="d" data-p="1000">0</b><button onclick="bump('dv2',-1000)">▼</button></span>
@@ -294,7 +295,7 @@
           </span> m/s
           <input id="dv2" type="hidden" value="0">
         </div>
-        <div class="crow"><span>→ your new speed</span><b id="calcVnew">—</b></div>
+        <div class="crow"><span id="vnewLbl">→ your new speed</span><b id="calcVnew">—</b></div>
         <div class="hitline" id="hit2"></div>
       </div>
 
@@ -302,7 +303,7 @@
         <button onclick="solvePlan()" class="solve">✨ solve it for me</button>
         <button onclick="runSim()" id="runSimBtn" class="runsim">▶ GO — run sim</button>
       </div>
-      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4200</span> m/s</span></div>
+      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4000</span> m/s</span></div>
       <div class="kv" id="leadRow"><span>Moon lead angle at start</span><span><input id="leadDeg" type="range" min="90" max="150" value="124"> <b id="leadDegV">124</b>°</span></div>
       <div id="planVerdict" class="verdict"></div>
       <button id="loadBtn" onclick="loadIntoCockpit()" class="load">✈ load into cockpit &amp; fly →</button>
@@ -313,6 +314,9 @@
 <div id="calHud"></div>
 <div id="hint">Start in <b>🗺 PLAN</b> — program your burns, then load into the cockpit to fly.</div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
+  crossorigin="anonymous"></script>
 <script src="flight8.js"></script>
 <script src="sat8.js"></script>
 <script>
@@ -498,7 +502,7 @@ const navCv=$('cNav'); let navCtx=fit(navCv);
 /* shared co-rotating trajectory map. mode:'wide' fits Earth+Moon+path; 'zoom' centers on the Moon.
    Draws: Moon-orbit ring, Earth, Moon (fixed +x), planned ghost, actual path, and YOU-ARE-HERE. */
 let plannedCorot=null;   // cached co-rotating planned path (built when a plan loads / on the fly)
-function buildPlannedGhost(){ const src=F7.planToSim(flightPlan||{target:'moon',dv1:3090,dv2:900,leadDeg:124});
+function buildPlannedGhost(){ const src=F7.planToSim(flightPlan||{target:'geo',dv1:2399,dv2:1457,leadDeg:124});
   const tMax=(src.target==='geo'?0.6:9)*86400;
   const r=F7.simulate(src,{dt:40,tMax}); const ts=r.tShift; const dtPer=40*3;
   plannedCorot=r.path.map((p,i)=>F7.toCorot(p[0],p[1],(i*dtPer)+ts)); plannedBurnMarks=r.burnMarks; }
@@ -625,7 +629,9 @@ const BURN_LEAD=1800;                           // s before a planned burn to sl
 function loadPlanFromStore(){ try{ const p=JSON.parse(localStorage.getItem('m7plan')); if(p) flightPlan=p; }catch(e){} }
 let planProfile=null;   // precomputed reference flight: [{t, speed, r}] sampled — for the planned-speed dial
 function startFlight(){ loadPlanFromStore();
-  const p=flightPlan||{target:'moon',dv1:3090,dv2:900,leadDeg:124};
+  // no stored plan → fly the verified GEO reference (mission 1); the old moon fallback carried a
+  // PROGRADE Δv₂ that could never capture — see the release QA log.
+  const p=flightPlan||{target:'geo',dv1:2399,dv2:1457,leadDeg:124};
   const src=F7.planToSim(p);                              // shared plan → burn schedule
   fs=F7.leoState(src.alt, 0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1;
   planTarget=src.target;
@@ -683,7 +689,7 @@ let tourOn=false, tourI=0;
 const TOUR=[
   {sel:'#zWindow', t:'Out the window', b:'Your real view of space — Earth shrinks as you climb, and the target satellite grows as you close in near GEO.'},
   {sel:'#zSideNav', t:'Mission NAV', b:'A top-down map of your flight in the co-rotating frame: the <b>planned path</b> (ghost) vs. where you <b>actually</b> are, plus burn cues.'},
-  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing has ~4,000 m/s.'},
+  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,000 m/s; the lunar flight 4,200.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
   {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee). Miss it and it re-alerts one orbit later.', force:true},
@@ -883,7 +889,8 @@ function showDebrief(msg, success, sc){
   // GEO success is the gate that unlocks the lunar mission
   const un=$('dbUnlock');
   if(success && planTarget==='geo'){ try{ localStorage.setItem('m7_geo_done','1'); }catch(e){}
-    un.classList.add('show'); un.innerHTML='🌙 <b>Lunar mission unlocked.</b> With a GEO servicing run under your belt, the harder graduation flight — <b>trans-lunar injection and lunar-orbit insertion</b> — is now available in the planner.'; }
+    refreshMoonButton();
+    un.classList.add('show'); un.innerHTML='🌙 <b>Lunar mission unlocked.</b> With a GEO servicing run under your belt, the graduation flight — <b>trans-lunar injection and lunar-orbit insertion</b> — is live: open 🗺 PLAN and select <b>🌙 Fly me to the Moon</b>.'; }
   else un.classList.remove('show');
   $('debrief').classList.add('show');
 }
@@ -972,7 +979,7 @@ function drawFuel(){ const w=fuelCv.width,h=fuelCv.height,g=fuelCtx; g.clearRect
    Hold a thruster and Δv accumulates at THRUST_RATE. A live "this burn" readout
    shows how much you've added so the pilot knows when to release. A typical
    maneuver here wants ~2–20 s of burn, so the rate is tuned to that window
-   against the ~3,100 m/s budget (release-and-re-press is fine; the meter is
+   against the mission's Δv budget (release-and-re-press is fine; the meter is
    per-continuous-burn and resets when you let go). --------------------------- */
 const THRUST_RATE=500;         // m/s per second of holding. Burns are impulsive (orbit is frozen while
                                // firing), so this just sets how long you hold: a ~2400 m/s burn ≈ 5 s.
@@ -1091,31 +1098,68 @@ function setMission(key){ plan.target=key; const T=TARGETS[key]; plan.dv1=0; pla
   $('planBudget').textContent=T.budget; $('dv1').value=0; $('dv2').value=0; $('leadDeg').value=T.lead; $('leadDegV').textContent=T.lead;
   syncDigits('dv1'); syncDigits('dv2');
   $('leadRow').style.display = key==='moon'?'flex':'none';    // lead angle only matters for the Moon
+  // step-2 wording follows the mission: GEO circularizes (prograde), the Moon flight BRAKES (retrograde)
+  $('sh2').textContent = key==='moon' ? 'STEP 2 · Brake into lunar orbit (flown BACKWARDS at closest approach)'
+                                      : 'STEP 2 · Circularize (burn at apogee)';
+  $('needLbl').textContent = key==='moon' ? 'arrival speed relative to the Moon ≈' : 'circular speed needed there';
+  $('vnewLbl').textContent = key==='moon' ? '→ your brake burn' : '→ your new speed';
   recompute(); }
+/* --- lunar mission gate: unlocks after a successful GEO servicing run (or with ?dev=1) --- */
+function moonUnlocked(){ if(DEV) return true; try{ return localStorage.getItem('m7_geo_done')==='1'; }catch(e){ return true; } }
+function tryMoon(){ if(moonUnlocked()) setMission('moon');
+  else alert('🌙 The lunar flight unlocks after a successful GEO servicing run — fly the 🛠 GEO mission first. (Everything you learn there — raise, coast, burn at the cue — is the warm-up for this one.)'); }
+function refreshMoonButton(){ const b=$('moonBtn'); if(!b) return; const un=moonUnlocked();
+  b.style.opacity=un?'1':'.55';
+  b.title=un?'trans-lunar injection + lunar-orbit insertion':'unlocks after a successful GEO servicing run';
+  b.innerHTML=un?'🌙 Fly me to the Moon':'🌙 Fly me to the Moon <small style="font-size:12px">(🔒 after GEO)</small>'; }
 // vis-viva forward math for the two burns
 function raiseResult(dv1){ const vp=vLEO+dv1/1000; const inv_a=2/rLEO - vp*vp/MU;
   if(inv_a<=0) return {ra:Infinity, va:0, escape:true};       // burn opened the orbit (escape)
   const a=1/inv_a, ra=2*a-rLEO, va=Math.sqrt(Math.max(0,MU*(2/ra-1/a))); return {ra,va,a,escape:false}; }
-function recompute(){ const T=TARGETS[plan.target];
-  plan.dv1=+$('dv1').value||0; plan.dv2=+$('dv2').value||0;
-  const r=raiseResult(plan.dv1); const vNeed=Math.sqrt(MU/T.ra);       // circular speed at target radius
-  const vNew=r.va + plan.dv2/1000;
-  // target card
-  $('targetCard').innerHTML='🎯 <b>'+T.name+'</b> — target apogee <b>'+T.ra.toLocaleString()+' km</b>, '+
-    'circular speed there <b>'+vNeed.toFixed(3)+' km/s</b>.<br>You start in LEO at '+rLEO.toLocaleString()+' km, '+vLEO.toFixed(3)+' km/s.';
-  // step 1 readouts
-  $('calcApo').textContent = r.escape? 'ESCAPE (orbit opened!)' : Math.round(r.ra).toLocaleString()+' km';
-  $('calcVarr').textContent = r.escape? '—' : r.va.toFixed(3)+' km/s';
-  const apoErr = r.escape? 1 : Math.abs(r.ra-T.ra)/T.ra;
-  setHit('hit1', apoErr, 'apogee', r.escape?'too much Δv — you escaped':'off by '+Math.round((r.ra-T.ra)/1000)+',000 km');
-  // step 2 readouts
-  $('needV').textContent = vNeed.toFixed(3)+' km/s';
-  $('calcVnew').textContent = vNew.toFixed(3)+' km/s';
-  const spdErr = Math.abs(vNew-vNeed)/vNeed;
-  setHit('hit2', spdErr, 'speed', (vNew<vNeed?'still '+Math.round((vNeed-vNew)*1000)+' m/s slow':Math.round((vNew-vNeed)*1000)+' m/s fast'));
-  // total + verdict readiness (both within tolerance)
+function recompute(){ const T=TARGETS[plan.target]; const isMoon=plan.target==='moon';
+  const M=F.MISSIONS[plan.target];
+  plan.dv1=+$('dv1').value||0;
+  // The learner always dials a positive number; for the Moon, Δv₂ is FLOWN as a brake (retrograde),
+  // so the plan carries it negative — exactly how the cockpit will schedule the burn.
+  plan.dv2=(isMoon?-1:1)*Math.abs(+$('dv2').value||0);
+  const r=raiseResult(plan.dv1);
+  let solved=null;
+  if(isMoon){
+    const AIM=395000;   // aim slightly PAST the Moon so you cross its path ahead of it — dead-center hits it
+    $('targetCard').innerHTML='🌙 <b>'+M.title+'</b> — '+M.objective+' '+M.task+
+      '<br><br>Aim your apogee just <b>past</b> the Moon (≈ <b>'+AIM.toLocaleString()+' km</b>; a dead-center 384,400 km aim smacks straight into it), set the <b>lead angle</b> so the Moon arrives when you do, then <b>brake</b> at closest approach. You start in LEO at '+rLEO.toLocaleString()+' km, '+vLEO.toFixed(3)+' km/s.';
+    $('calcApo').textContent = r.escape? 'ESCAPE (orbit opened!)' : Math.round(r.ra).toLocaleString()+' km';
+    $('calcVarr').textContent = r.escape? '—' : r.va.toFixed(3)+' km/s';
+    const apoErr = r.escape? 1 : Math.abs(r.ra-AIM)/AIM;
+    setHit('hit1', apoErr, 'apogee', r.escape?'too much Δv — you escaped'
+      :'off by '+Math.round((r.ra-AIM)/1000)+',000 km — near-lunar energies are knife-edge; trim by ±1 m/s');
+    // near apogee you crawl (~0.2 km/s) while the Moon does ~1.02 km/s — it runs you down from behind
+    const vMoon=Math.sqrt(MU/F.D_EM);
+    const vRel=r.escape? 0 : Math.max(0, vMoon - r.va);
+    $('needV').textContent = Math.round(vRel*1000)+' m/s (the Moon runs you down)';
+    const mag=Math.abs(plan.dv2);
+    $('calcVnew').textContent = Math.round(mag)+' m/s BACKWARDS';
+    const dvErr = (mag>=600 && mag<=1100)? 0 : Math.min(1, Math.abs(mag-900)/900);
+    setHit('hit2', dvErr, 'brake', mag<600?'brake harder or the Moon slings you right past'
+                                          :'that hard a brake risks dropping you onto the surface');
+    // the loadable verdict for the Moon comes from the SIMULATION (capture is a 3-body outcome) — see runPrediction
+  } else {
+    const vNeed=Math.sqrt(MU/T.ra);       // circular speed at target radius
+    const vNew=r.va + plan.dv2/1000;
+    $('targetCard').innerHTML='🎯 <b>'+M.title+'</b> — '+M.objective+' '+M.task+
+      '<br><br>Target apogee <b>'+T.ra.toLocaleString()+' km</b>, circular speed there <b>'+vNeed.toFixed(3)+' km/s</b>. You start in LEO at '+rLEO.toLocaleString()+' km, '+vLEO.toFixed(3)+' km/s.';
+    $('calcApo').textContent = r.escape? 'ESCAPE (orbit opened!)' : Math.round(r.ra).toLocaleString()+' km';
+    $('calcVarr').textContent = r.escape? '—' : r.va.toFixed(3)+' km/s';
+    const apoErr = r.escape? 1 : Math.abs(r.ra-T.ra)/T.ra;
+    setHit('hit1', apoErr, 'apogee', r.escape?'too much Δv — you escaped':'off by '+Math.round((r.ra-T.ra)/1000)+',000 km');
+    $('needV').textContent = vNeed.toFixed(3)+' km/s';
+    $('calcVnew').textContent = vNew.toFixed(3)+' km/s';
+    const spdErr = Math.abs(vNew-vNeed)/vNeed;
+    setHit('hit2', spdErr, 'speed', (vNew<vNeed?'still '+Math.round((vNeed-vNew)*1000)+' m/s slow':Math.round((vNew-vNeed)*1000)+' m/s fast'));
+    const tot0=Math.abs(plan.dv1)+Math.abs(plan.dv2);
+    solved = apoErr<0.03 && spdErr<0.03 && tot0<=T.budget;
+  }
   const tot=Math.abs(plan.dv1)+Math.abs(plan.dv2); $('planTotal').textContent=tot.toFixed(1);
-  const solved = apoErr<0.03 && spdErr<0.03 && tot<=T.budget;
   runPrediction(solved);
 }
 function setHit(id,err,what,offMsg){ const el=$(id);
@@ -1139,9 +1183,19 @@ function runPrediction(solved){ if(!predCtx) sizePred();
   const cor=res.path.map((p,i)=>F.toCorot(p[0],p[1],(i*dtPer)+ts));
   lastRes=res; lastCor=cor;
   drawPred(cor,res);
+  // The Moon's go/no-go comes straight from the simulation: capture is a genuine 3-body outcome
+  // (no clean vis-viva check exists), so the physics itself grades the plan.
+  const tot=Math.abs(plan.dv1)+Math.abs(plan.dv2);
+  if(plan.target==='moon') solved = res.captured && tot<=TARGETS.moon.budget;
   const v=$('planVerdict'), load=$('loadBtn');
-  if(solved){ v.className='verdict ok'; v.textContent='✔ Solution on target — press ▶ GO to run the sim, then load & fly.'; }
-  else { v.className='verdict'; v.textContent='Type Δv₁ and Δv₂ to hit the target apogee and circular speed. Watch the predicted path.'; }
+  if(solved){ v.className='verdict ok';
+    v.textContent = plan.target==='moon'
+      ? '✔ LUNAR CAPTURE predicted — press ▶ GO to watch the flight, then load into the cockpit.'
+      : '✔ Solution on target — press ▶ GO to run the sim, then load & fly.'; }
+  else { v.className='verdict';
+    v.textContent = plan.target==='moon'
+      ? 'Dial Δv₁ to aim just past the Moon, set the lead angle, and dial a Δv₂ brake for closest approach — until the prediction shows capture.'
+      : 'Dial in Δv₁ and Δv₂ with the ▲/▼ steppers to hit the target apogee and circular speed. Watch the predicted path.'; }
   load.classList.toggle('ready', !!solved);
   $('predStat').textContent='predicted outcome: '+res.outcome+(plan.target==='moon'?('  ·  closest Moon: '+Math.round(res.minMoon)+' km'):'')+'  ·  Δv: '+Math.round(Math.abs(plan.dv1)+Math.abs(plan.dv2))+' m/s';
 }
@@ -1153,6 +1207,7 @@ function syncDigits(id){ const tenths=Math.round((+$(id).value||0)*10);   // wor
   document.querySelectorAll('.digitpad[data-for="'+id+'"] .d').forEach(d=>{ const p=+d.dataset.p;
     d.textContent = Math.floor(tenths/(p*10))%10; }); }
 syncDigits('dv1'); syncDigits('dv2');
+refreshMoonButton();                      // lock/unlock the lunar mission per saved GEO progress
 /* ---- RUN SIM: animated time-warped playback of the current plan on the predictor canvas ----
    Success criteria (shown as the verdict):
      ✅ WIN  = captured into lunar orbit (bound to Moon, within its sphere of influence) AND Δv ≤ budget
@@ -1239,11 +1294,12 @@ function solvePlan(){ const T=TARGETS[plan.target];
     const r=raiseResult(dv1), vNeed=Math.sqrt(MU/T.ra), dv2=(vNeed-r.va)*1000;
     plan.dv1=Math.round(dv1); plan.dv2=Math.round(dv2);
   } else {
-    // Moon: verified clean-pass + lunar-capture values (a dead-center Hohmann would hit the Moon)
+    // Moon: verified clean-pass + lunar-capture values (a dead-center Hohmann would hit the Moon).
+    // Re-verified against simulate(): 3087 m/s TLI, 900 m/s brake, lead 120° → captured.
     plan.dv1=3087; plan.dv2=-900; plan.leadDeg=T.lead;
     $('leadDeg').value=T.lead; $('leadDegV').textContent=T.lead;
   }
-  $('dv1').value=plan.dv1; $('dv2').value=plan.dv2; syncDigits('dv1'); syncDigits('dv2'); recompute(); }
+  $('dv1').value=plan.dv1; $('dv2').value=Math.abs(plan.dv2); syncDigits('dv1'); syncDigits('dv2'); recompute(); }
 function loadIntoCockpit(){ try{ localStorage.setItem('m7plan',JSON.stringify(plan)); }catch(e){}
   flightPlan=JSON.parse(JSON.stringify(plan));
   buildPlannedGhost();       // cache the planned ghost + burn marks for the cockpit nav views

@@ -85,7 +85,7 @@
       <div class="q">satellite area-to-mass (drag / radiation sensitivity)</div>
       <div class="lab"><span id="bcLabel">compact satellite</span> <b><span id="bcV">0.02</span></b></div>
       <input id="bc" type="range" min="0.005" max="2" step="0.005" value="0.02">
-      <div class="note">Higher = lighter &amp; larger area (a “HAMR” object like a foil fragment). It feels far more drag and radiation pressure.</div>
+      <div class="note">Higher = lighter &amp; larger area (a “HAMR” object like a foil fragment). It feels far more drag — this sim models drag only, below 1,000 km; real HAMR objects feel radiation pressure the same way.</div>
     </div>
 
     <div class="sec warp">
@@ -282,7 +282,7 @@ let ssYear=0;
     const x=r*Math.cos(nu), y=r*Math.sin(nu);
     p.push(new THREE.Vector3(toU(x), toU(y)*Math.sin(inc), -toU(y)*Math.cos(inc))); } return p; }
   ssCirc.geometry.setFromPoints(ring(Re+700,0.0));
-  ssEll.geometry.setFromPoints(ring(Re+700,0.35));
+  ssEll.geometry.setFromPoints(ring(Re+700,0.05));
 })();
 
 /* ---- camera + input — SAME scheme as Modules 1 & 2 ----
@@ -362,7 +362,7 @@ function scenario(m){ mode=m;
   else if(m==='keep'){ $('alt').value=350; BCset(0.05); $('stitle').textContent='🛰 Station-keeping: radial vs tangential';
     g.innerHTML='<b>Goal:</b> this 350 km orbit is decaying. Try to hold altitude with small burns. Compare a <b>radial</b> burn with a <b>tangential prograde</b> burn of the same Δv — which actually raises the orbit? Watch apogee/perigee and your Δv spent.'; }
   else if(m==='radial'){ $('alt').value=1500; BCset(0.005); $('stitle').textContent='🤔 The radial-burn paradox';
-    g.innerHTML='<b>Goal:</b> circular orbit at 1,500 km. Set a burn of about <b>2,000 m/s</b> and press <b>⇱ radial out</b>. Pushing “up” doesn’t raise you — it drops the opposite side (perigee) below the surface, and half an orbit later the satellite <b>crashes</b>. A radial burn barely adds energy; it just makes the orbit eccentric.'; }
+    g.innerHTML='<b>Goal:</b> circular orbit at 1,500 km. Set a burn of about <b>2,000 m/s</b> and press <b>⇱ radial out</b>. Pushing “up” doesn’t raise you — it rotates the ellipse, planting a much lower perigee a quarter of the ring away, below the surface — so before the lap is out the satellite <b>crashes</b>. A radial burn barely adds energy; it just makes the orbit eccentric.'; }
   else if(m==='escape'){ $('alt').value=1500; BCset(0.005); $('stitle').textContent='💫 Escape → unbound (hyperbola)';
     g.innerHTML='<b>Goal:</b> break free. At 1,500 km, circular speed ≈ 7.1 km/s and <b>escape speed ≈ 10.1 km/s</b> (from Earth’s surface it’s the famous 11.2 km/s). Escaping <b>prograde</b> needs only ~2,950 m/s; escaping <b>radially</b> needs the full ~7,100 m/s. When speed passes escape, eccentricity crosses <b>1.0</b> and the ellipse opens into an <b>unbound hyperbola</b> — the same geometry as an object <b>scattering</b> past a planet.'; }
   else if(m==='infall'){ $('alt').value=20000; BCset(0.005); $('stitle').textContent='⬇ Radial infall';

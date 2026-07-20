@@ -4,6 +4,26 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v3.0 — audit result: **PASS**
+The v3.0 change set is overwhelmingly **client content** (worksheet data, tut HTML/JS, docs): the
+QA-walkthrough fixes, the Module 8 lunar-mission enablement, instructor materials (decks, docs,
+launchers), and Module 1's surface-clipped re-entry arcs. `server.js` changed in three strings —
+the version header, the `t1` course title, and a friendlier port-in-use message — with **zero
+changes** to auth, sessions, roles, gating, body-size limits, path handling, or the workbook
+editor. The new launcher scripts (`start-academy.bat`/`.command`) only check for node, open a
+localhost URL, and run `node server.js` — no privileged operations, nothing downloaded. New
+client surface reviewed: tut8 now loads Three.js from cdnjs **SRI-pinned** (same tag as tut1); the lunar
+unlock is a cosmetic localStorage flag (`m7_geo_done`) — it gates only a planner button, and module
+completion remains server-enforced, so "unlocking" it by hand grants nothing. Quiz-option
+shuffling is render-side only; answer keys never leave the data files (unchanged posture).
+Full test suite re-run this date: **functional + security + DoS body-size — 30+ checks, all
+passing** (`test/run.sh`). `academy_data.json` confirmed gitignored (verified with
+`git check-ignore`). Cleared to ship v3.0.
+
+**Process note:** v2.6 shipped without a logged entry here (caught by the v3.0 QA walkthrough —
+finding #64). The v2.6 change set was client/docs-only plus the COURSE reordering; this v3.0 audit
+covers the cumulative state. The release checklist gate stands: no push without a logged PASS.
+
 ## v2.5 — audit result: **PASS**
 The v2.5 change set is **client + docs only**: the Module 6 simulator (`tut6.html`) gained a libration-
 zoo scenario and physics fixes, the worksheet (`worksheet6.data.js`) gained a Part E capstone + exam

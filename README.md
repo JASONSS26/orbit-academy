@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v2.6
+# 🛰 ORBIT ACADEMY — v3.0
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -9,21 +9,37 @@ and the xGEO simulator.
 
 ## 👀 Reviewers — quickest way to try it
 
-You have repo access, so just run it locally (nothing is exposed on the public internet):
+You have repo access, so just run it locally (nothing is exposed on the public internet). Works
+identically on **Windows, macOS, and Linux**.
 
-```bash
-git clone https://github.com/JASONSS26/orbit-academy.git
-cd orbit-academy/academy
-node server.js                     # needs Node.js (nodejs.org); no packages to install
-```
+**Zero-install (no Node at all):** open `academy/public/gallery.html` directly in a browser —
+every worksheet and simulator works, progress saves in that browser. (A couple of features degrade
+without the server; see below.)
+
+**Full experience (accounts, roster) — needs Node.js:** the server is a JavaScript program, so the
+computer needs [Node.js](https://nodejs.org) — a one-time ~50 MB install (grab the **LTS**
+installer, click through it; no packages, no build step, nothing else to install, ever). Then:
+
+- **No terminal needed:** in the `academy` folder, double-click **`start-academy.bat`** (Windows)
+  or **`start-academy.command`** (macOS — first time: right-click → Open → Open). It checks for
+  Node, starts the server, and opens your browser. Keep its window open.
+- **Or from a terminal:**
+  ```bash
+  git clone https://github.com/JASONSS26/orbit-academy.git
+  cd orbit-academy/academy
+  node server.js
+  ```
+
 Then open **http://localhost:8080/gallery.html** — a no-login gallery with a link to every
 worksheet and simulator. (Worksheets opened there run in *standalone mode* and save progress in
-your browser; use the main hub at `http://localhost:8080/` if you want to create an account.)
+your browser; use the main hub at `http://localhost:8080/` if you want to create an account —
+the first account registered becomes the instructor.)
 
-**Even simpler, no Node at all:** open `academy/public/gallery.html` directly in a browser — every
-page works, progress saves locally. (A couple of features degrade without the server; see below.)
+**If something doesn't start:** `'node' is not recognized` → open a *new* terminal window after
+installing Node. "Port 8080 already in use" → the Academy is probably already running; just open
+http://localhost:8080. Full install walkthrough: `docs/INSTRUCTOR_GUIDE.md` §2–3.
 
-## What's here (v2.6)
+## What's here (v3.0)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
@@ -47,9 +63,11 @@ page works, progress saves locally. (A couple of features degrade without the se
   light curves, **RA/DEC** on a 3-D celestial sphere, a **tag-&-fit initial-orbit-determination**
   tool, parallax, and the orbitology → characterization → intent ladder.
 - **Module 8 — Lunar Transfers & Artemis** (the capstone flight sim): plan a two-burn transfer in
-  a flight computer, then **fly it** from an Artemis-class cockpit — GEO servicing (and a lunar
-  insertion) with a real RK4 model, a Δv budget/logbook, ILS-style track & speed instruments, a
-  true 3-D out-the-window view, a **TRAIN** free-flight sandbox, and a scored debrief.
+  a flight computer, then **fly it** from an Artemis-class cockpit — **two missions flown in
+  order**: GEO servicing, then (unlocked by a successful GEO run) the **lunar graduation flight**
+  (TLI → lead the Moon → retrograde LOI brake into lunar orbit) — with a real RK4 three-body model,
+  a Δv budget/logbook, ILS-style track & speed instruments, a true 3-D out-the-window view (with a
+  physically-lit 3-D target satellite), a **TRAIN** free-flight sandbox, and a scored debrief.
 - The **live simulators** (`tut1.html`–`tut8.html`) with matching camera/time controls.
 - **Interactive worksheets** (shared engine): each opens beside its simulator with learning
   **objectives**, a one-page **tutorial** (analogy + diagram), and **numbered exercises** built on a
@@ -117,7 +135,7 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v2.6: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v3.0: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. All modules and the v2.x worksheet engine are
 static client-side files (no new server surface). For internet-facing use, front it with HTTPS +

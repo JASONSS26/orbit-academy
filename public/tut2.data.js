@@ -9,8 +9,8 @@ const GEO_SATS = [
   ["Intelsat 35e",           -34.5],
   ["SES-1",                 -101.0],
   ["Galaxy 30",             -125.0],
-  ["XM-3 “Rock” (SiriusXM)",-115.0],   // XM Radio satellites — real names: Rock, Roll, Rhythm, Blues
-  ["XM-4 “Roll” (SiriusXM)",-115.0],
+  ["XM-1 “Roll” (SiriusXM)",-115.25],  // XM Radio satellites — real names: Rock, Roll, Rhythm, Blues
+  ["XM-2 “Rock” (SiriusXM)", -85.15],
   ["Meteosat-11 (EU)",         0.0],
   ["Eutelsat 7A (EU)",         7.0],
   ["Hotbird (EU TV)",         13.0],

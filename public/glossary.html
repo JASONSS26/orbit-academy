@@ -58,7 +58,7 @@
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const MODNAMES={1:'M1 Orbits',2:'M2 Geosync',3:'M3 TLEs',4:'M4 Maneuvers',5:'M5 Cislunar',6:'M6 Lagrange',7:'M7 Transfers',8:'M8 Observability'};
+const MODNAMES={1:'M1 Orbits',2:'M2 Geosync',3:'M3 TLEs',4:'M4 Maneuvers',5:'M5 Cislunar',6:'M6 Lagrange',7:'M7 Observability',8:'M8 Transfers'};
 let activeMod=0;   // 0 = all
 const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 // build module filter chips

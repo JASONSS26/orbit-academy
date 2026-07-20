@@ -51,7 +51,7 @@
       <label class="chk"><input type="checkbox" id="cSats" checked>show real GEO satellites</label>
       <label class="chk"><input type="checkbox" id="cJunk">show graveyard orbit (dead sats, above the belt)</label>
       <label class="chk"><input type="checkbox" id="cEcliptic">show ecliptic plane (Sun’s plane, tilted 23.5°)</label>
-      <label class="chk"><input type="checkbox" id="cRide">🛰 ride along a satellite (Sun sweeps by once/day)</label>
+      <label class="chk"><input type="checkbox" id="cRide">🛰 ride along a satellite (Sun sweeps past — sped up here; in reality once per day)</label>
       <button id="anatomy" style="margin-top:8px">🛰 Fly out for a close-up (inspector view)</button>
     </div>
 
@@ -527,7 +527,7 @@ function drawScope(sky){
   drawFrame(x0,y0,S,'LIVE — everything is a moving point. Take a picture to see what streaks.');
 }
 
-// render a developed 30-s time-exposure into ANY 2-D context (live panel or a shot thumbnail).
+// render a developed 4-min (240 s) time-exposure into ANY 2-D context (live panel or a shot thumbnail).
 // held objects = points; moving objects = streaks. E is LEFT, W is RIGHT, N up, S down.
 function renderExposure(ctx,x0,y0,S,off,dyPerX,drive){
   ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,S,S); ctx.clip(); ctx.fillStyle='#03060f'; ctx.fillRect(x0,y0,S,S);
@@ -569,7 +569,7 @@ function saveShot(off,dyPerX,drive){
   renderExposure(c,x0,y0,S,off,dyPerX,drive);
   const driveTxt=drive==='stars'?'tracking the STARS (sidereal drive)':'tracking a GEO SATELLITE';
   const streaks=drive==='stars'?'the satellite STREAKS; stars are points':'the STARS STREAK; the satellite is a point';
-  $('shotCap').innerHTML='📸 4-min exposure #'+shotN+' · '+driveTxt+' → <b>'+streaks+'</b> <span style="color:#8aa">(streak ≈ 7.5′ per min; the sky moves 15″/s)</span>';
+  $('shotCap').innerHTML='📸 4-min exposure #'+shotN+' · '+driveTxt+' → <b>'+streaks+'</b> <span style="color:#8aa">(streak grows ≈ 15′ per min; the sky moves 15″/s)</span>';
   $('shotsEmpty').style.display='none'; $('shotX').style.display='block';
 }
 

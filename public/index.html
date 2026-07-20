@@ -99,7 +99,7 @@
   <div id="hub" class="hide">
     <div class="card">
       <h1>Your flight path</h1>
-      <div class="sub">Complete each tutorial's quiz (70%+) to unlock the next. Finish all six to earn your certificate.</div>
+      <div class="sub">Complete each module's worksheet to unlock the next. Finish all eight to earn your certificate.</div>
       <div class="prog"><i id="progBar" style="width:0%"></i></div>
       <div class="grid" id="tutGrid"></div>
       <div id="certLink" class="hide" style="margin-top:16px;text-align:center">
@@ -110,6 +110,12 @@
       <h2>Instructor dashboard</h2>
       <div class="sub">Who has completed what.</div>
       <div id="roster"></div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line,#2b3d5a)">
+        <a href="editor.html" style="text-decoration:none">
+          <button style="background:#12203a;border:1px solid #2b3d5a;color:#e8eef7;font:inherit;
+            padding:9px 15px;border-radius:8px;cursor:pointer">✏️ Edit worksheets</button></a>
+        <span class="sub" style="margin-left:10px">Change the reading, questions &amp; answers; edits publish to the active workbook set.</span>
+      </div>
     </div>
   </div>
 
@@ -128,7 +134,7 @@
       <h1>Certificate of Completion</h1>
       <div class="sub">Orbit Academy — Cislunar Fundamentals</div>
       <div class="name" id="certName"></div>
-      <div style="color:var(--dim);font-size:15px">has demonstrated qualitative understanding of orbital dynamics,<br>angular rates, orbit taxonomy, maneuvers, observability, and cislunar space.</div>
+      <div style="color:var(--dim);font-size:15px">has demonstrated qualitative understanding of orbital dynamics, angular rates,<br>orbit taxonomy, maneuvers, cislunar space, Lagrange points, observability, and lunar transfers.</div>
       <div style="margin-top:20px;font-size:14px;color:var(--dim)" id="certDate"></div>
     </div>
     <div class="row" style="justify-content:center;margin-top:14px"><button onclick="window.print()">Print / Save PDF</button></div>
@@ -209,76 +215,9 @@ function openTut(id){
     if(!w) flashPopupHint();
     return;
   }
-  curTut=id; $('hub').classList.add('hide'); $('tutView').classList.remove('hide');
-  $('tutTitle').textContent=COURSE.find(c=>c.id===id).title;
-  const stage=$('tutStage');
-  let stepsHtml='';
-  if(t.steps&&t.steps.length){ stepsHtml='<div class="card"><h2>Guided exercise — do these in order</h2>'+
-    '<div class="sub">Work through each step in the tool above and think about what changes. These set you up for the quiz.</div><ol class="steps">'+
-    t.steps.map(s=>'<li>'+s+'</li>').join('')+'</ol></div>'; }
-  stage.innerHTML='<div class="card"><div class="sub">'+esc(t.blurb)+'</div>'+
-    '<iframe src="'+t.tool+'" title="interactive tool"></iframe></div>'+
-    stepsHtml+
-    '<div class="card" style="text-align:center"><button style="max-width:360px;margin:0 auto" onclick="startQuiz(\''+id+'\')">I\'ve worked through the steps → take the quiz</button></div>';
+  // Every module is worksheet-driven; a registry entry without a worksheet is a build error.
+  alert('This tutorial has no worksheet registered — check quiz.js.');
 }
-// Quiz: one question at a time, per-answer feedback, unlimited retries until correct.
-let QZ=null;
-function startQuiz(id){
-  QZ={id, i:0, firstTry:[], done:new Array(TUTORIALS[id].quiz.length).fill(false)};
-  renderQuestion();
-}
-function renderQuestion(){
-  const t=TUTORIALS[QZ.id], q=t.quiz[QZ.i], stage=$('tutStage');
-  const n=t.quiz.length;
-  let html='<div class="card"><div class="sub">Question '+(QZ.i+1)+' of '+n+' · answer until you get it right — that\'s how you learn it</div>'+
-    '<div class="q"><b style="font-size:17px">'+esc(q.q)+'</b>';
-  q.opts.forEach((o,oi)=>{ html+='<label class="opt" data-o="'+oi+'">'+esc(o)+'</label>'; });
-  html+='</div><div id="qfb"></div><div id="qnav" class="row" style="margin-top:10px"></div></div>';
-  stage.innerHTML=html;
-  stage.querySelectorAll('.opt').forEach(el=>el.onclick=()=>answerQuestion(+el.dataset.o));
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function answerQuestion(oi){
-  const t=TUTORIALS[QZ.id], q=t.quiz[QZ.i], stage=$('tutStage');
-  if(QZ.firstTry[QZ.i]===undefined) QZ.firstTry[QZ.i]=oi;   // record first attempt (for the record)
-  const opts=stage.querySelectorAll('.opt');
-  const correct = oi===q.a;
-  opts.forEach(el=>{ const i=+el.dataset.o;
-    el.classList.remove('sel');
-    if(i===oi) el.classList.add(correct?'correct':'wrong'); });
-  const fb=$('qfb');
-  if(correct){
-    QZ.done[QZ.i]=true;
-    opts.forEach(el=>el.style.pointerEvents='none');
-    fb.innerHTML='<div class="fb ok">✓ '+esc(q.why)+'</div>';
-    const last=QZ.i>=t.quiz.length-1;
-    $('qnav').innerHTML='<button onclick="'+(last?'finishQuiz()':'nextQuestion()')+'">'+(last?'Finish & earn badge →':'Next question →')+'</button>';
-  }else{
-    fb.innerHTML='<div class="fb no">✗ '+esc((q.feedback&&q.feedback[oi])||'Not quite — rethink it and try another answer.')+'</div>';
-    // let them try again: re-enable, clear the wrong marker after a moment
-    setTimeout(()=>{ opts.forEach(el=>el.classList.remove('wrong')); },900);
-  }
-}
-function nextQuestion(){ QZ.i++; renderQuestion(); }
-async function finishQuiz(){
-  const id=QZ.id, t=TUTORIALS[id];
-  const firstPass=QZ.firstTry.filter((v,i)=>v===t.quiz[i].a).length;
-  const firstScore=Math.round(100*firstPass/t.quiz.length);
-  // Mastery model: completing every question correctly earns the badge (score 100 recorded);
-  // we also show their first-attempt accuracy for self-awareness.
-  const r=await fetch('/api/complete',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({tutorial:id,score:100})});
-  const d=await r.json();
-  if(r.ok){ ME.progress=d.progress; UNLOCKED=d.unlocked; }
-  const stage=$('tutStage');
-  stage.innerHTML='<div class="card" style="text-align:center">'+hexBadgeBig()+
-    '<h2>🎉 Tutorial complete — badge earned!</h2>'+
-    '<div class="sub">You answered every question correctly. First-attempt accuracy: '+firstScore+'%. '+
-    'The next tutorial is now unlocked.</div>'+
-    '<div class="row" style="justify-content:center"><button style="max-width:280px" onclick="goHub()">Back to flight path →</button></div></div>';
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function hexBadgeBig(){ return '<div style="font-size:0">'+hexBadge(COURSE.findIndex(c=>c.id===QZ.id)+1).replace('width="30" height="30"','width="90" height="90"')+'</div>'; }
 
 function showCert(){ $('hub').classList.add('hide'); $('certView').classList.remove('hide');
   $('certName').textContent=ME.name; $('certDate').textContent='Completed '+new Date().toLocaleDateString(); }
@@ -290,7 +229,7 @@ async function loadRoster(){ const r=await fetch('/api/roster'); if(!r.ok)return
 }
 function flashPopupHint(){ alert('Your browser blocked the worksheet pop-up. Please allow pop-ups for this site, then click “Re-open the worksheet.”'); }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-const ROMAN=['','I','II','III','IV','V','VI'];
+const ROMAN=['','I','II','III','IV','V','VI','VII','VIII'];
 function hexBadge(n){ return '<svg width="30" height="30" viewBox="0 0 120 120">'+
   '<polygon points="60,8 108,34 108,86 60,112 12,86 12,34" fill="#0b1526" stroke="#39d353" stroke-width="6"/>'+
   '<ellipse cx="60" cy="60" rx="40" ry="16" transform="rotate(-25 60 60)" fill="none" stroke="#5fd0ff" stroke-width="4" opacity=".8"/>'+

@@ -84,6 +84,6 @@ const GLOSSARY = [
   {term:'Proximity operations', mod:7, also:['prox ops','neighborhood watch'], defn:'One spacecraft maneuvering close to another to inspect, dock with, service, or interfere. A camera stationed in GEO can run a "neighborhood watch" on its neighbors.'},
   {term:'Initial orbit determination (IOD)', mod:7, defn:'Working out an unknown object’s orbit from a few observations. Angles-only IOD is under-determined at first (a range/rate ambiguity) but is resolved as Earth-rotation parallax adds observations across a night.'},
   {term:'Arcminute / arcsecond', mod:7, defn:'Fine units of angle: 1° = 60 arcminutes (′) = 3,600 arcseconds (″). Not to be confused with a second of <b>time</b> — a fixed telescope sees stars drift ~15″ of angle per second of time.'},
-  {term:'Graveyard orbit', mod:7, defn:'A disposal orbit a few hundred km above GEO where retired satellites are boosted to clear the belt. From one image a graveyard object is hard to tell from a GEO one — the range/angular-rate ambiguity.'},
+  {term:'Graveyard orbit', mod:4, defn:'A disposal orbit a few hundred km above GEO where retired satellites are boosted to clear the belt. From one image a graveyard object is hard to tell from a GEO one — the range/angular-rate ambiguity.'},
 ];
 if (typeof module !== 'undefined') module.exports = GLOSSARY;

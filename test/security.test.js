@@ -41,6 +41,17 @@ let pass=0,fail=0; const P=(n,ok,x)=>{console.log((ok?'  ✓ ':'  ✗ FAIL ')+n+
   P('bad email rejected',(await req('POST','/api/register',{name:'B',email:'notanemail',password:'orbits123'})).status===400);
   P('wrong password rejected',(await req('POST','/api/login',{email:'i@j.org',password:'nope'})).status===401);
   P('malformed JSON rejected',(await req('POST','/api/login',null,null,'{not json')).status===400);
+
+  // ---- worksheet editor (instructor-only file writes) ----
+  P('workbook/list needs auth',(await req('GET','/api/workbook/list')).status===401);
+  P('workbook/list denies student',(await req('GET','/api/workbook/list',null,stu.cookie)).status===403);
+  P('workbook/get denies student',(await req('GET','/api/workbook/get?id=worksheet1',null,stu.cookie)).status===403);
+  P('workbook/save denies student',(await req('POST','/api/workbook/save',{id:'worksheet1',data:{tasks:[]}},stu.cookie)).status===403);
+  P('workbook/get rejects bad id (path traversal)',[400,403,404].includes((await req('GET','/api/workbook/get?id=..%2f..%2fserver',null,inst.cookie)).status));
+  P('workbook/save rejects bad id',(await req('POST','/api/workbook/save',{id:'../server',data:{tasks:[]}},inst.cookie)).status===400);
+  P('workbook/save rejects malformed payload',(await req('POST','/api/workbook/save',{id:'worksheet1',data:{nope:1}},inst.cookie)).status===400);
+  P('served worksheet data route rejects unknown id',[404].includes((await req('GET','/worksheet42.data.js')).status));
+
   // logout invalidates
   await req('POST','/api/logout',null,inst.cookie);
   P('session invalid after logout',(await req('GET','/api/me',null,inst.cookie)).status===401);

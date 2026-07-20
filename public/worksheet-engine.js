@@ -1,5 +1,5 @@
 /* ============================================================================
-   Orbit Academy — shared worksheet engine (v1.4).
+   Orbit Academy — shared worksheet engine (v1.5: quiz options shuffle at render).
    A worksheet HTML page provides two globals then includes this file:
      MODULE   = {id:'t5', title:'…', subtitle:'…', tool:'tut5.html', toolWindow:'cislunar5'}
      WORKSHEET = { objectives:[], tutorial:[…], elements?:{…}, parts:[…], tasks:[…],
@@ -127,14 +127,21 @@ function renderTasks(){
   }
   maybeFinish();
 }
+/* Options render in a per-quiz SHUFFLED order (so the correct answer isn't always in the same
+   slot — several data files habitually put it second). data-o keeps each option's ORIGINAL
+   index, so the answer key and feedback arrays need no remapping. The order is drawn once per
+   quiz object and cached, so a re-render within the session doesn't reshuffle. */
+function optOrder(q){ if(!q._ord){ q._ord=q.opts.map((_,i)=>i);
+    for(let i=q._ord.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=q._ord[i]; q._ord[i]=q._ord[j]; q._ord[j]=t; } }
+  return q._ord; }
 function quizHtml(key,q,done){
   let html='<div class="quiz"><div class="q">'+esc(q.q)+(q.multi?' <span style="font-weight:400;color:var(--dim);font-size:15px">(check all that apply)</span>':'')+'</div>';
   if(q.multi){
-    q.opts.forEach((o,oi)=>{ html+='<label class="opt mopt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'><input type="checkbox" style="margin-right:9px;pointer-events:none">'+esc(o)+'</label>'; });
+    optOrder(q).forEach(oi=>{ const o=q.opts[oi]; html+='<label class="opt mopt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'><input type="checkbox" style="margin-right:9px;pointer-events:none">'+esc(o)+'</label>'; });
     if(!done) html+='<button class="btn" style="margin-top:10px" id="sub_'+key+'">Submit answer</button>';
     html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+key+'">'+(done?'✓ '+esc(q.why):'')+'</div></div>';
   } else {
-    q.opts.forEach((o,oi)=>{ html+='<label class="opt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'>'+esc(o)+'</label>'; });
+    optOrder(q).forEach(oi=>{ const o=q.opts[oi]; html+='<label class="opt" data-t="'+key+'" data-o="'+oi+'"'+(done?' style="pointer-events:none"':'')+'>'+esc(o)+'</label>'; });
     html+='<div class="fb'+(done?' ok':'')+'" id="fb_'+key+'">'+(done?'✓ '+esc(q.why):'')+'</div></div>';
   }
   return html;

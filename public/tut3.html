@@ -52,7 +52,7 @@
         <input id="e" type="range" min="0" max="0.8" step="0.01" value="0.20"></div>
       <div class="el"><div class="q">3 · TILT vs. the equator</div>
         <div class="lab">inclination <b><span id="iV">30</span>°</b></div>
-        <input id="i" type="range" min="0" max="90" step="1" value="30"></div>
+        <input id="i" type="range" min="0" max="90" step="0.1" value="30"></div>
       <div class="el"><div class="q">4a · SWIVEL of the orbit plane (vs. the stars)</div>
         <div class="lab">RAAN <b><span id="raanV">40</span>°</b></div>
         <input id="raan" type="range" min="0" max="360" step="1" value="40"></div>
@@ -266,7 +266,7 @@ function buildTLE(a,e,iDeg,raanDeg,argpDeg,nuRad,Pmin){
   l1+=checksum(l1);
   // Line 2: cols per spec — inc, RAAN, ecc, argp, mean anomaly, mean motion, rev#
   let l2='2 '+NORAD+' '+fixdec(iDeg,3,4)+' '+fixdec(raanDeg,3,4)+' '+eccStr+' '+
-         fixdec(argpDeg,3,4)+' '+fixdec(Mdeg,3,4)+' '+revday.toFixed(8).padStart(11,'0')+'00001';
+         fixdec(argpDeg,3,4)+' '+fixdec(Mdeg,3,4)+' '+revday.toFixed(8).padStart(11,' ')+'00001';
   l2+=checksum(l2);
   $('tleText').textContent='YOUR ORBIT\n'+l1+'\n'+l2;
   $('tleMap').innerHTML=
@@ -294,9 +294,9 @@ const SATS=[
   {id:'geo',  name:'GEO (TV / weather)', c:0xffffff, a:42164, e:0.0002, i:0.1, raan:0, argp:0, nu:0,
     note:'<b>Geostationary.</b> Equatorial (i≈0), exactly one orbit per day, so it hangs over one longitude. Great for the equator — but poor coverage of high latitudes.'},
   {id:'moln', name:'Molniya (Soviet comms)', c:0xffcf4d, a:26600, e:0.74, i:63.4, raan:190, argp:270, nu:180,
-    note:'<b>Why the Soviets loved it:</b> a GEO satellite sits over the equator and barely clears the horizon from high latitudes — useless for northern Russia. A <b>Molniya</b> orbit is a highly eccentric 12-hour ellipse with <b>apogee ~40,000 km over the north.</b> By Kepler’s 2nd law it <i>crawls</i> near apogee, so it loafs over Russia for ~8 of every 12 hours. Argument of perigee is pinned near 270° (perigee in the south) and inclination is <b>63.4°</b> — the “magic” angle where Earth’s bulge (J2) does <i>not</i> rotate the ellipse, so apogee stays parked over the north. A trio covers the high Arctic 24/7.'},
-  {id:'tund', name:'Tundra (SiriusXM / SBIRS)', c:0xff7bd0, a:42164, e:0.24, i:63.4, raan:180, argp:270, nu:180,
-    note:'<b>Tundra</b> is Molniya’s bigger cousin: same 63.4° magic inclination and southern perigee, but a <b>24-hour</b> geosynchronous period with milder eccentricity. It traces a lopsided figure-8 ground track and dwells for hours over one high-latitude region — used by SiriusXM radio and missile-warning (SBIRS) satellites. One satellite gives a long daily dwell; a pair gives continuous coverage.'},
+    note:'<b>Why the Soviets loved it:</b> a GEO satellite sits over the equator and barely clears the horizon from high latitudes — useless for northern Russia. A <b>Molniya</b> orbit is a highly eccentric 12-hour ellipse with <b>apogee ~40,000 km over the north.</b> By Kepler’s 2nd law it <i>crawls</i> near apogee, so it loafs over Russia for ~8 of every 12 hours. Argument of perigee is pinned near 270° (perigee in the south) and inclination is <b>63.4°</b> — the “magic” angle where Earth’s bulge (J2) does <i>not</i> rotate the ellipse, so apogee stays parked over the north. A trio covers the high Arctic 24/7. US missile-warning sensors (SBIRS-HEO) fly Molniya-style 12-hour orbits for the same reason.'},
+  {id:'tund', name:'Tundra (SiriusXM)', c:0xff7bd0, a:42164, e:0.24, i:63.4, raan:180, argp:270, nu:180,
+    note:'<b>Tundra</b> is Molniya’s bigger cousin: same 63.4° magic inclination and southern perigee, but a <b>24-hour</b> geosynchronous period with milder eccentricity. It traces a lopsided figure-8 ground track and dwells for hours over one high-latitude region — used by SiriusXM satellite radio. One satellite gives a long daily dwell; a pair gives continuous coverage.'},
 ];
 let ghost=null;
 function clearGhost(){ ghostLine.visible=false; ghost=null; $('satNote').style.display='none';

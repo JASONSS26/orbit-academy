@@ -155,8 +155,8 @@
     <div class="big">Cislunar facts</div>
     <div class="kv"><span>Earth–Moon dist</span><span>384,400 km</span></div>
     <div class="kv"><span>lunar period</span><span>27.3 d</span></div>
-    <div class="kv"><span>Earth–Moon L1</span><span>85% out</span></div>
-    <div class="kv"><span>Earth–Moon L2</span><span>119% out</span></div>
+    <div class="kv"><span>Earth–Moon L1</span><span>~85% out</span></div>
+    <div class="kv"><span>Earth–Moon L2</span><span>~117% out</span></div>
     <div class="kv"><span>Earth : Moon mass</span><span>81 : 1</span></div>
     <div class="sec">
       <div class="big" style="font-size:17px;color:var(--cyan)">This scenario</div>
@@ -187,15 +187,16 @@
    Trajectories: LIVE RK4 in the INERTIAL frame (real Earth+Moon gravity, no
    fictitious forces) for the fan; analytic/tabulated paths for TESS & the halo.
    Language rule: no fictitious-force jargon anywhere (see the course-wide ban).
-   Verified: L1 at 0.837 D, L2 at 1.156 D, L4/L5 stable (mass ratio 81>24.96),
-   TESS-like HEO period 13.9 d (~2:1 with the 27.3-d Moon), RK4 dt=2s clean.
+   Verified (distances from Earth's center): L1 at 0.849 D (~326,000 km), L2 at
+   1.168 D (~449,000 km), L4/L5 stable (mass ratio 81>24.96),
+   TESS-like HEO period 13.66 d (true 2:1 with the 27.32-d Moon), RK4 dt=2s clean.
    ============================================================================ */
 const $=id=>document.getElementById(id);
 const R_EARTH=6371, R_MOON=1737, D_EM=384400, T_MOON=27.32;
 const MU_E=398600.4418, MU_M=4902.8, MU=MU_E+MU_M;
 const massFrac=MU_M/MU;                       // ≈0.0121 (Moon fraction)
-// collinear points (fractions of D_EM from Earth center), from the earlier CR3BP solve
-const L1F=0.8513, L2F=1.1858, L3F=-1.0051;   // true Earth–Moon libration fractions (CR3BP)
+// collinear points (fractions of D_EM from Earth center): L1 ≈ 84.9% (~326,000 km), L2 ≈ 116.8% (~449,000 km)
+const L1F=0.8491, L2F=1.1678, L3F=-1.0051;   // Earth–Moon libration fractions, measured from Earth's center
 
 let scene, cam3, r3;
 let scale='em', frame='emrot', quad=false, simT=0, warp=21600, paused=false;   // ≈6 h/s so the Moon visibly moves at start
@@ -279,7 +280,7 @@ const haloDot=new THREE.Mesh(new THREE.SphereGeometry(5000,10,8),new THREE.MeshB
    that a halo (ωp=ωv, forced by nonlinearity at one amplitude) is only mildly offset, while a generic
    orbit with ωp≠ωv is a LISSAJOUS figure that never closes and slowly fills a band. Amplitude is the
    ONE knob: set Ax,Az and the shape+period follow. High Az → dramatically out-of-plane.
-   The whole L1-local frame rides at 0.851·D_EM out along the (rotating) Earth–Moon line. */
+   The whole L1-local frame rides at 0.849·D_EM out along the (rotating) Earth–Moon line. */
 const ZOO_WP=2.3669, ZOO_WV=2.3020, ZOO_KAPPA=3.634;
 const ZOO_UNIT=0.14866*D_EM;              // L1 length scale (γ·D_EM ≈ 57,000 km)
 const L1X=L1F*D_EM;                        // L1 distance from Earth (same constant the ▲ marker uses)
@@ -499,10 +500,11 @@ function toggleQuad(){ quad=!quad; $('quadBtn').classList.toggle('on',quad);
   $('stage').classList.toggle('quad',quad);   // shows the white 2×2 divider cross
   $('stitle').style.display=quad?'none':'block'; positionLabels(); }
 
-/* --- TESS: analytic 2:1 HEO (perigee ~108,000 km, apogee ~375,000 km, ~13.7 d), inclined --- */
+/* --- TESS: analytic 2:1 HEO (perigee ~108,000 km, apogee ~368,000 km, 13.66 d = half the
+   27.32-d sidereal month — a true 2:1 lock), inclined --- */
 let tessA,tessE,tessIncl,tessPer;
-function buildTess(){ const rp=R_EARTH+108000, ra=375000; tessA=(rp+ra)/2; tessE=(ra-rp)/(ra+rp);
-  tessIncl=37*Math.PI/180; tessPer=2*Math.PI*Math.sqrt(tessA**3/MU_E)/86400;   // ~13.7 d
+function buildTess(){ const rp=R_EARTH+108000, ra=368390; tessA=(rp+ra)/2; tessE=(ra-rp)/(ra+rp);
+  tessIncl=37*Math.PI/180; tessPer=2*Math.PI*Math.sqrt(tessA**3/MU_E)/86400;   // 13.66 d (T_MOON/2)
   const pts=[]; for(let k=0;k<=220;k++) pts.push(orbPoint(tessA,tessE,tessIncl,k/220*6.283));
   tessLine.geometry.setFromPoints(pts); }
 /* --- L2 halo: a small looping curve drawn around the (rotating) L2 point --- */

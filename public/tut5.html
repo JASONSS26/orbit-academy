@@ -127,7 +127,7 @@
     <canvas id="c"></canvas>
     <div id="quadDivH"></div><div id="quadDivV"></div>
     <div class="stitle" id="stitle">🌙 Low lunar orbit</div>
-    <div id="frameTag">frame: Moon-locked</div>
+    <div id="frameTag">frame: Earth-centred inertial (ECI)</div>
     <div id="banner"></div>
     <div id="hint"></div>
   </div>
@@ -162,8 +162,9 @@
    Goal: build physical intuition for REFERENCE FRAMES and the Earth–Moon–Sun
    system, and define xGEO. Motion is analytic/Keplerian (no live propagation),
    so there is zero integration drift. Three zoom scales (lunar surface,
-   Earth–Moon, Sun–Earth) × four frames (fixed-stars, Earth co-moving,
-   Earth–Moon rotating, Moon-locked), toggleable lunar orbiters & xGEO objects,
+   Earth–Moon, Sun–Earth) × four frames (ECI fixed-stars, Earth–Moon rotating
+   synodic, Moon-centred inertial MCI, ECL-EMBR barycentric rotating),
+   toggleable lunar orbiters & xGEO objects,
    the Moon's Hill-sphere boundary, Moon phases, and a "lead the Moon" transfer.
    (Lagrange points & the effective-potential surface are deferred to Module 6.)
    Verified constants: Moon a=384,400 km, e=0.0549, i=5.14° to ecliptic,
@@ -364,7 +365,7 @@ let quad=false;
 // which frame's view is the input target: in quad mode, the panel under the cursor
 function panelFrameAt(clientX,clientY){ const r=canvas.getBoundingClientRect();
   const u=(clientX-r.left)/r.width, v=(clientY-r.top)/r.height;
-  return FRAMES[(v<0.5?0:1)*2 + (u<0.5?0:1)]; }              // TL,TR,BL,BR = stars,earth,emrot,moon
+  return FRAMES[(v<0.5?0:1)*2 + (u<0.5?0:1)]; }              // TL,TR,BL,BR = eci,emrot,mci,embr
 function activeFrame(cx,cy){ return quad? panelFrameAt(cx,cy) : frame; }
 // track the cursor globally so arrow keys drive whichever panel it's hovering (in quad mode).
 // Window-level (not canvas-level) so overlay elements never swallow the update; the hovered
@@ -428,10 +429,8 @@ function setScale(s){ scale=s;
   $('stitle').textContent=titles[s];
   // leaving the Earth–Moon view abandons any armed/flown transfer and clears the Moon phase offset
   if(s!=='em' && tli){ tli=null; tliMoonOffset=0; tliLine.visible=false; tliShip.visible=false; $('tliPanel').style.display='none'; }
-  // Per-frame camera distance. Moon-centred frames (MCI, Moon-fixed) zoom in tighter so you
-  // genuinely "ride the Moon" — that's what distinguishes Moon-fixed from the synodic frame,
-  // which otherwise also freezes the Earth–Moon line (they share a rate because the Moon is
-  // tidally locked). The tighter zoom also shows the big elliptical lunar orbit clearly.
+  // Per-frame camera distance. The Moon-centred frame (MCI) zooms in tighter so you
+  // genuinely "ride the Moon"; the tighter zoom also shows the big elliptical lunar orbit clearly.
   const base = s==='moon'? R_MOON*6 : s==='em'? D_EM*1.9 : D_ES*0.6;
   for(const f of FRAMES){ views[f].R = (frameCentersMoon(f) && s!=='es') ? Math.min(base, HILL_MOON*1.4) : base; }
   if(!quad){ if(s==='moon'&&(frame==='eci'||frame==='emrot')) setFrame('mci');
@@ -603,9 +602,9 @@ function resize(){ const st=$('stage'); CW=st.clientWidth; CH=st.clientHeight; r
 addEventListener('resize',resize);
 
 /* Frame handling — the pedagogical core. Two independent choices define each frame:
-     CENTER  — Earth (origin) for ECI & synodic; the Moon for MCI & Moon-fixed.
-     CO-ROTATE — synodic & Moon-fixed carry an azimuth with the Earth–Moon line
-                 (so that line/the other body appears fixed while the rest sweeps);
+     CENTER  — Earth (origin) for ECI & synodic; the Moon for MCI; the barycenter for ECL-EMBR.
+     CO-ROTATE — synodic & ECL-EMBR carry an azimuth with the Earth–Moon line
+                 (so that line appears fixed while the rest sweeps);
                  ECI & MCI do NOT co-rotate (so the Moon sweeps around Earth in ECI,
                  and the Earth sweeps around the Moon in MCI).
    All four share the same simT, so the underlying dynamics are identical. */

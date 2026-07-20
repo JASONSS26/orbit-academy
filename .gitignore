@@ -17,3 +17,6 @@ geo_*.js
 satellite_illumination*.gif
 satellite_illumination*.mp4
 *.mp4
+# worksheet editor timestamped backups (regenerated on every save)
+workbooks/**/*.bak
+workbooks/**/*.tmp

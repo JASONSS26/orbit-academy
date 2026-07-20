@@ -2,6 +2,80 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v3.0 — 2026-07-20
+**Major-version bump**: the capstone's second mission (the lunar flight) ships for real, and the
+course gains a complete instructor-materials layer — per-module intro decks, learning goals and
+lecture outlines, worksheet-editor documentation, double-click launchers, and a programmer's
+maintenance manual. Under it all, a full-course QA release: a trainee-persona walkthrough of every worksheet against every simulator
+(67 findings logged in `docs/QA_WALKTHROUGH_LOG.md`), all findings fixed, and **the Module 8 lunar
+mission enabled**. `server.js` changes are limited to the version string and one COURSE title
+string (`t1` → "How Orbits Work", matching the worksheet/README); auth/session/gating logic
+unchanged. Security audit: **PASS** (full suite re-run).
+
+- **🌙 Module 8 lunar mission is live.** "Fly me to the Moon" unlocks after a successful GEO
+  servicing run (the debrief flag is now actually read; `?dev=1` bypasses for instructors). The
+  planner is mission-aware: for the Moon it teaches aim-*past*-the-Moon (~395,000 km), the ~120°
+  lead angle, and a **retrograde LOI brake** (the learner dials a positive Δv₂; the plan flies it
+  BACKWARDS), and the go/no-go verdict comes from the full three-body simulation (capture has no
+  clean vis-viva check). Reference solution re-verified against `simulate()`: 3,087 m/s TLI +
+  900 m/s LOI at 120° lead → captured. Fixed a broken cockpit fallback plan that carried a
+  *prograde* LOI (could never capture). Worksheet 8 gains **PART D · Graduate — fly to the Moon**
+  (3 exercises + a lunar exam question), documents the hold-the-box-for-one-orbit success rule and
+  the rendezvous (angular-separation) scoring, and drops its stale "Worksheet 7 / tut7" header.
+- **Module 8 cockpit:** Three.js is now actually loaded (SRI-pinned, same as tut1), so the
+  physically-lit 3-D target satellite and its eclipse cue render in the window — previously
+  `Sat7.build()` silently failed. The NAV MFD moved left (13.5%) so the center thrust cluster
+  no longer obscures it.
+- **Worksheet↔simulator reconciliation across Modules 1–7** (the QA log's core finding — prose
+  describing older tool versions): Module 6's libration-zoo capstone rewritten to the real
+  Ax/Az + frequency-ratio controls; Module 4's radiation-pressure exercise rewritten as
+  drag-analogy + reasoning (the sim models drag only, below 1,000 km — table and slider notes now
+  say so); Module 2's telescope tasks fixed (default drive, inspector-view name, no ground track,
+  honest terminator pacing, XM sats renamed/relocated to real slots); Module 5's opening-zoom,
+  barycenter-wobble, and Moon-plane text now match what the sim draws; Module 3's intro SVG had
+  perigee/apogee **reversed** (fixed), marker colors un-swapped, the sample ISS TLE replaced with
+  a checksum-valid one, and the Molniya-preset comparison made survivable (presets overwrite
+  sliders — jot your values first).
+- **Physics/number fixes:** escape-speed claims altitude-qualified (tut1 explains dynamically);
+  15″/s streak caption (was 7.5′/min, is 15′/min); L1/L2 unified to from-Earth-center truth
+  (84.9% / 116.8%; `L2F` constant was ~7,000 km off); TESS ellipse retuned to a true 2:1
+  (ra 368,390 km, P = 13.66 d); sun-sync demo ellipse no longer passes through the Earth;
+  radial-burn "opposite side" mental model corrected (apsides rotate ~90°); radar headline unified
+  to the tool's ≈7.7-million× (guide said 300,000×); final-exam Moon-motion claim fixed (~50° per
+  coast, not "half the sky").
+- **Hub & plumbing:** "Finish all six" → all eight; badges VII/VIII; certificate lists all eight
+  topics; ~210 lines of unreachable in-hub quiz code deleted (`quiz.js` is now a pure registry);
+  worksheet quizzes **shuffle answer order at render** (34 straight quizzes had the answer in
+  slot 2); glossary M7/M8 tags un-swapped; cheat sheet corrected & extended to Modules 7–8
+  (in tut8 arrow keys fire thrusters); Module 7 gains two new exercises driving its IOD and
+  radar-integration scenes.
+- **Repo hygiene:** 342 identical macOS "` 2.`" duplicate files deleted; `public/` worksheet data
+  re-synced to `workbooks/active/`.
+- **Module 1 honesty fix:** re-entering (suborbital) injections now draw as an **arc that ends at
+  Earth's surface** — solved analytically for the surface-crossing true anomaly — instead of a
+  full ellipse passing through the planet; the animated marker freezes at impact, and the
+  underground "perigee" marker is suppressed.
+- **Barycenter taught where the Moon first appears (Module 5):** two bound bodies orbit their
+  common center of mass; the Earth–Moon barycenter is ~4,670 km from Earth's center — *inside*
+  the planet — while for artificial satellites "orbits the parent's center" is exact for every
+  practical purpose.
+- **Install & onboarding:** README and Instructor Guide §2–3 rewritten for people who have never
+  installed Node (per-OS steps, what Node even is, Windows `set PORT=` syntax, troubleshooting);
+  new double-click launchers **`start-academy.bat`** (Windows) and **`start-academy.command`**
+  (macOS) that detect a missing Node and point at nodejs.org; the port-in-use error now prints
+  Windows and macOS/Linux commands. Confirmed: the whole course runs identically on Windows
+  (only the developer test suite needs Git Bash/WSL).
+- **Instructor materials:** the **worksheet editor** is now documented (Guide §7.1) after an
+  end-to-end positive test (load → edit → validated save → live on next student refresh;
+  timestamped `.bak` per save; broken saves rejected); Guide §6 expanded with **learning goals
+  and a 10-minute intro-lecture skeleton for every module** (hook, beats with anchor numbers,
+  the one live demo, the misconception to pre-empt); new **`slides/module1–8.pptx`** — an
+  8-slide branded intro deck per module with speaker notes; `guide.html` regenerated from the
+  markdown with a proper converter (code blocks and tables now render correctly).
+- **New `docs/MAINTENANCE.md`** — programmer's manual: architecture, schemas, invariants,
+  add-a-module recipe, the two-copies-of-worksheet-data rule, release checklist distilled from
+  the QA walkthrough, and accepted warts.
+
 ## v2.6 — 2026-07-15
 A large content + consistency release: all eight modules complete, a new reference frame taught in
 the cislunar modules, the capstone flight sim polished, a course-wide worksheet audit applied, and

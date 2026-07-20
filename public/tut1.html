@@ -110,7 +110,7 @@
     </div>
   </div>
   <div class="panel" style="font-size:17px;color:var(--dim)">
-    <b style="color:var(--fg)">The big idea:</b> where you release + how fast sets the whole ellipse. Slower than circular → release point = <b>apogee</b>. Faster → <b>perigee</b>. ~11.2 km/s → escape.
+    <b style="color:var(--fg)">The big idea:</b> where you release + how fast sets the whole ellipse. Slower than circular → release point = <b>apogee</b>. Faster → <b>perigee</b>. Faster still → escape (≈10.7 km/s from 600 km).
   </div>
   <div class="panel" style="font-size:17px;color:var(--dim)">
     <b style="color:var(--fg)">Prograde vs. retrograde:</b> looking down from above the North Pole, Earth spins <b>counter-clockwise</b>. An orbit going the <b>same</b> way (CCW) is <b>prograde</b>; one going the opposite way (CW) is <b>retrograde</b>. Almost everything launched from Earth is prograde — it's cheaper (you get Earth's spin for free).
@@ -266,8 +266,25 @@ function orbitFromRelease(r0_km, v_kms){
   // orient so that perigee is along +x if releaseIsPerigee, else apogee along +x (release at +x)
   // true anomaly of release: 0 if perigee, pi if apogee
   const nu0 = releaseIsPerigee?0:Math.PI;
+  /* SUBORBITAL / RE-ENTERING (perigee underground): the flown path is NOT a full ellipse — it
+     ends where the conic meets the surface. Solve r(ν)=Re for the impact true anomaly and draw
+     only the arc actually flown: release (apogee, ν=π) forward to impact (ν=2π−νx). Also record
+     the time of flight to impact so the animated marker stops at the ground instead of
+     tunnelling through the planet and resurfacing. */
+  let nuImpact=null, tImpact=null;
+  if(bound && rp<Re){
+    const p=a*(1-e*e), c=(p/Re-1)/e;
+    if(c>-1&&c<1){ const nux=Math.acos(c);          // surface crossings at ν=±νx around perigee
+      nuImpact=2*Math.PI-nux;                        // descending branch: the first crossing after release
+      const E=2*Math.atan2(Math.sqrt(1-e)*Math.sin(nuImpact/2), Math.sqrt(1+e)*Math.cos(nuImpact/2));
+      const Mi=((E-e*Math.sin(E))%(2*Math.PI)+2*Math.PI)%(2*Math.PI);
+      const n=Math.sqrt(MU/(a*a*a));
+      let dM=Mi-Math.PI; if(dM<0)dM+=2*Math.PI;      // release is at apogee (M0=π)
+      tImpact=dM/n; }
+  }
   if(bound){
-    for(let k=0;k<=NS;k++){const nu=k/NS*2*Math.PI;
+    const nuEnd=(nuImpact!=null)?nuImpact:(nu0+2*Math.PI);
+    for(let k=0;k<=NS;k++){const nu=nu0+k/NS*(nuEnd-nu0);
       const r=a*(1-e*e)/(1+e*Math.cos(nu));
       // measure angle from +x: release sits at nu0, so scene angle = (nu - nu0)
       const ang=nu-nu0; pts.push(new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang))));}
@@ -284,7 +301,7 @@ function orbitFromRelease(r0_km, v_kms){
   let nuEdge=0;
   if(!bound){ const p=a*(1-e*e); const cN=(p/(80*UNIT)-1)/e;   // r=80Re -> cos(nu)
     nuEdge = (cN>-1&&cN<1)? Math.acos(cN) : (e>1?Math.acos(-1/e)*0.98:Math.PI*0.98); }
-  return {a,e,rp,ra,h,energy,bound,releaseIsPerigee,nu0,pts,period,r0,v,nuEdge};
+  return {a,e,rp,ra,h,energy,bound,releaseIsPerigee,nu0,pts,period,r0,v,nuEdge,nuImpact,tImpact};
 }
 // position along a bound orbit at time t (Kepler's equation) -> scene Vector3
 function posAtTime(orb,t){
@@ -301,6 +318,7 @@ function posAtTime(orb,t){
     const r=a*(1-e*e)/(1+e*Math.cos(nu));
     const ang=nu-orb.nu0; return new THREE.Vector3(toScene(r*Math.cos(ang)),0,-toScene(r*Math.sin(ang)));
   }
+  if(orb.tImpact!=null && t>orb.tImpact) t=orb.tImpact;   // crashed: hold the marker at the impact point
   const n=2*Math.PI/orb.period; let M=(n*t)%(2*Math.PI);
   // release at perigee(nu0=0) => M starts at 0; at apogee => M starts at pi
   M += orb.releaseIsPerigee?0:Math.PI;
@@ -332,7 +350,7 @@ function injectObject(alt_km,v_kms,colIdx,inc_deg){
   grp.add(apo);grp.add(per);
   // position perigee/apogee markers now, for THIS object (works for every fan member, not just selected)
   const showAP=$('showApo').checked && orb.bound;
-  apo.visible=per.visible=showAP;
+  apo.visible=showAP; per.visible=showAP && orb.rp>Re;   // an underground "perigee" isn't a place you visit
   if(showAP){ const pgAng=orb.releaseIsPerigee?0:Math.PI, apAng=orb.releaseIsPerigee?Math.PI:0;
     per.position.set(toScene(orb.rp*Math.cos(pgAng)),0,-toScene(orb.rp*Math.sin(pgAng)));
     apo.position.set(toScene(orb.ra*Math.cos(apAng)),0,-toScene(orb.ra*Math.sin(apAng))); }
@@ -357,7 +375,7 @@ $('spd').addEventListener('input',refreshSpeedLabel);
 $('inc').addEventListener('input',()=>$('incV').textContent=$('inc').value);
 // toggle perigee/apogee markers on ALL injected objects live
 $('showApo').addEventListener('change',()=>{const on=$('showApo').checked;
-  injected.forEach(o=>{const vis=on&&o.orb.bound; o.apo.visible=vis; o.per.visible=vis;});});
+  injected.forEach(o=>{const vis=on&&o.orb.bound; o.apo.visible=vis; o.per.visible=vis&&o.orb.rp>Re;});});
 $('inject').onclick=()=>injectObject(+$('alt').value,+$('spd').value,null,+$('inc').value);
 $('injectMany').onclick=()=>{const alt=+$('alt').value, v0=+$('spd').value, inc=+$('inc').value;
   const vesc=Math.sqrt(2*MU/(Re+alt)), vc=circV(alt);
@@ -394,7 +412,7 @@ $('apiKey').addEventListener('change',e=>{apiKey=e.target.value.trim();
   $('tutorMode').textContent=apiKey?'live Claude tutor enabled ✓':'using built-in tutor · click to add Claude API key';});
 function setTutor(t){$('tutorText').innerHTML=t;}
 function builtinExplain(o){
-  if(!o.orb.bound) return 'You exceeded escape speed (~11.2 km/s at this altitude), so this path is a hyperbola — the object leaves Earth entirely. Pull the speed back down to stay bound.';
+  if(!o.orb.bound) return 'You exceeded escape speed (~'+Math.sqrt(2*MU/o.orb.r0).toFixed(1)+' km/s at this altitude), so this path is a hyperbola — the object leaves Earth entirely. Pull the speed back down to stay bound.';
   if(o.orb.rp<Re+100) return 'Careful — the perigee dipped to '+(o.orb.rp-Re).toFixed(0)+' km, below the atmosphere. You released SLOWER than circular, so this point is apogee and the object falls back into the Earth on the far side — it re-enters. Add a little speed to raise perigee.';
   if(o.orb.e<0.02) return 'Nearly circular! Your speed matched the local circular speed, so the object keeps a constant altitude. This is what constellation satellites (Starlink, GPS, GEO) use.';
   const which=o.orb.releaseIsPerigee?'faster than circular, so your release point became <b>perigee</b> (closest point) and the object swings OUT to a higher apogee on the far side'
