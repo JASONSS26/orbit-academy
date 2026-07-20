@@ -603,7 +603,15 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
         let xx=r*Math.cos(ang), yy=r*Math.sin(ang);
         const cr=F7.toCorot(xx,yy,fsT+tShiftSec());   // show in the same co-rotating frame as everything else
         k?g.lineTo(X(cr[0]),Y(cr[1])):g.moveTo(X(cr[0]),Y(cr[1])); }
-      g.stroke(); g.setLineDash([]); }
+      g.stroke(); g.setLineDash([]);
+      // live APOGEE (gold ◎) and perigee (green ·) of the CURRENT orbit — recomputed every frame
+      // from the same osculating ellipse, so they JUMP with every trim burn ("orbit adjust").
+      { const ts2=fsT+tShiftSec(), raP=a*(1+e), rpP=a*(1-e);
+        const A=F7.toCorot(raP*Math.cos(argP+Math.PI), raP*Math.sin(argP+Math.PI), ts2);
+        const Pp=F7.toCorot(rpP*Math.cos(argP), rpP*Math.sin(argP), ts2);
+        g.strokeStyle='#ffcf4d'; g.lineWidth=2; g.beginPath(); g.arc(X(A[0]),Y(A[1]),Math.max(3,h*0.02),0,7); g.stroke();
+        g.fillStyle='#ffcf4d'; g.font='bold '+(h*0.05)+'px monospace'; g.fillText('apo',X(A[0])+h*0.025,Y(A[1])-h*0.012);
+        g.fillStyle='#39d353'; g.beginPath(); g.arc(X(Pp[0]),Y(Pp[1]),Math.max(2,h*0.013),0,7); g.fill(); } }
   }
   // Earth (+ Moon only for the lunar mission; + target sat for GEO)
   g.fillStyle='#3a7fd0'; g.beginPath(); g.arc(X(0),Y(0),Math.max(3,F7.R_E*sc*(isGeo?1:mode==='zoom'?1:3)),0,7); g.fill();
@@ -1090,7 +1098,10 @@ function startBurn(dir,btn){
   // Do NOT zero burnDv here — pulses accumulate. A fresh integration starts only if the last one
   // expired, or if it belonged to an already-COMPLETED burn (held on screen just for reading).
   if(burnDone || performance.now()>burnHoldUntil){ burnDv=0; burnDone=false; }
-  firing=dir; lastFire=0;   // sentinel: stepBurn seeds lastFire from ITS OWN clock next frame (avoids dt<0)
+  // clock the integration from the PRESS instant (rAF timestamps share performance.now()'s
+  // timebase), so the first visible tick comes on the very next frame with the full elapsed dt —
+  // the old two-frame seed sentinel read as latency between the button and the meter.
+  firing=dir; lastFire=performance.now();
   btn&&btn.classList.add('firing'); }
 function stopBurn(){ const wasFiring=!!firing;
   if(firing){ const b=planBurns[nextBurn]; if(b && burnWindow){ b.got+=lastPulse; } }  // credit this pulse
@@ -1115,7 +1126,9 @@ function stepBurn(now){
     if(!firing && burnDv>0 && now>burnHoldUntil){ burnDv=0; burnDone=false; updateBurnMeter(); } return; }
   if(!lastFire){ lastFire=now; return; }   // first frame of a hold: seed the clock from stepBurn's own `now`
   if(dvSpent>=dvTotal){ stopBurn(); return; }             // out of fuel → stop (only reason to auto-stop)
-  const dt=Math.max(0,Math.min(0.1,(now-lastFire)/1000)); lastFire=now;
+  // cap at 0.25 s (not 0.1): on a slow/heavily-loaded render loop the old cap silently delivered
+  // LESS than THRUST_RATE per real second, which also felt like the meter lagging the button.
+  const dt=Math.max(0,Math.min(0.25,(now-lastFire)/1000)); lastFire=now;
   const add=Math.min(THRUST_RATE*dt, dvTotal-dvSpent);
   const along=DIR_ALONG[firing], sign=DIR_SIGN[firing];
   fs=F7.applyBurn(fs, along?sign*(add/1000):0, along?0:sign*(add/1000));
@@ -1279,7 +1292,13 @@ function sizePred(){ const cv=$('cPred'), r=cv.getBoundingClientRect(), d=Math.m
   cv.width=r.width*d; cv.height=r.height*d; predCtx=cv.getContext('2d'); }
 let lastRes=null, lastCor=null;
 function runPrediction(solved){ if(!predCtx) sizePred();
-  const sp=planToSim(); const res=F.simulate(sp,{dt:30,tMax:(plan.target==='geo'?0.6:9)*86400});
+  // a still-running ▶ GO playback would keep overwriting this fresh prediction with its captured
+  // (stale) path — so any Δv/lead adjustment cancels the playback first
+  if(simAnim){ cancelAnimationFrame(simAnim); simAnim=null; const rb=$('runSimBtn'); if(rb) rb.textContent='▶ GO — run sim'; }
+  // GEO runs 2.0 days (was 0.6): after circularizing at ~0.22 d the craft still has to DRIFT
+  // around the belt to the target (one relative lap ≈ 1.1 d in this frame) — the sim now stays on
+  // long enough for the path to actually reach the target satellite.
+  const sp=planToSim(); const res=F.simulate(sp,{dt:30,tMax:(plan.target==='geo'?2.0:9)*86400});
   const ts=res.tShift, dtPer=30*3;
   const cor=res.path.map((p,i)=>F.toCorot(p[0],p[1],(i*dtPer)+ts));
   lastRes=res; lastCor=cor;
@@ -1298,7 +1317,13 @@ function runPrediction(solved){ if(!predCtx) sizePred();
       ? 'Dial Δv₁ to aim just past the Moon, set the lead angle, and dial a Δv₂ brake for closest approach — until the prediction shows capture.'
       : 'Dial in Δv₁ and Δv₂ with the ▲/▼ steppers to hit the target apogee and circular speed. Watch the predicted path.'; }
   load.classList.toggle('ready', !!solved);
-  $('predStat').textContent='predicted outcome: '+res.outcome+(plan.target==='moon'?('  ·  closest Moon: '+Math.round(res.minMoon)+' km'):'')+'  ·  Δv: '+Math.round(Math.abs(plan.dv1)+Math.abs(plan.dv2))+' m/s';
+  // for GEO also report how close the drift leg gets to the target sat (phasing feedback)
+  let tgtLine='';
+  if(plan.target==='geo' && res.samples){ const day2=TARGETS.geo.day2*86400; let best=1e9;
+    for(const s of res.samples){ if(s.t<day2) continue; const c=F.toCorot(s.x,s.y,s.t+res.tShift);
+      const sep=Math.abs(Math.atan2(c[1],c[0]))*180/Math.PI; if(sep<best) best=sep; }
+    if(best<1e9) tgtLine='  ·  closest to target: '+(best<0.5?best.toFixed(2):best.toFixed(1))+'°'; }
+  $('predStat').textContent='predicted outcome: '+res.outcome+(plan.target==='moon'?('  ·  closest Moon: '+Math.round(res.minMoon)+' km'):tgtLine)+'  ·  Δv: '+Math.round(Math.abs(plan.dv1)+Math.abs(plan.dv2))+' m/s';
 }
 // live recompute on input
 // per-digit ± stepper: change a place value (down to 0.1), clamp to [0, 9999.9], round to 0.1
@@ -1316,7 +1341,7 @@ refreshMoonButton();                      // lock/unlock the lunar mission per s
    The marker sweeps the co-rotating path; each burn point flashes red as it's reached. */
 let simAnim=null;
 function runSim(){ if(simAnim){ cancelAnimationFrame(simAnim); simAnim=null; }
-  const sp=planToSim(); const res=F.simulate(sp,{dt:30,tMax:(plan.target==='geo'?0.6:9)*86400}); const ts=res.tShift, dtPer=30*3;
+  const sp=planToSim(); const res=F.simulate(sp,{dt:30,tMax:(plan.target==='geo'?2.0:9)*86400}); const ts=res.tShift, dtPer=30*3;   // GEO: long enough to drift to the target
   const cor=res.path.map((p,i)=>F.toCorot(p[0],p[1],(i*dtPer)+ts));
   const tot=Math.abs(plan.dv1)+Math.abs(plan.dv2), budget=+$('planBudget').textContent;
   const win = res.captured && tot<=budget;
