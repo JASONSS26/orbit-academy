@@ -26,7 +26,7 @@ const WORKSHEET = {
     'When your plan reaches GEO within budget, <b>load it into the cockpit and fly it</b>: at each burn the <b>🔴 BURN NOW</b> light flashes — hold the thruster until the "this burn Δv" readout hits your planned value, then release. The <b>ILS-style</b> panel shows if you are on-track (localizer) and on-speed (green dial) or need a forwards/backwards trim.',
     { h:'Mission 2 — Fly me to the Moon (unlocks after your GEO run)' },
     'The graduation flight. Two things make it harder than GEO. First, <b>the target moves</b>: the Moon covers ~13° of its orbit per day, and your coast out takes ~4 days — so you launch when the Moon is about <b>120° of lead</b> ahead of where you’ll cross its path, like a duck hunter firing ahead of the duck. Second, you must aim your apogee just <b>past</b> the Moon (~395,000 km, beyond its 384,400 km distance) — a dead-center aim smacks straight into it.',
-    'The burns also change character. <b>Trans-Lunar Injection (TLI)</b> is a big prograde burn (~<b>3,090 m/s</b>) out of LEO — like burn 1 at GEO, just harder. But the arrival burn, <b>Lunar-Orbit Insertion (LOI)</b>, points <b>BACKWARDS</b> (~<b>900 m/s</b>): you sweep past the Moon too fast to be held, so you <b>brake</b> at closest approach and let its gravity capture you. Brake too little and it slings you right past; too much and you drop onto the surface. Budget: <b>5,000 m/s</b>.',
+    'The burns also change character. <b>Trans-Lunar Injection (TLI)</b> is a big prograde burn (~<b>3,090 m/s</b>) out of LEO — like burn 1 at GEO, just harder. But the arrival burn, <b>Lunar-Orbit Insertion (LOI)</b>, points <b>BACKWARDS</b> (~<b>900 m/s</b>): you sweep past the Moon too fast to be held, so you <b>brake</b> at closest approach and let its gravity capture you. Brake too little and it slings you right past; too much and you drop onto the surface. Budget: <b>7,500 m/s</b>.',
   ],
 
   parts: [
@@ -200,12 +200,12 @@ const WORKSHEET = {
         'The planner grades this plan with the full three-body simulation (no simple formula exists once the Moon’s gravity dominates): the verdict turns green only when the predicted path is <b>captured</b>. Too little brake and you slingshot past; too much and you drop onto the surface.',
       ],
       predict:'At GEO, burn 2 was FORWARDS (speed up to stay). At the Moon it’s BACKWARDS. What’s different about arriving at a massive moving body that makes the burn flip direction?',
-      do:'Dial <b>Δv₂</b> to ~900 m/s (the planner flies it BACKWARDS automatically), then press <b>▶ GO — run sim</b> and watch the prediction. Nudge Δv₁ (±1–2 m/s), the lead angle, and Δv₂ until the verdict reads <b>✔ LUNAR CAPTURE predicted</b>. Log Δv₂ and your total against the 5,000 m/s budget. Stuck? <b>✨ solve it for me</b> works on this mission too — it loads the verified reference plan (3,087 / 900 / 120° lead); study <i>why</i> those numbers work before you fly them.',
+      do:'Dial <b>Δv₂</b> to ~900 m/s (the planner flies it BACKWARDS automatically), then press <b>▶ GO — run sim</b> and watch the prediction. Nudge Δv₁ (±1–2 m/s), the lead angle, and Δv₂ until the verdict reads <b>✔ LUNAR CAPTURE predicted</b>. Log Δv₂ and your total against the 7,500 m/s budget. Stuck? <b>✨ solve it for me</b> works on this mission too — it loads the verified reference plan (3,087 / 900 / 120° lead); study <i>why</i> those numbers work before you fly them.',
       observe:'capture is a knife-edge three-body outcome: small changes in Δv₁ or lead angle move your closest approach by thousands of km, and the brake has a working band — roughly 700–1,000 m/s — between slingshot and surface impact.',
       think:[
         'Why is there no clean vis-viva formula for LOI the way there was for circularizing at GEO?',
         'What does the "closest Moon" number in the prediction tell you about your aim?',
-        'Where did your total land against 5,000 m/s, and how much margin is left for trims?',
+        'Where did your total land against 7,500 m/s, and how much margin is left for trims?',
       ],
       quiz:{ q:'Why does Lunar-Orbit Insertion (LOI) point BACKWARDS, when circularizing at GEO pointed FORWARDS?',
         opts:['At GEO you arrive too slow for a circle and must speed up; at the Moon you arrive too fast relative to it to be captured and must brake',
@@ -241,7 +241,7 @@ const WORKSHEET = {
     'A LEO→GEO transfer is a <b>two-burn</b> maneuver: burn 1 raises apogee to GEO (~<b>2,400 m/s</b>); burn 2 circularizes at GEO (~<b>1,460 m/s</b>). The in-between ellipse is the <b>GTO</b> — the standard transfer orbit real launches release GEO satellites into. Total ≈ <b>3,860 m/s</b>, inside a 4,800 m/s budget.',
     'Circularizing costs a lot because you arrive at apogee moving slowly (1.6 km/s) and must speed up to GEO’s 3.1 km/s.',
     'You <b>fly the plan</b> by holding the right thruster to each logged Δv at the <b>BURN NOW</b> cue, using the <b>ILS-style</b> localizer (on-track?) and speed dial (on-speed?) to stay on the planned trajectory. Winning means <b>holding the target box for a full orbit</b>, near the target satellite — not just touching it. On final approach, thread the <b>ILS gates</b>, watch the live "orbit now" peri/apo readout to time trims — and never close within <b>100 m</b> of the target with relative motion: that’s a collision.',
-    'The lunar graduation flight re-aims the same skills at a <b>moving</b> target: <b>lead the Moon</b> (~120°), aim your apogee just <b>past</b> it (~395,000 km — dead-center is a collision), burn <b>TLI</b> (~3,090 m/s prograde), coast ~4 days, then <b>LOI</b> — a ~900 m/s <b>BACKWARDS brake</b> at closest approach so the Moon’s gravity can capture you. Budget 5,000 m/s.',
+    'The lunar graduation flight re-aims the same skills at a <b>moving</b> target: <b>lead the Moon</b> (~120°), aim your apogee just <b>past</b> it (~395,000 km — dead-center is a collision), burn <b>TLI</b> (~3,090 m/s prograde), coast ~4 days, then <b>LOI</b> — a ~900 m/s <b>BACKWARDS brake</b> at closest approach so the Moon’s gravity can capture you. Budget 7,500 m/s.',
   ],
 
   resources: [

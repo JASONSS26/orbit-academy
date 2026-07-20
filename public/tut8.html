@@ -857,7 +857,7 @@ let tourOn=false, tourI=0;
 const TOUR=[
   {sel:'#zWindow', t:'Out the window', b:'Your real view of space — Earth shrinks as you climb, and the target satellite grows as you close in near GEO.'},
   {sel:'#zSideNav', t:'Mission NAV', b:'A top-down map of your flight in the co-rotating frame: the <b>planned path</b> (ghost) vs. where you <b>actually</b> are, plus burn cues.'},
-  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,800 m/s; the lunar flight 5,000.'},
+  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,800 m/s; the lunar flight a forgiving 7,500.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
   {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee) — and tells you exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARDS</b>. Miss it and it re-alerts one orbit later.', force:true},
@@ -950,7 +950,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
        : burnWindow ? Math.max(1, COAST_WARP()/300)
        : (b && tToBurn<3*BURN_LEAD) ? COAST_WARP()/8
        : COAST_WARP();
-  if(!firing) warp=Math.max(0.125, warp*userWarp);   // ',' / '.' pilot trim on top of the auto warp
+  if(!firing) warp=Math.max(0.0625, warp*userWarp);   // ',' / '.' pilot trim on top of the auto warp (×1/16..×16)
   // MISSED a burn window? The correct orbital phase (perigee for a raise, apogee for a circularize)
   // comes back one ORBITAL PERIOD later — so reschedule this same burn forward by one period and let
   // BURN NOW re-alert then, instead of abandoning it. (Cap the retries so a hopeless orbit still ends.)
@@ -1317,8 +1317,8 @@ function updateBurnMeter(){ $('burnDv').textContent=Math.round(burnDv);
 const KEYDIR={'a':'fore','arrowleft':'fore','d':'aft','arrowright':'aft','w':'up','arrowup':'up','s':'down','arrowdown':'down'};
 addEventListener('keydown',e=>{ if(planMode) return;
   // ',' / '.' — the course-wide time-warp keys work in the cockpit too (they scale the auto warp)
-  if(e.key===','){ userWarp=Math.max(0.125, userWarp/2); missionMsg='⏱ time warp ×'+(userWarp<1?userWarp.toFixed(3).replace(/0+$/,''):userWarp)+' of auto'; return; }
-  if(e.key==='.'){ userWarp=Math.min(8, userWarp*2); missionMsg='⏱ time warp ×'+userWarp+' of auto'; return; }
+  if(e.key===','){ userWarp=Math.max(0.0625, userWarp/2); missionMsg='⏱ time warp ×'+(userWarp<1?userWarp.toFixed(4).replace(/0+$/,'').replace(/\.$/,''):userWarp)+' of auto'; return; }
+  if(e.key==='.'){ userWarp=Math.min(16, userWarp*2); missionMsg='⏱ time warp ×'+userWarp+' of auto'; return; }
   const dir=KEYDIR[e.key.toLowerCase()]; if(dir&&!e.repeat){ e.preventDefault();
   const btn=document.querySelector('#burnPad .bbtn.'+dir); startBurn(dir,btn); } });
 addEventListener('keyup',e=>{ const dir=KEYDIR[e.key.toLowerCase()]; if(dir){ e.preventDefault(); stopBurn(); } });
@@ -1355,7 +1355,7 @@ let planMode=false;
    MU/R from the shared flight model. Targets: GEO r=42164 km; Moon distance 384,400 km. */
 const MU=F.MU_E, R_E=F.R_E, rLEO=R_E+400, vLEO=Math.sqrt(MU/rLEO);
 const TARGETS={ geo:{ra:42164, name:'GEO', budget:4800, day1:0.0, day2:0.221, lead:124},
-                moon:{ra:F.D_EM, name:'lunar distance', budget:5000, day1:0.0, day2:4.18, lead:120} };
+                moon:{ra:F.D_EM, name:'lunar distance', budget:7500, day1:0.0, day2:4.18, lead:120} };
 let plan={ target:'geo', dv1:0, dv2:0, leadDeg:124 };
 function setMission(key){ plan.target=key; const T=TARGETS[key]; plan.dv1=0; plan.dv2=0; plan.leadDeg=T.lead;
   document.querySelectorAll('#missionSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===key));

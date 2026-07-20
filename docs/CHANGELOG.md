@@ -16,7 +16,9 @@ content improvements. Client-only (`server.js` untouched).
   - **Δv integrator holds its final number ~5 s** after a completed burn for read-back and
     incremental trims (next press still starts fresh; pulse top-ups unchanged).
   - **More fuel (two rounds of flight-testing):** GEO 4,000 → **4,800** m/s (margin ~140 → ~940,
-    a ~25% reserve); Moon 4,200 → **5,000** (~1,010). All teaching numbers reconciled: worksheet 8
+    a ~25% reserve); Moon 4,200 → **7,500** (~3,510 — raised to +50% after hand-flying the LOI +
+    lunar-circularize sequence; the graduation flight is meant to be forgiving). All teaching
+    numbers reconciled: worksheet 8
     logbook/quizzes/exam, instructor guide, module-8 deck.
   - **⚙ FINE ×0.1 thrust** (button on the pad, or hold Shift): 50 m/s-per-second trim thrust for
     station-keeping and gate-threading — at full rate the shortest tap was ~50 m/s, too coarse to

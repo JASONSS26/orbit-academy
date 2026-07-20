@@ -516,7 +516,7 @@ Everything from Modules 1–6 gets used in anger.
   costs so much (you arrive at apogee moving slowly and must speed up to GEO's 3.1 km/s).
 - Students can plan the lunar leg: lead the Moon ~120°, aim apogee just *past* it, TLI ~3,090 m/s,
   a ~4-day coast, then LOI — a ~900 m/s retrograde brake at closest approach — inside a
-  5,000 m/s budget.
+  7,500 m/s budget.
 - Students can fly the plan on cue: hold thrust to the logged Δv at BURN NOW, stay on the
   ILS-style track and speed indicators, and hold the target orbit for a full revolution.
 
