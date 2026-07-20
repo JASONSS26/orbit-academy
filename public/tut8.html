@@ -86,6 +86,9 @@
   #trainBtn{position:fixed;top:12px;right:132px;z-index:60;background:#123a2a;border:1px solid var(--grn);
     color:#9fe0af;font-family:inherit;font-size:18px;font-weight:bold;padding:11px 18px;border-radius:9px;cursor:pointer}
   #trainBtn:hover{background:#164a30;color:#fff}
+  #gatesBtn{position:fixed;top:12px;right:258px;z-index:60;background:#0f2438;border:1px solid #2b6a8a;
+    color:#9fd0ff;font-family:inherit;font-size:15px;font-weight:bold;padding:13px 14px;border-radius:9px;cursor:pointer}
+  #gatesBtn:hover{background:#164a60;color:#fff}
   /* --- planner overlay --- */
   #planner{position:fixed;inset:0;z-index:55;background:linear-gradient(#060d18,#02060d);display:none;overflow:auto}
   #planner.show{display:block}
@@ -208,6 +211,7 @@
 </div></div>
 
 <!-- PLAN ⇄ FLY toggle (top-right) -->
+<button id="gatesBtn" onclick="toggleGates()">▦ GATES ON</button>
 <button id="trainBtn" onclick="startTraining()">🎮 TRAIN</button>
 <button id="modeToggle" onclick="toggleMode()">🗺 PLAN</button>
 
@@ -304,7 +308,7 @@
         <button onclick="solvePlan()" class="solve">✨ solve it for me</button>
         <button onclick="runSim()" id="runSimBtn" class="runsim">▶ GO — run sim</button>
       </div>
-      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4000</span> m/s</span></div>
+      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4400</span> m/s</span></div>
       <div class="kv" id="leadRow"><span>Moon lead angle at start</span><span><input id="leadDeg" type="range" min="90" max="150" value="124"> <b id="leadDegV">124</b>°</span></div>
       <div id="planVerdict" class="verdict"></div>
       <button id="loadBtn" onclick="loadIntoCockpit()" class="load">✈ load into cockpit &amp; fly →</button>
@@ -472,6 +476,25 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
           g.fillStyle='#ff4438'; g.beginPath(); g.arc(tp.x,tp.y,s,0,7); g.fill();
           g.fillStyle='rgba(255,150,120,.9)'; g.fillRect(tp.x-s*1.8,tp.y-s*0.35,s*3.6,s*0.7); } }
       g.globalAlpha=1;
+      // ---- ILS approach gates: wireframe hoops to thread on final approach (toggle ▦ GATES) ----
+      if(GATES_ON && approachGates && approachGates.length){
+        const nextGate=approachGates.find(x=>x.state==='pending');
+        for(const gt of approachGates){ const th=gt.ang+beltRot;
+          const gc=[R_GEO*Math.cos(th), R_GEO*Math.sin(th)], rad=[Math.cos(th),Math.sin(th)];
+          g.strokeStyle = gt.state==='passed' ? 'rgba(57,211,83,.55)'
+                        : gt.state==='missed' ? 'rgba(255,90,82,.5)'
+                        : gt===nextGate ? 'rgba(255,207,77,'+(0.65+0.3*Math.sin(t*0.008)).toFixed(3)+')'
+                        : 'rgba(95,208,255,.55)';
+          g.lineWidth = gt===nextGate? Math.max(2,h*0.006) : Math.max(1.2,h*0.004);
+          g.beginPath(); let st=false;
+          for(let k=0;k<=40;k++){ const ph=k/40*2*Math.PI;
+            // hoop lies in the plane ⊥ the belt path: radial × vertical, centered on the belt
+            const W=[gc[0]+GATE_R*Math.cos(ph)*rad[0], gc[1]+GATE_R*Math.cos(ph)*rad[1], GATE_R*Math.sin(ph)];
+            const pt=proj(W); if(!pt){ st=false; continue; }
+            st? g.lineTo(pt.x,pt.y) : (g.moveTo(pt.x,pt.y), st=true); }
+          g.stroke(); }
+        g.lineWidth=1;
+      }
       // the TARGET satellite up close: the rendered bus grows in over the red bead as we rendezvous
       if(window.Sat7 && Sat7.ready){
         const tp=proj([R_GEO*Math.cos(beltRot),R_GEO*Math.sin(beltRot),0]);
@@ -487,7 +510,7 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
   if(crashFlash && cage<1){ const a=1-cage;
     g.fillStyle='rgba(255,'+Math.round(120*(1-a))+',30,'+(0.75*a).toFixed(3)+')'; g.fillRect(0,0,w,h);
     g.fillStyle='rgba(255,'+Math.round(200*a)+',80,'+a.toFixed(3)+')'; g.font='bold '+(h*0.14)+'px monospace'; g.textAlign='center';
-    g.fillText('🔥 RE-ENTRY', w*0.5, h*0.55); g.textAlign='left'; }
+    g.fillText(crashText, w*0.5, h*0.55); g.textAlign='left'; }
   // out-of-fuel farewell: a cold blue banner that pulses while the doomed run coasts to its end
   if(fuelDoomFlash && flying){ const pulse=0.55+0.25*Math.sin(performance.now()/220);
     g.fillStyle='rgba(6,14,30,.5)'; g.fillRect(0,0,w,h);
@@ -497,6 +520,39 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
     g.fillText('destined to coast eternally. Bye.', w*0.5, h*0.6); g.textAlign='left'; }
 }
 let geoCloseness=0, geoEclipsed=false;
+
+/* ===================== ILS APPROACH GATES + TARGET COLLISION =====================
+   Gates: once the planned burns are done and we're near belt altitude, a string of wireframe
+   hoops appears along the final-approach corridor (fixed belt longitudes short of the target,
+   on the pilot's side). Threading one = crossing its longitude within ±GATE_R of the belt
+   radius. Purely a piloting aid (toggle ▦ GATES) — scoring is unchanged.
+   Collision: the target satellite is a real object. Passing within COLLIDE_KM (100 m) of it is
+   a collision, checked per RK4 substep with a segment test so time-warp can't tunnel through. */
+let GATES_ON=true, approachGates=null, gatePrevAng=null, collPrev=null;
+const GATE_R=150, GATE_OFFS=[10,8,6,4,2];      // hoop radius (km); gate longitudes (° short of target)
+const COLLIDE_KM=0.1;                          // 100 m — closer than this to the target sat = collision
+let crashText='🔥 RE-ENTRY';                   // what the red flash banner says (varies by crash type)
+function toggleGates(){ GATES_ON=!GATES_ON; $('gatesBtn').textContent='▦ GATES '+(GATES_ON?'ON':'OFF'); }
+window.toggleGates=toggleGates;
+function buildGates(cp){ const a=Math.atan2(cp[1],cp[0]);      // co-rot angle; the target sits at 0
+  const side=(a>=0?1:-1), aDeg=Math.abs(a)*180/Math.PI;
+  approachGates=GATE_OFFS.filter(d=>d<aDeg-0.5).map(d=>({ang:side*d*Math.PI/180, deg:d, state:'pending'}));
+  gatePrevAng=a;
+  if(approachGates.length>=2) capcomOnce('gates','CAPCOM: final approach — ILS gates are up. Thread the hoops: hold belt altitude through each ring on the way in to the target.');
+  else approachGates=[]; }
+function updateGates(cp,re){ if(!approachGates||!approachGates.length) return;
+  const a=Math.atan2(cp[1],cp[0]);
+  for(const gt of approachGates){ if(gt.state!=='pending') continue;
+    if(Math.abs(gatePrevAng)>Math.abs(gt.ang) && Math.abs(a)<=Math.abs(gt.ang) && Math.sign(a||1)===Math.sign(gt.ang)){
+      gt.state = Math.abs(re-42164)<=GATE_R ? 'passed' : 'missed'; gt.when=performance.now();
+      capcom(gt.state==='passed' ? 'CAPCOM: '+gt.deg+'° gate — threaded ✓'
+        : 'CAPCOM: missed the '+gt.deg+'° gate — '+Math.round(Math.abs(re-42164))+' km off belt altitude. Trim and settle in.'); } }
+  gatePrevAng=a; }
+// shortest distance from point T to the segment p→q (all co-rotating km) — beats warp tunneling
+function segDist(p,q,T){ const vx=q[0]-p[0],vy=q[1]-p[1], wx=T[0]-p[0],wy=T[1]-p[1];
+  const c1=vx*wx+vy*wy; if(c1<=0) return Math.hypot(wx,wy);
+  const c2=vx*vx+vy*vy; if(c2<=c1) return Math.hypot(T[0]-q[0],T[1]-q[1]);
+  const tt=c1/c2; return Math.hypot(T[0]-(p[0]+tt*vx), T[1]-(p[1]+tt*vy)); }
 
 /* =====================  NAV MFD: live trajectory  ===================== */
 const navCv=$('cNav'); let navCtx=fit(navCv);
@@ -554,7 +610,12 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
   else { // target sat on the belt — RED, matching the red bead in the out-the-window view (same satellite)
     const tr=Math.max(4,h*0.02);
     g.fillStyle='rgba(255,70,60,'+(0.5+0.3*Math.sin(performance.now()/220)).toFixed(3)+')'; g.beginPath(); g.arc(X(R_GEO),Y(0),tr*1.8,0,7); g.fill();
-    g.fillStyle='#ff4438'; g.beginPath(); g.arc(X(R_GEO),Y(0),tr,0,7); g.fill(); }
+    g.fillStyle='#ff4438'; g.beginPath(); g.arc(X(R_GEO),Y(0),tr,0,7); g.fill();
+    // the approach gates, mirrored on the map (fixed co-rot longitudes on the belt)
+    if(GATES_ON && approachGates) for(const gt of approachGates){
+      g.strokeStyle = gt.state==='passed'?'#39d353': gt.state==='missed'?'#ff5a52':'#ffcf4d';
+      g.lineWidth=1.2; g.beginPath();
+      g.arc(X(R_GEO*Math.cos(gt.ang)),Y(R_GEO*Math.sin(gt.ang)),Math.max(2.5,GATE_R*sc),0,7); g.stroke(); } }
   // red burn markers
   g.strokeStyle='#ff5a52'; g.lineWidth=1.5;
   (plannedBurnMarks||[]).forEach(m=>{ const px=X(m.xy[0]),py=Y(m.xy[1]); g.beginPath(); g.arc(px,py,Math.max(3,h*0.02),0,7); g.stroke(); });
@@ -587,7 +648,15 @@ function drawSide(){ const w=sideCv.width,h=sideCv.height, g=sideCtx;
   // live status line
   if(flying){ const hrs=fsT/3600; const clock = hrs<48? hrs.toFixed(1)+' h' : (hrs/24).toFixed(2)+' d';
     g.fillStyle='#5fd0ff'; g.font='bold '+(h*0.042)+'px monospace';
-    y=wrapText(g,'T+'+clock+'  ·  '+(warp>=1000?(warp/1000).toFixed(0)+'k':Math.round(warp))+'×  ·  '+Math.hypot(fs[2],fs[3]).toFixed(2)+' km/s', x, y, maxW, lineH); }
+    y=wrapText(g,'T+'+clock+'  ·  '+(warp>=1000?(warp/1000).toFixed(0)+'k':Math.round(warp))+'×  ·  '+Math.hypot(fs[2],fs[3]).toFixed(2)+' km/s', x, y, maxW, lineH);
+    // LIVE orbit readout — recomputed every frame from the actual state (including mid-burn),
+    // so the pilot always sees the CURRENT peri/apo and can time adjustment burns. (Previously
+    // the only apogee figure was CAPCOM's rate-limited telemetry line, which went stale in the
+    // log and could mislead trim decisions.)
+    const oe=orbElems();
+    g.fillStyle='#ffcf6a'; g.font='bold '+(h*0.042)+'px monospace';
+    y=wrapText(g, oe.bound? ('orbit now: peri '+Math.round(oe.peri-F7.R_E).toLocaleString()+' · apo '+Math.round(oe.apo-F7.R_E).toLocaleString()+' km alt · e='+oe.e.toFixed(2))
+                          : 'orbit now: ESCAPE trajectory (e ≥ 1) — burn BACKWARDS', x, y, maxW, lineH); }
   const b=flying?planBurns[nextBurn]:null;
   if(!flying && !training){ g.fillStyle='#ffcf6a'; g.font='bold '+(h*0.048)+'px monospace';
     y=wrapText(g,'▶ Start in PLAN, then load into the cockpit to fly.',x,y,maxW,lineH)+h*0.012; }
@@ -639,6 +708,7 @@ function startFlight(){ loadPlanFromStore();
   dvTotal=(F7.MISSIONS[planTarget]||F7.MISSIONS.geo).budget;   // fuel gauge matches the loaded mission's budget
   planBurns=src.burns.map(b=>({name:b.name, dir:b.fore>=0?'FORWARDS':'BACKWARDS', dvTarget:Math.abs((b.fore||b.side)*1000), t:b.t, done:false, got:0}));
   nextBurn=0; burnWindow=false; missionMsg=''; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; lastBeltAlert=0;
+  approachGates=null; gatePrevAng=null; collPrev=null;   // fresh ILS gates + collision tracking per flight
   $('debrief').classList.remove('show');
   moonLead=(p.leadDeg||124);
   buildPlannedGhost();                                   // ghost path for the nav screens
@@ -662,6 +732,7 @@ function startTraining(){ if(planMode) toggleMode();      // make sure we're in 
   fs=F7.leoState(400,0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1; training=true;
   dvTotal=99999;                                           // effectively unlimited fuel
   planBurns=[]; nextBurn=0; burnWindow=false; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; missionMsg='🎮 TRAINING — free flight, unlimited fuel';
+  approachGates=null; gatePrevAng=null; collPrev=null;
   moonLead=0; plannedCorot=null; planProfile=null;
   $('debrief').classList.remove('show');
   resetBurnMeter();
@@ -690,7 +761,7 @@ let tourOn=false, tourI=0;
 const TOUR=[
   {sel:'#zWindow', t:'Out the window', b:'Your real view of space — Earth shrinks as you climb, and the target satellite grows as you close in near GEO.'},
   {sel:'#zSideNav', t:'Mission NAV', b:'A top-down map of your flight in the co-rotating frame: the <b>planned path</b> (ghost) vs. where you <b>actually</b> are, plus burn cues.'},
-  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,000 m/s; the lunar flight 4,200.'},
+  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,400 m/s; the lunar flight 4,600.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
   {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee) — and tells you exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARDS</b>. Miss it and it re-alerts one orbit later.', force:true},
@@ -785,8 +856,21 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   let simDt=dtReal*warp; const H=20;
   let steps=Math.min(2500,Math.max(1,Math.round(simDt/H)));
   const ts=tShiftSec();
+  let hitSat=false;
   for(let i=0;i<steps;i++){ fs=F7.step(fsT+ts, fs, H); fsT+=H;
     // (coast only — burns are applied impulsively by stepBurn while the trajectory is frozen)
+    // target-satellite collision: per-SUBSTEP segment check near belt altitude, so a high-warp
+    // frame spanning hours can never tunnel through the 100 m collision sphere unnoticed.
+    if(planTarget==='geo' && !hitSat){ const reI=Math.hypot(fs[0],fs[1]);
+      if(Math.abs(reI-42164)<1500){ const c=F7.toCorot(fs[0],fs[1],fsT+ts);
+        if(collPrev && segDist(collPrev,c,[42164,0])<COLLIDE_KM) hitSat=true;
+        collPrev=c; } else collPrev=null; }
+  }
+  if(hitSat){ crashFlash=performance.now(); crashText='💥 COLLISION';
+    if(training){ fs=F7.leoState(400,0); fsT=0; actualPath=[]; collPrev=null;
+      missionMsg='🎮 TRAINING — you rammed the target satellite. Respawned in LEO.';
+      capcom('CAPCOM: that was a collision, not a rendezvous — inside 100 m you must already be station-keeping. Respawned; try a gentler closing rate.'); }
+    else { endFlight('💥 COLLIDED with the target satellite — you closed inside 100 m with relative motion. Servicing means station-keeping alongside the target, not contact.', false); return; }
   }
   // record co-rotating actual position
   const cp=F7.toCorot(fs[0],fs[1], fsT+ts); if(actualPath.length===0||Math.hypot(cp[0]-actualPath[actualPath.length-1][0],cp[1]-actualPath[actualPath.length-1][1])>2000) actualPath.push(cp);
@@ -794,9 +878,13 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   // outcome checks
   const re=Math.hypot(fs[0],fs[1]); const mp=F7.moonPos(fsT+ts); const rm=Math.hypot(fs[0]-mp[0],fs[1]-mp[1]);
   updateWindowPhase(re,rm);
-  if(planTarget==='geo') checkBeltProximity(cp);
+  if(planTarget==='geo'){ checkBeltProximity(cp);
+    // ILS gates: raise them once the planned burns are done and we're near belt altitude
+    if(!training){
+      if(!approachGates && nextBurn>=planBurns.length && Math.abs(re-42164)<5000) buildGates(cp);
+      else if(approachGates) updateGates(cp,re); } }
   if(training){   // sandbox: no scored endings. Crashing just respawns you in LEO; nothing else terminates.
-    if(re<F7.R_E){ crashFlash=performance.now(); fs=F7.leoState(400,0); fsT=0; actualPath=[]; missionMsg='🎮 TRAINING — reset to LEO (you hit the atmosphere)'; capcomSaid={}; capcom('CAPCOM: whoa — you dipped into the atmosphere and burned up. Respawned in LEO. Easy on the retrograde.'); }
+    if(re<F7.R_E){ crashFlash=performance.now(); crashText='🔥 RE-ENTRY'; fs=F7.leoState(400,0); fsT=0; actualPath=[]; missionMsg='🎮 TRAINING — reset to LEO (you hit the atmosphere)'; capcomSaid={}; capcom('CAPCOM: whoa — you dipped into the atmosphere and burned up. Respawned in LEO. Easy on the retrograde.'); }
     trainCoach(re);
     return;
   }
@@ -817,8 +905,8 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
       return;
     }
   }
-  if(re<F7.R_E){ crashFlash=performance.now(); endFlight('💥 Crashed into the Earth — burned up on re-entry.', false); }
-  else if(planTarget==='moon' && rm<F7.R_M){ crashFlash=performance.now(); endFlight('💥 Crashed into the Moon.', false); }
+  if(re<F7.R_E){ crashFlash=performance.now(); crashText='🔥 RE-ENTRY'; endFlight('💥 Crashed into the Earth — burned up on re-entry.', false); }
+  else if(planTarget==='moon' && rm<F7.R_M){ crashFlash=performance.now(); crashText='💥 LUNAR IMPACT'; endFlight('💥 Crashed into the Moon.', false); }
   else if(re>2.2*F7.D_EM){ endFlight('↗ Escaped — you overshot the target and left the system.', false); }
   else if(nextBurn>=planBurns.length){ // all burns done — did we reach the target?
     if(coastEndT===0) coastEndT=fsT;                 // mark when the last burn finished
@@ -1098,8 +1186,8 @@ let planMode=false;
    the resulting apogee, arrival speed, and final speed, and checks them against the mission target.
    MU/R from the shared flight model. Targets: GEO r=42164 km; Moon distance 384,400 km. */
 const MU=F.MU_E, R_E=F.R_E, rLEO=R_E+400, vLEO=Math.sqrt(MU/rLEO);
-const TARGETS={ geo:{ra:42164, name:'GEO', budget:4000, day1:0.0, day2:0.221, lead:124},
-                moon:{ra:F.D_EM, name:'lunar distance', budget:4200, day1:0.0, day2:4.18, lead:120} };
+const TARGETS={ geo:{ra:42164, name:'GEO', budget:4400, day1:0.0, day2:0.221, lead:124},
+                moon:{ra:F.D_EM, name:'lunar distance', budget:4600, day1:0.0, day2:4.18, lead:120} };
 let plan={ target:'geo', dv1:0, dv2:0, leadDeg:124 };
 function setMission(key){ plan.target=key; const T=TARGETS[key]; plan.dv1=0; plan.dv2=0; plan.leadDeg=T.lead;
   document.querySelectorAll('#missionSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===key));

@@ -2,6 +2,35 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v3.1 — 2026-07-20 (post-3.0 flight-test fixes)
+Owner flight-testing of Module 8 drove a round of cockpit upgrades; plus onboarding and Module 1
+content improvements. Client-only (`server.js` untouched).
+
+- **Module 8 cockpit:**
+  - **🔴 BURN NOW cue spells out the order** — the pilot's own planned Δv and direction, e.g.
+    "2,400 m/s FORWARDS", with the burn's name beneath (values verified to come from the loaded
+    plan, not constants).
+  - **Live "orbit now" readout** in the MISSION CONSOLE: current perigee/apogee/e recomputed every
+    frame, including mid-burn — fixes the stale-apogee trap (the only apogee figure used to be
+    CAPCOM's rate-limited telemetry line, which aged in the log and misled trim decisions).
+  - **Δv integrator holds its final number ~5 s** after a completed burn for read-back and
+    incremental trims (next press still starts fresh; pulse top-ups unchanged).
+  - **~10% more fuel:** GEO 4,000 → **4,400** m/s (margin ~140 → ~540); Moon 4,200 → **4,600**
+    (~610). All teaching numbers reconciled: worksheet 8 logbook/quizzes/exam, instructor guide,
+    module-8 deck.
+  - **ILS approach gates:** on final approach (planned burns done, near belt altitude) wireframe
+    hoops appear along the belt toward the target — thread them by holding belt altitude; pass/miss
+    called by CAPCOM, drawn in the window and on the nav maps, toggle with the new ▦ GATES button.
+    A piloting aid only; scoring unchanged.
+  - **Target collision is real:** passing within **100 m** of the target satellite ends the GEO
+    mission in a collision (checked per RK4 substep with a segment test so time-warp can't tunnel
+    through); TRAIN mode respawns instead. Crash banner now names the event (RE-ENTRY / LUNAR
+    IMPACT / COLLISION).
+- **Module 1:** inclination now defined against **Earth's equatorial plane** (the equator extended
+  into space, ⊥ the spin axis) with the rule of thumb *inclination = highest latitude reached*.
+- **Onboarding:** README/guide quick-start walks the GitHub download first (sign-in, `<> Code` →
+  Download ZIP, per-OS unzip), written for people who've never used GitHub.
+
 ## v3.0 — 2026-07-20
 **Major-version bump**: the capstone's second mission (the lunar flight) ships for real, and the
 course gains a complete instructor-materials layer — per-module intro decks, learning goals and

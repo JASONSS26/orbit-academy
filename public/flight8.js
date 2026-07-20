@@ -95,8 +95,8 @@ function simulate(plan, opts){ opts=opts||{};
 // co-rotating transform exposed for callers (planner + cockpit share it)
 function toCorot(x,y,t){ const a=-wMoon*t; return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; }
 // Convert a two-step plan {target,dv1,dv2,leadDeg} into a full sim plan (both planner & cockpit use this)
-const PLAN_TARGETS={ geo:{ra:42164, day1:0.0, day2:0.221, budget:4000},
-                     moon:{ra:D_EM, day1:0.0, day2:4.18, budget:4200} };
+const PLAN_TARGETS={ geo:{ra:42164, day1:0.0, day2:0.221, budget:4400},
+                     moon:{ra:D_EM, day1:0.0, day2:4.18, budget:4600} };
 function planToSim(p){ const T=PLAN_TARGETS[p.target||'moon'];
   return { alt:400, leoPhase:0, target:p.target||'moon', moonPhase0:(p.leadDeg||124)*Math.PI/180,
     burns:[ {name:(p.target==='geo'?'Raise apogee':'Trans-Lunar Injection'), dir:'FORE', t:T.day1*86400, fore:(p.dv1||0)/1000, side:0},
@@ -107,7 +107,7 @@ function planToSim(p){ const T=PLAN_TARGETS[p.target||'moon'];
    Matches the planner's "solve it for me" values. Total 3,987 m/s. Final circular trim is flown
    by hand in the cockpit. */
 const SOLUTION={   // the Moon mission (kept as SOLUTION for back-compat)
-  alt:400, leoPhase:0, moonLeadDeg:120, budget:4200,   // m/s
+  alt:400, leoPhase:0, moonLeadDeg:120, budget:4600,   // m/s
   burns:[
     { name:'Trans-Lunar Injection', dir:'FORE',  dvMS:3087, atDay:0.0  },   // prograde departure
     { name:'Lunar-Orbit Insertion', dir:'AFT',   dvMS:900,  atDay:4.18 },   // retrograde brake at closest approach
@@ -121,7 +121,7 @@ const MISSIONS={
     key:'geo', title:'Service a GEO satellite', icon:'🛰',
     objective:'A communications satellite in geostationary orbit needs servicing. You begin in a 400 km low-Earth parking orbit.',
     task:'Plan and fly a transfer up to a <b>circular GEO orbit</b> (42,164 km radius) and <b>rendezvous</b> with the target satellite — arrive at the right altitude, moving at the right speed, close to it.',
-    target:'geo', budget:4000, moonLeadDeg:124,
+    target:'geo', budget:4400, moonLeadDeg:124,   // ~540 m/s of margin over the 3,860 plan (a ~10% reserve) — room for trims + station-keeping
     targetSat:{ raDeg:0 },          // the sat sits at a fixed GEO longitude (co-rotating +x)
     burns:[ {name:'Raise apogee to GEO', dir:'FORE', dvMS:2399, atDay:0.00},
             {name:'Circularize at GEO',  dir:'FORE', dvMS:1457, atDay:0.221} ] },
@@ -129,7 +129,7 @@ const MISSIONS={
     key:'moon', title:'Fly me to the Moon', icon:'🌙',
     objective:'Deliver a spacecraft from Earth to a parking orbit around the Moon. You begin in a 400 km low-Earth parking orbit.',
     task:'Plan and fly a transfer that <b>leads the Moon</b>, then insert into a <b>circular orbit around the Moon</b> near your target altitude. Scored on how circular your final orbit is and how close to the target altitude.',
-    target:'moon', budget:4200, moonLeadDeg:124, targetLunarAltKm:3000,
+    target:'moon', budget:4600, moonLeadDeg:124, targetLunarAltKm:3000,   // ~610 m/s of margin over the 3,987 plan (a ~10% reserve)
     burns:SOLUTION.burns.slice() },
 };
 
