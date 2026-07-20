@@ -301,6 +301,7 @@
           <input id="dv2" type="hidden" value="0">
         </div>
         <div class="crow"><span id="vnewLbl">→ your new speed</span><b id="calcVnew">—</b></div>
+        <div class="crow"><span id="sugLbl">→ suggested Δv₂ for THIS Δv₁</span><b id="calcDv2s">—</b></div>
         <div class="hitline" id="hit2"></div>
       </div>
 
@@ -1235,6 +1236,7 @@ function recompute(){ const T=TARGETS[plan.target]; const isMoon=plan.target==='
     $('needV').textContent = Math.round(vRel*1000)+' m/s (the Moon runs you down)';
     const mag=Math.abs(plan.dv2);
     $('calcVnew').textContent = Math.round(mag)+' m/s BACKWARDS';
+    $('calcDv2s').textContent = '≈ 700–1,000 m/s brake (3-body — confirm with ▶ GO)';
     const dvErr = (mag>=600 && mag<=1100)? 0 : Math.min(1, Math.abs(mag-900)/900);
     setHit('hit2', dvErr, 'brake', mag<600?'brake harder or the Moon slings you right past'
                                           :'that hard a brake risks dropping you onto the surface');
@@ -1250,6 +1252,9 @@ function recompute(){ const T=TARGETS[plan.target]; const isMoon=plan.target==='
     setHit('hit1', apoErr, 'apogee', r.escape?'too much Δv — you escaped':'off by '+Math.round((r.ra-T.ra)/1000)+',000 km');
     $('needV').textContent = vNeed.toFixed(3)+' km/s';
     $('calcVnew').textContent = vNew.toFixed(3)+' km/s';
+    // suggested Δv₂ RECOMPUTED for the Δv₁ currently dialed: close the gap between the arrival
+    // speed your actual transfer gives and the circular speed at the target — live, every change.
+    $('calcDv2s').textContent = r.escape? '—' : Math.max(0,Math.round((vNeed-r.va)*1000))+' m/s prograde';
     const spdErr = Math.abs(vNew-vNeed)/vNeed;
     setHit('hit2', spdErr, 'speed', (vNew<vNeed?'still '+Math.round((vNeed-vNew)*1000)+' m/s slow':Math.round((vNew-vNeed)*1000)+' m/s fast'));
     const tot0=Math.abs(plan.dv1)+Math.abs(plan.dv2);
@@ -1352,12 +1357,26 @@ function drawPred(cor,res,upto,burnIdx){ const cv=$('cPred'),g=predCtx,w=cv.widt
   g.beginPath(); g.arc(X(0),Y(0),R_GEO*sc,0,7); g.stroke();
   g.fillStyle=isGeo?'rgba(216,210,196,.85)':'rgba(120,180,255,.6)'; g.font=(h*0.028)+'px monospace';
   g.fillText(isGeo?'GEO belt (target)':'GEO belt',X(0)+R_GEO*sc+5,Y(0));
-  // target transfer ellipse (amber): perigee at Earth, apogee at the target radius (+x)
+  // target transfer ellipse (amber): perigee at Earth (r_p from the focus), apogee EXACTLY on the
+  // target ring. An ellipse's CENTER sits (r_a−r_p)/2 from the focus toward apogee — not at the
+  // Earth–target midpoint (the old midpoint drawing pushed the apogee ~r_p/2 past the belt).
   g.strokeStyle='rgba(255,200,90,.85)';
-  const aT=(F.R_E+400+rTgt)/2*sc, bT=Math.sqrt((F.R_E+400)*rTgt)*sc;
-  const ellCx=(X(0)+X(rTgt))/2;   // midpoint between Earth (perigee) and target (apogee)
-  g.beginPath(); g.ellipse(ellCx, cy, aT, bT, 0, 0, 7); g.stroke();
+  { const rp=F.R_E+400;
+    const aT=(rp+rTgt)/2*sc, bT=Math.sqrt(rp*rTgt)*sc;
+    const ellCx=X((rTgt-rp)/2);
+    g.beginPath(); g.ellipse(ellCx, cy, aT, bT, 0, 0, 7); g.stroke(); }
   g.setLineDash([]);
+  // live APOGEE marker on the PREDICTED path (gold ◎) — recomputed on every Δv/lead change, so the
+  // student watches their actual apogee walk onto (or past) the target ring as they dial Δv₁.
+  if(res && res.samples && res.samples.length && (plan.dv1||0)>0){
+    const cut=TARGETS[plan.target].day2*86400-60;          // apogee of the TRANSFER leg (before burn 2)
+    let best=null, bestR=0;
+    for(const s of res.samples){ if(s.t>cut) break; const r=Math.hypot(s.x,s.y); if(r>bestR){ bestR=r; best=s; } }
+    if(best){ const cp=F.toCorot(best.x,best.y,best.t+res.tShift), px=X(cp[0]), py=Y(cp[1]);
+      g.strokeStyle='#ffcf4d'; g.lineWidth=2; g.beginPath(); g.arc(px,py,Math.max(4,h*0.014),0,7); g.stroke();
+      g.fillStyle='#ffcf4d'; g.beginPath(); g.arc(px,py,Math.max(1.5,h*0.005),0,7); g.fill();
+      g.font=(h*0.028)+'px monospace';
+      g.fillText('apogee '+Math.round(bestR).toLocaleString()+' km', px+h*0.02, py+h*0.035); } }
   g.fillStyle='#3a7fd0'; g.beginPath(); g.arc(X(0),Y(0),Math.max(4,F.R_E*sc*(isGeo?1:3)),0,7); g.fill();  // Earth (true size at GEO scale; exaggerated only in the tiny lunar-scale view)
   g.fillStyle='#9fe0af'; g.font=(h*0.03)+'px monospace'; g.fillText('EARTH',X(0)+8,Y(0)-8);
   if(!isGeo){ g.fillStyle='#d8d2c4'; g.beginPath(); g.arc(X(F.D_EM),Y(0),Math.max(3,F.R_M*sc*4),0,7); g.fill(); g.fillText('MOON',X(F.D_EM)+8,Y(0)-8); }

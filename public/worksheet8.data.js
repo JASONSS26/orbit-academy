@@ -100,7 +100,7 @@ const WORKSHEET = {
         'The Δv is the difference: 3.08 − 1.62 ≈ <b>1.46 km/s = 1,460 m/s</b>. That is a big second payment — and it surprises people, because you are "already there." The reason: arriving slow means a large speed gap to close.',
       ],
       predict:'You arrive at GEO going 1.62 km/s but need 3.08 km/s to circularize. Predict the Δv — and whether burn 2 is bigger or smaller than you’d guess.',
-      do:'In the planner’s <b>STEP 2</b>, dial "Your Δv₂" with the ▲/▼ digit steppers until "your new speed" matches the circular speed shown (~3.08 km/s). Record the Δv in logbook row 2, then write the MISSION TOTAL and compare to the 4,400 m/s budget.',
+      do:'In the planner’s <b>STEP 2</b>, dial "Your Δv₂" with the ▲/▼ digit steppers until "your new speed" matches the circular speed shown (~3.08 km/s). Notice the <b>suggested Δv₂</b> line and the gold <b>apogee ◎</b> on the map recompute every time you change Δv₁ — your arrival speed depends on the transfer you actually built. Record the Δv in logbook row 2, then write the MISSION TOTAL and compare to the 4,400 m/s budget.',
       observe:'circularizing costs ~1,460 m/s — nearly as much as the raise burn — because you arrive at apogee moving slowly and must close a big speed gap. Total ≈ 3,860 m/s, just under the 4,400 m/s budget.',
       think:[
         'Why is the circularize burn so large, even though you’re "already at GEO"?',
