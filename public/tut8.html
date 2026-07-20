@@ -1134,7 +1134,7 @@ function toggleFine(){ fineThrust=!fineThrust;
 window.toggleFine=toggleFine;
 addEventListener('keydown',e=>{ if(e.key==='Shift') shiftFine=true; });
 addEventListener('keyup',e=>{ if(e.key==='Shift') shiftFine=false; });
-let firing=null, burnDv=0, lastFire=0, burnHoldUntil=0, burnDone=false;
+let firing=null, burnDv=0, lastFire=0, burnHoldUntil=0, burnDone=false, burnHoldTgt=0;
 const BURN_PERSIST=5000;       // ms the "THIS BURN" integrator keeps its total after you release —
                                // mid-burn so you can PULSE the thruster (tap-tap-tap) to sneak up on
                                // the target, and after COMPLETION so you can read what you actually
@@ -1149,7 +1149,7 @@ function startBurn(dir,btn){
   if(dvSpent>=dvTotal||firing) return;
   // Do NOT zero burnDv here — pulses accumulate. A fresh integration starts only if the last one
   // expired, or if it belonged to an already-COMPLETED burn (held on screen just for reading).
-  if(burnDone || performance.now()>burnHoldUntil){ burnDv=0; burnDone=false; }
+  if(burnDone || performance.now()>burnHoldUntil){ burnDv=0; burnDone=false; burnHoldTgt=0; }
   // clock the integration from the PRESS instant (rAF timestamps share performance.now()'s
   // timebase), so the first visible tick comes on the very next frame with the full elapsed dt —
   // the old two-frame seed sentinel read as latency between the button and the meter.
@@ -1162,7 +1162,9 @@ function stopBurn(){ const wasFiring=!!firing;
   if(firing){ const b=planBurns[nextBurn]; if(b && burnWindow){ b.got+=lastPulse; } }  // credit this pulse
   firing=null; lastPulse=0; document.querySelectorAll('.bbtn').forEach(b=>b.classList.remove('firing'));
   if(!wasFiring) return;
-  const b=planBurns[nextBurn]; if(b) delete b.frozen;   // guidance thaws — next pulse re-targets the residual
+  const b=planBurns[nextBurn];
+  const frozenDv=(b&&b.frozen)? b.frozen.dv : null;     // remember what the meter was demanding
+  if(b) delete b.frozen;                                 // guidance thaws — next pulse re-targets the residual
   /* Is this burn DONE? For the GEO mission judge by the LIVE RESIDUAL — what the current orbit
      still needs — not by "60% of the planned value flown". (The old rule both completed burn 1
      prematurely when a pilot pulse-released past 60% — flipping the panel to burn 2's ~1,457 m/s
@@ -1179,9 +1181,12 @@ function stopBurn(){ const wasFiring=!!firing;
         (L!==null?(', residual '+Math.round(Math.abs(L))+' m/s'):'')+' ('+
         (err<0.05?'right on the numbers ✓':err<0.15?'close enough':'off by '+Math.round(err*100)+'% — watch the next one')+').'+
         (nextBurn<planBurns.length?' Coasting to the next burn.':' Coasting to the target now.'));
-      // burn COMPLETE → keep the final total on screen for ~5 s so the pilot can read what they
-      // actually flew (it supports incremental trim decisions); the next press starts fresh (burnDone).
-      burnDone=true; burnHoldUntil=performance.now()+BURN_PERSIST; updateBurnMeter();
+      // burn COMPLETE → keep the final total AND the target it was flown against on screen for
+      // ~5 s, so the read-back stays a like-for-like comparison (without holding the target, the
+      // meter instantly re-baselined against the NEXT burn's goal). Next press starts fresh.
+      burnDone=true; burnHoldUntil=performance.now()+BURN_PERSIST;
+      burnHoldTgt=(frozenDv!=null? frozenDv : b.dvTarget);
+      updateBurnMeter();
       return;
     }
   }
@@ -1189,10 +1194,10 @@ function stopBurn(){ const wasFiring=!!firing;
   updateBurnMeter();                                     // re-target the meter to the remaining residual
 }
 let lastPulse=0;               // Δv accrued in the current continuous press (for crediting b.got)
-function resetBurnMeter(){ burnDv=0; lastPulse=0; burnHoldUntil=0; burnDone=false; updateBurnMeter(); }
+function resetBurnMeter(){ burnDv=0; lastPulse=0; burnHoldUntil=0; burnDone=false; burnHoldTgt=0; updateBurnMeter(); }
 function stepBurn(now){
   if(!firing||!fs){ // idle: once the persist window lapses, clear the running total
-    if(!firing && burnDv>0 && now>burnHoldUntil){ burnDv=0; burnDone=false; updateBurnMeter(); } return; }
+    if(!firing && burnDv>0 && now>burnHoldUntil){ burnDv=0; burnDone=false; burnHoldTgt=0; updateBurnMeter(); } return; }
   if(!lastFire){ lastFire=now; return; }   // first frame of a hold: seed the clock from stepBurn's own `now`
   if(dvSpent>=dvTotal){ stopBurn(); return; }             // out of fuel → stop (only reason to auto-stop)
   // cap at 0.25 s (not 0.1): on a slow/heavily-loaded render loop the old cap silently delivered
@@ -1209,7 +1214,10 @@ function updateBurnMeter(){ $('burnDv').textContent=Math.round(burnDv);
   // residual inside a burn window (frozen while firing), the planned value otherwise
   const b=flying?planBurns[nextBurn]:null;
   const gd=b? (firing&&b.frozen? b.frozen : burnGuidance(nextBurn,b)) : null;
-  const tgt=gd? gd.dv : 0;
+  let tgt=gd? gd.dv : 0;
+  // read-back hold: for ~5 s after a completed burn keep comparing against THAT burn's target,
+  // not the next one's — the total and its goal must stay a matched pair while the pilot reads them
+  if(burnDone && burnHoldTgt>0) tgt=burnHoldTgt;
   // Scale so the TARGET sits at 80% of the bar — leaving 20% headroom to SEE an overshoot.
   // The white marker (with a green ±tolerance band) shows exactly where to stop; pulse up to it.
   const markPct=80;
