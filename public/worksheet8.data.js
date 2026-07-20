@@ -221,7 +221,7 @@ const WORKSHEET = {
       ],
       predict:'During the burn-free 4-day coast, watch the nav map: will your path look like a straight shot to the Moon, or a curve that the Moon swings around to meet?',
       do:'Press <b>✈ load into cockpit & fly</b>. Execute TLI FORWARDS at the cue (~3,090 m/s). Ride the coast and watch the encounter geometry develop. At the LOI cue, hold <b>BACKWARDS</b> to your logged value. Then trim until CAPCOM confirms you’ve held a stable lunar orbit for a full revolution. Compare your actual spend to the logbook.',
-      observe:'the "impossible" shot is just your GEO skills re-aimed: one big prograde burn, a patient coast, a brake instead of a boost, and disciplined trims. When CAPCOM calls the hold complete, you have flown an Artemis-class profile end to end.',
+      observe:'the "impossible" shot is just your GEO skills re-aimed: one big prograde burn, a patient coast, a brake instead of a boost, and disciplined trims. When CAPCOM confirms the capture you get a <b>victory lap</b> — one more orbit with the NAV zoomed in tight on the lunar orbit you just built — and then the debrief. You have flown an Artemis-class profile end to end.',
       think:[
         'How did your final grade change between arrival and after trimming?',
         'Where did most of your margin go — the burns, or the trims?',

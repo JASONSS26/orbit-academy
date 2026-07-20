@@ -639,7 +639,12 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
        (within 90,000 km of the Moon) → Moon-centered, as before. */
     const cpz=(flying&&fs)? F7.toCorot(fs[0],fs[1],fsT+tShiftSec()) : null;
     const rmz=cpz? Math.hypot(cpz[0]-moonX,cpz[1]) : 0, rez=cpz? Math.hypot(cpz[0],cpz[1]) : 0;
-    if(!cpz || rmz<90000){ const span=90000; sc=Math.min(w,h)/(2*span); cx=w/2-moonX*sc; cy=h/2; phaseLbl=cpz?'arrival':null; }
+    if(!cpz || rmz<90000){
+      // arrival zoom ADAPTS to how close we are: from the 90,000 km approach box down to a tight
+      // frame around a low lunar orbit — so a captured orbit (and the victory lap) fills the panel
+      const span=cpz? Math.max(15000, Math.min(90000, rmz*2.5)) : 90000;
+      sc=Math.min(w,h)/(2*span); cx=w/2-moonX*sc; cy=h/2;
+      phaseLbl=cpz? (victoryUntil?'victory lap':'arrival') : null; }
     else if(rez<80000){ const span=Math.max(30000,rez*1.7); sc=Math.min(w,h)/(2*span); cx=w/2; cy=h/2; phaseLbl='departure'; }
     else { let mx=F7.D_EM*1.15; mx=Math.max(mx,rez*1.1);
       sc=Math.min(w,h)/(2*mx); cx=w/2; cy=h/2; phaseLbl='cruise'; }
@@ -778,6 +783,10 @@ let flightPlan=null, planBurns=[], nextBurn=0, burnWindow=false, missionMsg='', 
 // Success is not declared the instant you touch the target box — you must HOLD it for a full orbit,
 // leaving room to trim. holdStartT = mission-time the box was first satisfied (0 = not currently in it).
 let holdStartT=0, holdAnnounced=false;
+// Lunar VICTORY LAP: after capture is confirmed (hold complete), the mission doesn't cut straight
+// to the debrief — it runs one more lunar orbit at a watchable warp while the NAV zooms in on the
+// new orbit, then debriefs. victoryUntil = mission-time the lap ends (0 = not in a lap).
+let victoryUntil=0, victoryMsg='';
 // Out-of-fuel doom: if the tanks run dry while NOT on the target, you'll coast forever. fuelDoomT =
 // mission-time we went dry (0 = not doomed); fuelDoomFlash = perf.now() when the farewell banner started.
 let fuelDoomT=0, fuelDoomFlash=0;
@@ -801,6 +810,7 @@ function startFlight(){ loadPlanFromStore();
   dvTotal=(F7.MISSIONS[planTarget]||F7.MISSIONS.geo).budget;   // fuel gauge matches the loaded mission's budget
   planBurns=src.burns.map(b=>({name:b.name, dir:b.fore>=0?'FORWARDS':'BACKWARDS', dvTarget:Math.abs((b.fore||b.side)*1000), t:b.t, done:false, got:0}));
   nextBurn=0; burnWindow=false; missionMsg=''; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; lastBeltAlert=0;
+  victoryUntil=0; victoryMsg='';                          // fresh victory-lap state per flight
   approachGates=null; gatePrevAng=null; collPrev=null;   // fresh ILS gates + collision tracking per flight
   userWarp=1;                                             // fresh time-warp trim per flight
   livePred=null; livePredAt=0; livePredMin=null;          // fresh live-prediction cache per flight
@@ -946,6 +956,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   // warp: 1× while firing; slow in the burn window; fast coasting; still fast after all burns (to reach outcome)
   warp = firing ? 1                                 // manual trim always runs real-time
        : training ? 60                              // sandbox: gentle, watchable pace
+       : victoryUntil ? 2800                        // victory lap: one lunar orbit in ~10 s, scenic
        : holdStartT ? 2600                          // confirmation orbit: ~one GEO orbit in ~30 s, watchable
        : burnWindow ? Math.max(1, COAST_WARP()/300)
        : (b && tToBurn<3*BURN_LEAD) ? COAST_WARP()/8
@@ -1052,9 +1063,17 @@ function checkHold(inBox, period, winMsg){
       capcom('CAPCOM: parameters look good — now HOLD it. We want to see you stay locked in for one full orbit before we call it. Trim as needed.'); }
     else if(!holdAnnounced && fsT-holdStartT>period*0.5){ holdAnnounced=true;
       capcom('CAPCOM: halfway through the confirmation orbit — steady as she goes. Watch the neighbors slide by.'); }
-    else if(fsT-holdStartT>=period){ endFlight(winMsg, true); }
+    else if(fsT-holdStartT>=period){
+      if(planTarget==='moon'){
+        // capture confirmed → VICTORY LAP: one more lunar orbit before the debrief, NAV zoomed in
+        if(!victoryUntil){ victoryUntil=fsT+period; victoryMsg=winMsg;
+          missionMsg='🏁 CAPTURE CONFIRMED — victory lap around the Moon';
+          capcom('CAPCOM: capture confirmed and held. Outstanding. Take a victory lap — enjoy the view of your new orbit; debrief when you come back around.'); }
+        else if(fsT>=victoryUntil){ endFlight(victoryMsg||winMsg, true); }
+      } else endFlight(winMsg, true);
+    }
   } else if(holdStartT){                              // drifted out of the box → reset the hold
-    holdStartT=0; holdAnnounced=false;
+    holdStartT=0; holdAnnounced=false; victoryUntil=0;
     capcom('CAPCOM: you drifted out of the target box — resetting the hold. Nudge it back and settle in.');
   }
 }
