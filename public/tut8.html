@@ -597,23 +597,29 @@ let plannedCorot=null;   // cached co-rotating planned path (built when a plan l
 /* LIVE trajectory prediction (lunar mission): propagate the CURRENT state ~5 days ahead with the
    same RK4 model and cache the co-rotating polyline. Refreshed ~2.5×/s (every frame while firing),
    fine-stepped near Earth so the departure orbit doesn't wobble. */
-let livePred=null, livePredAt=0;
+let livePred=null, livePredAt=0, livePredMin=null;   // livePredMin: predicted closest approach to the Moon
 function computeLivePred(){
-  if(!flying||!fs||planTarget!=='moon'){ livePred=null; return; }
+  if(!flying||!fs||planTarget!=='moon'){ livePred=null; livePredMin=null; return; }
   const now=performance.now(); if(livePred && !firing && now-livePredAt<400) return;
   livePredAt=now;
   const ts=tShiftSec(); let s=fs.slice(), t=fsT; const pts=[];
-  const horizon=5*86400; let steps=0;
-  while(t-fsT<horizon && steps<1600){ steps++;
+  // 8-day horizon: the transfer coast alone is ~4–5 days, so the prediction must reach PAST the
+  // lunar encounter to show how the pass/capture geometry develops relative to the Moon.
+  const horizon=8*86400; let steps=0; let minRm=Infinity, minPt=null, minT=0;
+  while(t-fsT<horizon && steps<2400){ steps++;
     const re=Math.hypot(s[0],s[1]);
     const H=(re<20000)?120:600;                       // fine steps low, coarse on the cruise
     s=F7.step(t+ts,s,H); t+=H;
-    if(steps%2===0) pts.push(F7.toCorot(s[0],s[1],t+ts));
+    const cp2=F7.toCorot(s[0],s[1],t+ts);
+    if(steps%2===0) pts.push(cp2);
+    const mp=F7.moonPos(t+ts), rm=Math.hypot(s[0]-mp[0],s[1]-mp[1]);
+    if(rm<minRm){ minRm=rm; minPt=cp2; minT=t-fsT; }
     if(re<F7.R_E) break;
-    const mp=F7.moonPos(t+ts); if(Math.hypot(s[0]-mp[0],s[1]-mp[1])<F7.R_M) break;
+    if(rm<F7.R_M) break;
     if(re>2.5*F7.D_EM) break;
   }
   livePred=pts;
+  livePredMin=(minPt && minRm<200000)? {p:minPt, km:minRm, days:minT/86400} : null;
 }
 function buildPlannedGhost(){ const src=F7.planToSim(flightPlan||{target:'geo',dv1:2399,dv2:1457,leadDeg:124});
   const tMax=(src.target==='geo'?0.6:9)*86400;
@@ -655,7 +661,12 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
   if(!isGeo && livePred && livePred.length>1){
     g.setLineDash([4,4]); g.strokeStyle='rgba(95,208,255,'+(firing?0.95:0.6)+')'; g.lineWidth=firing?2.2:1.5;
     g.beginPath(); livePred.forEach((p,i)=>{i?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1]));});
-    g.stroke(); g.setLineDash([]); }
+    g.stroke(); g.setLineDash([]);
+    // predicted CLOSEST APPROACH to the Moon: the number that decides the encounter — marked live
+    if(livePredMin){ const px=X(livePredMin.p[0]), py=Y(livePredMin.p[1]);
+      g.strokeStyle='#ffcf4d'; g.lineWidth=1.6; g.beginPath(); g.arc(px,py,Math.max(3,h*0.018),0,7); g.stroke();
+      g.fillStyle='#ffcf4d'; g.font=(h*0.045)+'px monospace';
+      g.fillText('closest '+Math.round(livePredMin.km).toLocaleString()+' km · T+'+livePredMin.days.toFixed(1)+' d', px+h*0.024, py-h*0.012); } }
   // LIVE osculating orbit (cyan): the ellipse the current velocity would coast on — recomputed every
   // frame from fs, so it reshapes INSTANTLY as you thrust (even while the coast is frozen mid-burn). GEO only.
   if(isGeo && flying && fs){ const el=orbElems();
@@ -792,7 +803,7 @@ function startFlight(){ loadPlanFromStore();
   nextBurn=0; burnWindow=false; missionMsg=''; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; lastBeltAlert=0;
   approachGates=null; gatePrevAng=null; collPrev=null;   // fresh ILS gates + collision tracking per flight
   userWarp=1;                                             // fresh time-warp trim per flight
-  livePred=null; livePredAt=0;                            // fresh live-prediction cache per flight
+  livePred=null; livePredAt=0; livePredMin=null;          // fresh live-prediction cache per flight
   $('debrief').classList.remove('show');
   moonLead=(p.leadDeg||124);
   buildPlannedGhost();                                   // ghost path for the nav screens
