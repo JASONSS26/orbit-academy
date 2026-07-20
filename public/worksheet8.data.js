@@ -200,7 +200,7 @@ const WORKSHEET = {
         'The planner grades this plan with the full three-body simulation (no simple formula exists once the Moon’s gravity dominates): the verdict turns green only when the predicted path is <b>captured</b>. Too little brake and you slingshot past; too much and you drop onto the surface.',
       ],
       predict:'At GEO, burn 2 was FORWARDS (speed up to stay). At the Moon it’s BACKWARDS. What’s different about arriving at a massive moving body that makes the burn flip direction?',
-      do:'Dial <b>Δv₂</b> to ~900 m/s (the planner flies it BACKWARDS automatically), then press <b>▶ GO — run sim</b> and watch the prediction. Nudge Δv₁ (±1–2 m/s), the lead angle, and Δv₂ until the verdict reads <b>✔ LUNAR CAPTURE predicted</b>. Log Δv₂ and your total against the 5,000 m/s budget.',
+      do:'Dial <b>Δv₂</b> to ~900 m/s (the planner flies it BACKWARDS automatically), then press <b>▶ GO — run sim</b> and watch the prediction. Nudge Δv₁ (±1–2 m/s), the lead angle, and Δv₂ until the verdict reads <b>✔ LUNAR CAPTURE predicted</b>. Log Δv₂ and your total against the 5,000 m/s budget. Stuck? <b>✨ solve it for me</b> works on this mission too — it loads the verified reference plan (3,087 / 900 / 120° lead); study <i>why</i> those numbers work before you fly them.',
       observe:'capture is a knife-edge three-body outcome: small changes in Δv₁ or lead angle move your closest approach by thousands of km, and the brake has a working band — roughly 700–1,000 m/s — between slingshot and surface impact.',
       think:[
         'Why is there no clean vis-viva formula for LOI the way there was for circularizing at GEO?',
