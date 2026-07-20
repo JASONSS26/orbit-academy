@@ -9,31 +9,38 @@ and the xGEO simulator.
 
 ## 👀 Reviewers — quickest way to try it
 
-You have repo access, so just run it locally (nothing is exposed on the public internet). Works
-identically on **Windows, macOS, and Linux**.
+Everything runs on your own computer (nothing is exposed on the public internet), and it works
+identically on **Windows, macOS, and Linux**. Two steps: download the files, then open them.
 
-**Zero-install (no Node at all):** open `academy/public/gallery.html` directly in a browser —
-every worksheet and simulator works, progress saves in that browser. (A couple of features degrade
-without the server; see below.)
+**Step 1 — get the files onto your computer.** No tools or GitHub knowledge needed:
 
-**Full experience (accounts, roster) — needs Node.js:** the server is a JavaScript program, so the
-computer needs [Node.js](https://nodejs.org) — a one-time ~50 MB install (grab the **LTS**
-installer, click through it; no packages, no build step, nothing else to install, ever). Then:
+1. In a web browser, go to **https://github.com/JASONSS26/orbit-academy** (sign in to GitHub if it
+   asks — this is a private project, so use the account that was invited to it).
+2. Find the green button labeled **`<> Code`** near the top-right of the file listing and click
+   it. In the menu that drops down, click **Download ZIP**. A file called
+   `orbit-academy-main.zip` lands in your Downloads folder.
+3. Unzip it: on **Windows**, right-click the file → **Extract All…** → Extract; on **macOS**,
+   just double-click it. Either way you get a folder — open it and you'll find an **`academy`**
+   folder inside. That's the whole course. (You can move it anywhere you like, e.g. the Desktop.)
 
-- **No terminal needed:** in the `academy` folder, double-click **`start-academy.bat`** (Windows)
-  or **`start-academy.command`** (macOS — first time: right-click → Open → Open). It checks for
-  Node, starts the server, and opens your browser. Keep its window open.
-- **Or from a terminal:**
-  ```bash
-  git clone https://github.com/JASONSS26/orbit-academy.git
-  cd orbit-academy/academy
-  node server.js
-  ```
+*(If you use git: `git clone https://github.com/JASONSS26/orbit-academy.git` does the same thing.)*
 
-Then open **http://localhost:8080/gallery.html** — a no-login gallery with a link to every
-worksheet and simulator. (Worksheets opened there run in *standalone mode* and save progress in
-your browser; use the main hub at `http://localhost:8080/` if you want to create an account —
-the first account registered becomes the instructor.)
+**Step 2 — run it.** Two options:
+
+- **Zero-install (no Node, nothing to set up):** in the folder you just downloaded, open
+  `academy/public/gallery.html` by double-clicking it — it opens in your browser, with a link to
+  every worksheet and simulator. Progress saves in that browser. (A couple of features degrade
+  without the server; see below.)
+- **Full experience (accounts, roster) — needs Node.js:** the server is a JavaScript program, so
+  the computer needs [Node.js](https://nodejs.org) — a one-time ~50 MB install (grab the **LTS**
+  installer, click through it; no packages, no build step, nothing else to install, ever). Then
+  in the `academy` folder, double-click **`start-academy.bat`** (Windows) or
+  **`start-academy.command`** (macOS — first time: right-click → Open → Open); it checks for
+  Node, starts the server, and opens your browser — keep its window open. (Terminal users:
+  `cd orbit-academy/academy && node server.js`.) Then browse to
+  **http://localhost:8080/gallery.html** for the no-login gallery, or the main hub at
+  **http://localhost:8080/** to create an account — the first account registered becomes the
+  instructor.
 
 **If something doesn't start:** `'node' is not recognized` → open a *new* terminal window after
 installing Node. "Port 8080 already in use" → the Academy is probably already running; just open

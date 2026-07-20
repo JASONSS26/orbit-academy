@@ -35,10 +35,14 @@ loaded from a pinned public CDN).
 
 ### 2.1 Get the files
 
-**Option A — download a ZIP (no tools needed):**
-1. Go to the repository: `https://github.com/JASONSS26/orbit-academy`
-2. Click the green **Code** button → **Download ZIP**.
-3. Unzip it anywhere (e.g. your Desktop). You'll get an `orbit-academy/academy/` folder.
+**Option A — download a ZIP (no tools or GitHub knowledge needed):**
+1. In a web browser, go to `https://github.com/JASONSS26/orbit-academy` (sign in to GitHub if it
+   asks — the project is private, so use the account that was invited to it).
+2. Click the green **`<> Code`** button near the top-right of the file listing, then click
+   **Download ZIP** in the menu that appears. The file `orbit-academy-main.zip` lands in your
+   Downloads folder.
+3. Unzip it — Windows: right-click → **Extract All…**; macOS: double-click. Inside the resulting
+   folder is an **`academy`** folder: that's the whole course. Move it anywhere you like.
 
 **Option B — clone with git (if you have git):**
 ```bash
