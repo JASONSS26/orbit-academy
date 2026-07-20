@@ -289,11 +289,11 @@ $('tleCopy').onclick=()=>{ navigator.clipboard&&navigator.clipboard.writeText($(
 const SATS=[
   {id:'iss',  name:'ISS (space station)', c:0x9be0af, a:6798, e:0.0006, i:51.6, raan:120, argp:80, nu:0,
     note:'<b>Low Earth Orbit.</b> Nearly circular, ~420 km up, 92-minute period. Inclination 51.6° so it overflies most of the populated world (and is reachable from Baikonur).'},
-  {id:'gps',  name:'GPS (navigation)', c:0x5fd0ff, a:26560, e:0.01, i:55, raan:200, argp:60, nu:120,
+  {id:'gps',  name:'GPS (navigation)', c:0x5fd0ff, a:26562, e:0.01, i:55, raan:200, argp:60, nu:120,
     note:'<b>Medium Earth Orbit,</b> ~20,200 km, half-day period (two orbits per day). Circular by design so signal timing is uniform everywhere.'},
   {id:'geo',  name:'GEO (TV / weather)', c:0xffffff, a:42164, e:0.0002, i:0.1, raan:0, argp:0, nu:0,
     note:'<b>Geostationary.</b> Equatorial (i≈0), exactly one orbit per day, so it hangs over one longitude. Great for the equator — but poor coverage of high latitudes.'},
-  {id:'moln', name:'Molniya (Soviet comms)', c:0xffcf4d, a:26600, e:0.74, i:63.4, raan:190, argp:270, nu:180,
+  {id:'moln', name:'Molniya (Soviet comms)', c:0xffcf4d, a:26562, e:0.74, i:63.4, raan:190, argp:270, nu:180,
     note:'<b>Why the Soviets loved it:</b> a GEO satellite sits over the equator and barely clears the horizon from high latitudes — useless for northern Russia. A <b>Molniya</b> orbit is a highly eccentric 12-hour ellipse with <b>apogee ~40,000 km over the north.</b> By Kepler’s 2nd law it <i>crawls</i> near apogee, so it loafs over Russia for ~8 of every 12 hours. Argument of perigee is pinned near 270° (perigee in the south) and inclination is <b>63.4°</b> — the “magic” angle where Earth’s bulge (J2) does <i>not</i> rotate the ellipse, so apogee stays parked over the north. A trio covers the high Arctic 24/7. US missile-warning sensors (SBIRS-HEO) fly Molniya-style 12-hour orbits for the same reason.'},
   {id:'tund', name:'Tundra (SiriusXM)', c:0xff7bd0, a:42164, e:0.24, i:63.4, raan:180, argp:270, nu:180,
     note:'<b>Tundra</b> is Molniya’s bigger cousin: same 63.4° magic inclination and southern perigee, but a <b>24-hour</b> geosynchronous period with milder eccentricity. It traces a lopsided figure-8 ground track and dwells for hours over one high-latitude region — used by SiriusXM satellite radio. One satellite gives a long daily dwell; a pair gives continuous coverage.'},
@@ -358,13 +358,24 @@ function loop(){requestAnimationFrame(loop);
     // Advance MEAN anomaly at a constant rate (uniform in time — that's what "mean" means), then convert
     // M→true anomaly for the draw. Stepping true anomaly directly (the old bug) made the marker sweep equal
     // ANGLE per second, so it raced at apogee and crawled at perigee — backwards from Kepler's 2nd law.
-    const e=+$('e').value;
+    /* ONE TIME BASE: simulated seconds are scaled so the CURRENT orbit takes ~12 s of wall time at
+       warp 1, and Earth's spin runs on the SAME simulated clock. The on-screen orbit:day RATIO is
+       therefore physically exact for every orbit — the GEO preset genuinely hovers over its
+       longitude, and Molniya flies exactly two orbits per Earth rotation, so its repeating
+       apogee-dwell geometry is real, not decorative. (Previously the satellite ran at a fixed
+       40°/s of mean anomaly while Earth spun at a fixed rad-per-frame — unrelated clocks, so the
+       Molniya/Earth resonance could never show.) */
+    const e=+$('e').value, a=+$('a').value;
+    const P=2*Math.PI*Math.sqrt(a*a*a/MU);              // true period of the CURRENT orbit (s)
+    const simDt=(P/12)*dt*warp;                          // simulated seconds this frame
     const M0=trueToMean(+$('nu').value*Math.PI/180, e);
-    const M=M0 + dt*40*warp*Math.PI/180;               // same 40°/s base rate, now applied to mean anomaly
+    const M=M0 + (2*Math.PI/P)*simDt;
     const nuDeg=meanToTrue(M,e)*180/Math.PI;
     $('nu').value=nuDeg; $('nuV').textContent=Math.round(nuDeg); rebuild();
+    earth.rotation.y += (2*Math.PI/86164)*simDt;         // sidereal spin, same clock as the satellite
   }
-  earth.rotation.y+=0.0008;
+  // animation off → both clocks freeze together (a spinning Earth under a frozen satellite would
+  // silently wreck any ground-track reasoning)
   cam.position.set(panPivot.x+camR*Math.sin(camPh)*Math.cos(camTh),panPivot.y+camR*Math.cos(camPh),panPivot.z+camR*Math.sin(camPh)*Math.sin(camTh));
   cam.lookAt(panPivot); r.render(scene,cam);
   } catch(e){ if(!loop._warned){loop._warned=true; console.error('tut3 loop error:',e);} }

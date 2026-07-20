@@ -41,6 +41,13 @@ content improvements. Client-only (`server.js` untouched).
     mission in a collision (checked per RK4 substep with a segment test so time-warp can't tunnel
     through); TRAIN mode respawns instead. Crash banner now names the event (RE-ENTRY / LUNAR
     IMPACT / COLLISION).
+- **Module 3:** Earth's rotation is now **synched to the orbit clock**. The satellite animation
+  and Earth's spin previously ran on unrelated fixed rates, so the Molniya resonance could never
+  show. Both now share one simulated-time base (scaled so the current orbit takes ~12 s at warp 1;
+  Earth spins at the sidereal rate on the same clock) — the GEO preset genuinely hovers and
+  Molniya flies exactly two orbits per Earth rotation. Molniya/GPS presets pinned to the exact
+  semi-synchronous axis (a = 26,562 km; were 26,600/26,560, drifting ~0.4%/orbit). Both clocks
+  freeze together when the animation is off.
 - **Module 1:** inclination now defined against **Earth's equatorial plane** (the equator extended
   into space, ⊥ the spin axis) with the rule of thumb *inclination = highest latitude reached*.
 - **Onboarding:** README/guide quick-start walks the GitHub download first (sign-in, `<> Code` →
