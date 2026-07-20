@@ -861,7 +861,7 @@ const TOUR=[
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
   {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee) — and tells you exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARDS</b>. Miss it and it re-alerts one orbit later.', force:true},
-  {sel:'#burnPad', t:'Thrust — hold to fire', b:'Press &amp; hold FORWARDS/BACKWARDS (speed up / slow down) or UPWARDS/DOWNWARDS (radial out / in) — or keys <b>A D W S</b>. For delicate trims, tap <b>⚙ FINE ×0.1</b> (or hold Shift) to cut thrust to a tenth. Burn at the cue!'},
+  {sel:'#burnPad', t:'Thrust — hold to fire', b:'Press &amp; hold FORWARDS/BACKWARDS (speed up / slow down) or UPWARDS/DOWNWARDS (radial out / in) — or keys <b>A D W S</b>. During an ordered burn the throttle is <b>closed-loop</b>: fast far from the target Δv, auto-tapering as you close in, so big burns are quick AND easy to end on the number. <b>⚙ FINE ×0.1</b> (or Shift) for delicate trims. Burn at the cue!'},
 ];
 function tourRectFor(sel){ const stage=$('stage').getBoundingClientRect();
   const el=document.querySelector(sel); if(!el) return null;
@@ -1271,7 +1271,17 @@ function stepBurn(now){
   // cap at 0.25 s (not 0.1): on a slow/heavily-loaded render loop the old cap silently delivered
   // LESS than THRUST_RATE per real second, which also felt like the meter lagging the button.
   const dt=Math.max(0,Math.min(0.25,(now-lastFire)/1000)); lastFire=now;
-  const rate=THRUST_RATE*((fineThrust||shiftFine)?0.1:1);   // ⚙ FINE / Shift → ×0.1 for delicate trims
+  /* CLOSED-LOOP THROTTLE. With a burn ORDERED (in its window), expenditure runs fast far from
+     the target and auto-tapers as you close in: rate = clamp(3×remaining, 60..1500 m/s/s).
+     A 3,000 m/s TLI delivers its bulk in ~2 s, then the last 100 m/s crawls at ≤300 m/s/s and
+     the final approach at 60 — so the release is easy to time instead of a 6-second hold ending
+     on a 10-ms reflex. Free trims (no order): steady 500. ⚙ FINE / Shift overrides at 50. */
+  let rate;
+  if(fineThrust||shiftFine) rate=THRUST_RATE*0.1;
+  else { const bo=planBurns[nextBurn];
+    const ord=(bo && burnWindow)? ((bo.frozen&&bo.frozen.dv) || bo.dvTarget) : 0;
+    const remaining=ord>0? Math.max(0, ord-burnDv) : 0;
+    rate = ord>0? Math.min(1500, Math.max(60, remaining*3)) : THRUST_RATE; }
   const add=Math.min(rate*dt, dvTotal-dvSpent);
   const along=DIR_ALONG[firing], sign=DIR_SIGN[firing];
   fs=F7.applyBurn(fs, along?sign*(add/1000):0, along?0:sign*(add/1000));
