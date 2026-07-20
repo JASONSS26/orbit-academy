@@ -38,6 +38,9 @@
   .bbtn:hover{border-color:var(--accent);color:#fff;box-shadow:inset 0 0 10px rgba(255,150,40,.4)}
   .bbtn.firing{background:#4a2c08;border-color:var(--accent);color:#fff;box-shadow:inset 0 0 14px rgba(255,150,40,.7)}
   .bbtn small{display:block;font-size:0.58vw;color:#b98a4a}
+  .fbtn{flex:0 0 auto;background:#0f2438;border:1px solid #2b6a8a;color:#9fd0ff;font-family:inherit;
+    font-size:0.6vw;font-weight:bold;padding:1.5% 2%;border-radius:5px;cursor:pointer;letter-spacing:.5px}
+  .fbtn.on{background:#164a60;border-color:#5fd0ff;color:#fff;box-shadow:inset 0 0 8px rgba(95,208,255,.4)}
   /* live "this burn" cumulative Δv readout, sits under the pad */
   #burnMeter{position:absolute;left:26%;top:83%;width:19%;height:7.5%;background:rgba(6,10,18,.6);
     border:1px solid #2b3a52;border-radius:8px;padding:0.6% 1.5%;text-align:center}
@@ -183,6 +186,7 @@
        BACKWARDS (slow down) / DOWNWARDS (radial in). Mirrors the window orientation. PRESS AND HOLD. -->
   <div id="burnPad">
     <div class="lbl">◈ THRUST<span>hold button or arrow key</span></div>
+    <button class="fbtn" id="fineBtn" onclick="toggleFine()" title="×0.1 thrust for delicate trims (or hold Shift)">⚙ FINE ×0.1 OFF</button>
     <button class="bbtn up"    data-dir="up">▲ UPWARDS<small>radial out · ↑</small></button>
     <button class="bbtn fore"  data-dir="fore">▲ FORWARDS<small>speed up · ←</small></button>
     <button class="bbtn aft"   data-dir="aft">▼ BACKWARDS<small>slow down · →</small></button>
@@ -309,7 +313,7 @@
         <button onclick="solvePlan()" class="solve">✨ solve it for me</button>
         <button onclick="runSim()" id="runSimBtn" class="runsim">▶ GO — run sim</button>
       </div>
-      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4400</span> m/s</span></div>
+      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4800</span> m/s</span></div>
       <div class="kv" id="leadRow"><span>Moon lead angle at start</span><span><input id="leadDeg" type="range" min="90" max="150" value="124"> <b id="leadDegV">124</b>°</span></div>
       <div id="planVerdict" class="verdict"></div>
       <button id="loadBtn" onclick="loadIntoCockpit()" class="load">✈ load into cockpit &amp; fly →</button>
@@ -738,6 +742,7 @@ function startFlight(){ loadPlanFromStore();
   planBurns=src.burns.map(b=>({name:b.name, dir:b.fore>=0?'FORWARDS':'BACKWARDS', dvTarget:Math.abs((b.fore||b.side)*1000), t:b.t, done:false, got:0}));
   nextBurn=0; burnWindow=false; missionMsg=''; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; lastBeltAlert=0;
   approachGates=null; gatePrevAng=null; collPrev=null;   // fresh ILS gates + collision tracking per flight
+  userWarp=1;                                             // fresh time-warp trim per flight
   $('debrief').classList.remove('show');
   moonLead=(p.leadDeg||124);
   buildPlannedGhost();                                   // ghost path for the nav screens
@@ -791,11 +796,11 @@ let tourOn=false, tourI=0;
 const TOUR=[
   {sel:'#zWindow', t:'Out the window', b:'Your real view of space — Earth shrinks as you climb, and the target satellite grows as you close in near GEO.'},
   {sel:'#zSideNav', t:'Mission NAV', b:'A top-down map of your flight in the co-rotating frame: the <b>planned path</b> (ghost) vs. where you <b>actually</b> are, plus burn cues.'},
-  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,400 m/s; the lunar flight 4,600.'},
+  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,800 m/s; the lunar flight 5,000.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
   {sel:'#burnNow', t:'BURN NOW cue', b:'Flashes when you reach a planned burn point (e.g. perigee or apogee) — and tells you exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARDS</b>. Miss it and it re-alerts one orbit later.', force:true},
-  {sel:'#burnPad', t:'Thrust — hold to fire', b:'Press &amp; hold FORWARDS/BACKWARDS (speed up / slow down) or UPWARDS/DOWNWARDS (radial out / in) — or keys <b>A D W S</b>. Burn at the cue!'},
+  {sel:'#burnPad', t:'Thrust — hold to fire', b:'Press &amp; hold FORWARDS/BACKWARDS (speed up / slow down) or UPWARDS/DOWNWARDS (radial out / in) — or keys <b>A D W S</b>. For delicate trims, tap <b>⚙ FINE ×0.1</b> (or hold Shift) to cut thrust to a tenth. Burn at the cue!'},
 ];
 function tourRectFor(sel){ const stage=$('stage').getBoundingClientRect();
   const el=document.querySelector(sel); if(!el) return null;
@@ -878,6 +883,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
        : burnWindow ? Math.max(1, COAST_WARP()/300)
        : (b && tToBurn<3*BURN_LEAD) ? COAST_WARP()/8
        : COAST_WARP();
+  if(!firing) warp=Math.max(0.125, warp*userWarp);   // ',' / '.' pilot trim on top of the auto warp
   // MISSED a burn window? The correct orbital phase (perigee for a raise, apogee for a circularize)
   // comes back one ORBITAL PERIOD later — so reschedule this same burn forward by one period and let
   // BURN NOW re-alert then, instead of abandoning it. (Cap the retries so a hopeless orbit still ends.)
@@ -1118,6 +1124,16 @@ function drawFuel(){ const w=fuelCv.width,h=fuelCv.height,g=fuelCtx; g.clearRect
    a completed burn — so pulsed top-ups and read-back both work; ⟲ resets). ---- */
 const THRUST_RATE=500;         // m/s per second of holding. Burns are impulsive (orbit is frozen while
                                // firing), so this just sets how long you hold: a ~2400 m/s burn ≈ 5 s.
+/* FINE thrust (×0.1 → 50 m/s per second): for station-keeping, gate-threading, and small trims —
+   at full rate the shortest human tap delivers ~50 m/s, far too coarse to "tweak". Toggle the
+   ⚙ FINE button on the pad, or just hold Shift while thrusting. */
+let fineThrust=false, shiftFine=false;
+let userWarp=1;   // pilot's manual time-warp trim: ',' halves, '.' doubles (multiplies the auto warp)
+function toggleFine(){ fineThrust=!fineThrust;
+  const b=$('fineBtn'); if(b){ b.textContent='⚙ FINE ×0.1 '+(fineThrust?'ON':'OFF'); b.classList.toggle('on',fineThrust); } }
+window.toggleFine=toggleFine;
+addEventListener('keydown',e=>{ if(e.key==='Shift') shiftFine=true; });
+addEventListener('keyup',e=>{ if(e.key==='Shift') shiftFine=false; });
 let firing=null, burnDv=0, lastFire=0, burnHoldUntil=0, burnDone=false;
 const BURN_PERSIST=5000;       // ms the "THIS BURN" integrator keeps its total after you release —
                                // mid-burn so you can PULSE the thruster (tap-tap-tap) to sneak up on
@@ -1182,7 +1198,8 @@ function stepBurn(now){
   // cap at 0.25 s (not 0.1): on a slow/heavily-loaded render loop the old cap silently delivered
   // LESS than THRUST_RATE per real second, which also felt like the meter lagging the button.
   const dt=Math.max(0,Math.min(0.25,(now-lastFire)/1000)); lastFire=now;
-  const add=Math.min(THRUST_RATE*dt, dvTotal-dvSpent);
+  const rate=THRUST_RATE*((fineThrust||shiftFine)?0.1:1);   // ⚙ FINE / Shift → ×0.1 for delicate trims
+  const add=Math.min(rate*dt, dvTotal-dvSpent);
   const along=DIR_ALONG[firing], sign=DIR_SIGN[firing];
   fs=F7.applyBurn(fs, along?sign*(add/1000):0, along?0:sign*(add/1000));
   dvSpent+=add; burnDv+=add; lastPulse+=add; updateBurnMeter();
@@ -1222,7 +1239,11 @@ function updateBurnMeter(){ $('burnDv').textContent=Math.round(burnDv);
 })();
 // keyboard thrusters (parallel path): A/← fore · D/→ aft · W/↑ up(radial-out) · S/↓ down(radial-in) — hold
 const KEYDIR={'a':'fore','arrowleft':'fore','d':'aft','arrowright':'aft','w':'up','arrowup':'up','s':'down','arrowdown':'down'};
-addEventListener('keydown',e=>{ if(planMode) return; const dir=KEYDIR[e.key.toLowerCase()]; if(dir&&!e.repeat){ e.preventDefault();
+addEventListener('keydown',e=>{ if(planMode) return;
+  // ',' / '.' — the course-wide time-warp keys work in the cockpit too (they scale the auto warp)
+  if(e.key===','){ userWarp=Math.max(0.125, userWarp/2); missionMsg='⏱ time warp ×'+(userWarp<1?userWarp.toFixed(3).replace(/0+$/,''):userWarp)+' of auto'; return; }
+  if(e.key==='.'){ userWarp=Math.min(8, userWarp*2); missionMsg='⏱ time warp ×'+userWarp+' of auto'; return; }
+  const dir=KEYDIR[e.key.toLowerCase()]; if(dir&&!e.repeat){ e.preventDefault();
   const btn=document.querySelector('#burnPad .bbtn.'+dir); startBurn(dir,btn); } });
 addEventListener('keyup',e=>{ const dir=KEYDIR[e.key.toLowerCase()]; if(dir){ e.preventDefault(); stopBurn(); } });
 
@@ -1257,8 +1278,8 @@ let planMode=false;
    the resulting apogee, arrival speed, and final speed, and checks them against the mission target.
    MU/R from the shared flight model. Targets: GEO r=42164 km; Moon distance 384,400 km. */
 const MU=F.MU_E, R_E=F.R_E, rLEO=R_E+400, vLEO=Math.sqrt(MU/rLEO);
-const TARGETS={ geo:{ra:42164, name:'GEO', budget:4400, day1:0.0, day2:0.221, lead:124},
-                moon:{ra:F.D_EM, name:'lunar distance', budget:4600, day1:0.0, day2:4.18, lead:120} };
+const TARGETS={ geo:{ra:42164, name:'GEO', budget:4800, day1:0.0, day2:0.221, lead:124},
+                moon:{ra:F.D_EM, name:'lunar distance', budget:5000, day1:0.0, day2:4.18, lead:120} };
 let plan={ target:'geo', dv1:0, dv2:0, leadDeg:124 };
 function setMission(key){ plan.target=key; const T=TARGETS[key]; plan.dv1=0; plan.dv2=0; plan.leadDeg=T.lead;
   document.querySelectorAll('#missionSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===key));

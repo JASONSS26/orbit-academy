@@ -15,9 +15,22 @@ content improvements. Client-only (`server.js` untouched).
     CAPCOM's rate-limited telemetry line, which aged in the log and misled trim decisions).
   - **Δv integrator holds its final number ~5 s** after a completed burn for read-back and
     incremental trims (next press still starts fresh; pulse top-ups unchanged).
-  - **~10% more fuel:** GEO 4,000 → **4,400** m/s (margin ~140 → ~540); Moon 4,200 → **4,600**
-    (~610). All teaching numbers reconciled: worksheet 8 logbook/quizzes/exam, instructor guide,
-    module-8 deck.
+  - **More fuel (two rounds of flight-testing):** GEO 4,000 → **4,800** m/s (margin ~140 → ~940,
+    a ~25% reserve); Moon 4,200 → **5,000** (~1,010). All teaching numbers reconciled: worksheet 8
+    logbook/quizzes/exam, instructor guide, module-8 deck.
+  - **⚙ FINE ×0.1 thrust** (button on the pad, or hold Shift): 50 m/s-per-second trim thrust for
+    station-keeping and gate-threading — at full rate the shortest tap was ~50 m/s, too coarse to
+    tweak with. **',' / '.' time-warp keys** now work in the cockpit too (they scale the automatic
+    warp; fresh ×1 each flight).
+  - **Live burn guidance:** inside a burn window the BURN NOW cue, CAPCOM call, and the burn
+    meter's target + full scale show what the CURRENT orbit needs (frozen at ignition, re-targeted
+    to the residual after each pulse); completion = residual < max(40 m/s, 3%) — the old
+    60%-of-plan rule both advanced burns prematurely on a pulse-release and demanded the full
+    planned Δv from an already-circular orbit. Windows that open already-satisfied are skipped
+    with a CAPCOM call. The meter renders every frame and resets per flight (it used to show the
+    previous run's target at mission start). Planner: transfer-ellipse center fixed (apogee now
+    exactly on the belt ring), live apogee ◎ marker + 'suggested Δv₂' recompute on every
+    adjustment, ▶ GO cancels stale playbacks and runs 2.0 days so the path reaches the target.
   - **ILS approach gates:** on final approach (planned burns done, near belt altitude) wireframe
     hoops appear along the belt toward the target — thread them by holding belt altitude; pass/miss
     called by CAPCOM, drawn in the window and on the nav maps, toggle with the new ▦ GATES button.
