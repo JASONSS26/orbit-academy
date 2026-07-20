@@ -35,7 +35,7 @@ const WORKSHEET = {
       '<text x="470" y="298" font-size="12.5" fill="#5a6270">release speed is different.</text>'+
       '</svg>', caption: 'Same launch point, faster each time: too slow and the far side dips into Earth — it re-enters (dashed red); the right speed gives a circle (green); more speed opens a bigger ellipse (blue) that swings far out on the opposite side.' },
     'On an ellipse the object moves <b>fastest when it’s closest (perigee)</b> and <b>slowest when it’s farthest (apogee)</b>. And the higher an orbit is, the slower it goes overall — a low satellite whips around in about 90 minutes, while a far-out one at <b>GEO</b> takes a full 24 hours, keeping pace with Earth’s spin so it hovers over one spot.',
-    'A couple more words you’ll meet: <b>prograde</b> means going with Earth’s spin (the easy, default direction); <b>inclination</b> is how much the orbit is tilted, which decides how far north and south the satellite travels.',
+    'A couple more words you’ll meet: <b>prograde</b> means going with Earth’s spin (the easy, default direction); <b>inclination</b> is how much the orbit is tilted — measured against the plane of Earth’s equator — which decides how far north and south the satellite travels.',
     { h: 'Getting around the simulator' },
     'Click <b>↗ Simulator</b> (top-right of this page) to open the 3-D view in its own window, and set it beside this worksheet. You steer the <i>camera</i> with your mouse and keyboard — you’re moving your viewpoint, not the satellites. The same controls work in every module, and the <b>🃏 Cheat sheet</b> button keeps them handy.',
     { figure: '<svg viewBox="0 0 640 250" width="640" xmlns="http://www.w3.org/2000/svg"><rect width="640" height="250" rx="10" fill="#f4f8fc"/><text x="20" y="30" font-size="15" font-weight="bold" fill="#1a4c8b">Camera controls</text>'+
@@ -64,7 +64,7 @@ const WORKSHEET = {
     '<b>Farther out = slower.</b> LEO ~7.6 km/s (90 min); GEO ~3.1 km/s (24 h).',
     '<b>Prograde</b> = with Earth’s spin (the cheap, default direction). <b>Retrograde</b> = against it.',
     '<b>Geosynchronous</b> = ~24 h period. <b>Geostationary</b> = geosynchronous <i>and</i> over the equator, so it hangs above one spot.',
-    '<b>Inclination</b> tilts the orbit plane; a 90° (polar) orbit eventually overflies every latitude.',
+    '<b>Inclination</b> is the tilt of the orbit plane measured against <b>Earth’s equatorial plane</b>; it equals the highest latitude the satellite reaches, and a 90° (polar) orbit eventually overflies every latitude.',
     'Launch geography follows physics & safety: <b>east from Florida</b> banks Earth’s spin; <b>south from Vandenberg</b> reaches polar orbits over open ocean.',
     'Scale reality check: the <b>ISS skims the surface</b> (~420 km, ~7% of an Earth radius) — “space” is only a NYC-hop straight up.',
   ],
@@ -403,12 +403,13 @@ const WORKSHEET = {
     // ---- PART G · inclination & launch ----
     { id:'e1', title:'Inclination: tilting the orbit',
       teach:[
-        'Every orbit lies in a flat plane slicing through the center of the Earth. <b>Inclination</b> is simply how much that plane is <b>tilted</b> relative to the equator, and it decides how far north and south the satellite travels. An inclination near 0° keeps the orbit hugging the equator; crank it up and the orbit reaches toward higher and higher latitudes.',
+        'Every orbit lies in a flat plane slicing through the center of the Earth. To say how an orbit is tilted, you need something fixed to measure the tilt <i>against</i> — and the reference everyone uses is <b>Earth’s equatorial plane</b>: imagine the equator extended outward into space as a vast flat sheet, sitting exactly perpendicular to Earth’s spin axis. <b>Inclination is the angle between the orbit’s plane and that sheet.</b>',
+        'That one number tells you a lot. At <b>0°</b> the orbit lies <i>in</i> the equatorial sheet — the satellite rides around directly above the equator forever. Tilt the plane and the satellite spends each lap swinging above the sheet and back below it — and here’s the handy rule of thumb: <b>the inclination is also the highest latitude the satellite ever reaches</b>. A 30° orbit gets no farther north or south than 30°; a 53° Starlink orbit tops out near Seattle’s latitude; only a steep tilt can carry a satellite over your head if you live far from the equator.',
         'The extreme case is a <b>90° (polar) orbit</b>, which passes right over the North and South Poles. As the satellite loops pole-to-pole, the Earth keeps spinning underneath it, so over time the satellite eventually <b>overflies every point on the planet</b>. That’s exactly what you want for mapping, imaging, and weather satellites — and it’s the same reason the Starlink and GPS shells you saw earlier were tilted, to reach beyond the equator.',
       ],
       predict:'Before you move the slider: inclination tilts the orbit’s plane. What do you think happens to how far north and south the satellite travels as you crank the tilt up toward 90°?',
       do:'Set the <b>inclination slider</b> to ~0° and inject to see an equatorial orbit, then raise it to ~60° and inject again, then to 90° (polar). Compare all three — watch the orbit reach higher and higher latitudes until, at 90°, it goes straight over the poles.',
-      observe:'the orbit plane tilts as inclination rises, and at 90° the orbit passes directly over the poles.',
+      observe:'the orbit plane tilts away from the equatorial plane as inclination rises — and the highest latitude each orbit reaches matches its inclination angle — until, at 90°, the orbit passes directly over the poles.',
       think:[
         'As you raise the slider, how far north and south does the orbit start to reach?',
         'What does a 90° polar orbit eventually let a satellite see that an equatorial one never will?',
