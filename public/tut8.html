@@ -555,6 +555,25 @@ function segDist(p,q,T){ const vx=q[0]-p[0],vy=q[1]-p[1], wx=T[0]-p[0],wy=T[1]-p
   const c2=vx*vx+vy*vy; if(c2<=c1) return Math.hypot(T[0]-q[0],T[1]-q[1]);
   const tt=c1/c2; return Math.hypot(T[0]-(p[0]+tt*vx), T[1]-(p[1]+tt*vy)); }
 
+/* ===================== LIVE BURN GUIDANCE (GEO mission) =====================
+   The demanded Δv is recomputed from the CURRENT orbit whenever a burn window is active —
+   a pilot who pulsed, trimmed, or deviated shouldn't be ordered to fly the stale planned
+   number. At ignition the value FREEZES (a burn order shouldn't slide mid-hold) and
+   re-computes on release, so each pulse's target is the remaining residual.
+   Earth-centric vis-viva only — the Moon mission keeps its planned values (capture is a
+   three-body outcome; the plan itself is the guidance there). */
+function liveNeedMS(idx){ if(!fs || planTarget!=='geo') return null;
+  const re=Math.hypot(fs[0],fs[1]), v=Math.hypot(fs[2],fs[3]), R=42164;
+  if(idx===0){ const a=(re+R)/2; return (Math.sqrt(F7.MU_E*(2/re-1/a))-v)*1000; }  // raise apogee to GEO from HERE
+  return (Math.sqrt(F7.MU_E/re)-v)*1000;                                            // circularize at THIS radius
+}
+// what the panel/cue should demand right now: {dv (m/s, magnitude), dir, live}
+function burnGuidance(idx,b){
+  if(!(burnWindow||firing)) return {dv:b.dvTarget, dir:b.dir, live:false};   // outside the window: planned context
+  const L=liveNeedMS(idx); if(L===null) return {dv:b.dvTarget, dir:b.dir, live:false};
+  return {dv:Math.abs(L), dir:(L>=0?'FORWARDS':'BACKWARDS'), live:true};
+}
+
 /* =====================  NAV MFD: live trajectory  ===================== */
 const navCv=$('cNav'); let navCtx=fit(navCv);
 /* shared co-rotating trajectory map. mode:'wide' fits Earth+Moon+path; 'zoom' centers on the Moon.
@@ -670,7 +689,8 @@ function drawSide(){ const w=sideCv.width,h=sideCv.height, g=sideCtx;
   if(!flying && !training){ g.fillStyle='#ffcf6a'; g.font='bold '+(h*0.048)+'px monospace';
     y=wrapText(g,'▶ Start in PLAN, then load into the cockpit to fly.',x,y,maxW,lineH)+h*0.012; }
   else if(b){ g.fillStyle=burnWindow?'#ff8a80':'#ffcf6a'; g.font='bold '+(h*0.05)+'px monospace';
-    y=wrapText(g, burnWindow?'🔴 BURN '+b.dir+' NOW':'▶ NEXT: '+b.name, x, y, maxW, lineH);
+    const gdS=(firing&&b.frozen)? b.frozen : burnGuidance(nextBurn,b);
+    y=wrapText(g, burnWindow?'🔴 BURN '+gdS.dir+' NOW · ~'+Math.round(gdS.dv)+' m/s':'▶ NEXT: '+b.name, x, y, maxW, lineH);
     g.fillStyle='#9fb6d8'; g.font=(h*0.042)+'px monospace';
     if(!burnWindow) y=wrapText(g,'T-'+Math.max(0,Math.round((b.t-fsT)/60))+' min to burn',x,y,maxW,lineH);
     y+=h*0.012; }
@@ -839,7 +859,17 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   const tToBurn=b? b.t-fsT : 1e9;                 // seconds until the next planned burn
   const wasWindow=burnWindow;
   burnWindow = b && tToBurn>-BURN_LEAD && tToBurn<BURN_LEAD;   // window straddles the planned time
-  if(burnWindow && !wasWindow && b){ capcom('CAPCOM: approaching '+b.name+'. Stand by to burn '+b.dir+' — hold to ~'+b.dvTarget+' m/s. This is most efficient right at perigee/apogee.'); }
+  if(burnWindow && !wasWindow && b){
+    const L=(planTarget==='geo' && !firing)? liveNeedMS(nextBurn) : null;
+    if(L!==null && Math.abs(L)<25){
+      // the current orbit already satisfies this burn (pilot trimmed en route) — skip the cue
+      b.done=true; b.err=0; nextBurn++; burnWindow=false;
+      capcom('CAPCOM: '+b.name+' — your orbit is already on the numbers (residual '+Math.round(Math.abs(L))+' m/s). No burn needed; skipping this cue.');
+    } else {
+      const gd=burnGuidance(nextBurn,b);
+      capcom('CAPCOM: approaching '+b.name+'. Stand by to burn '+gd.dir+' — hold to ~'+Math.round(gd.dv)+' m/s. This is most efficient right at perigee/apogee.');
+    }
+  }
   // warp: 1× while firing; slow in the burn window; fast coasting; still fast after all burns (to reach outcome)
   warp = firing ? 1                                 // manual trim always runs real-time
        : training ? 60                              // sandbox: gentle, watchable pace
@@ -888,9 +918,14 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   const re=Math.hypot(fs[0],fs[1]); const mp=F7.moonPos(fsT+ts); const rm=Math.hypot(fs[0]-mp[0],fs[1]-mp[1]);
   updateWindowPhase(re,rm);
   if(planTarget==='geo'){ checkBeltProximity(cp);
-    // ILS gates: raise them once the planned burns are done and we're near belt altitude
+    // ILS gates: raise them once we're actually ON final approach — near belt altitude and
+    // roughly circular — regardless of burn bookkeeping. (The old trigger waited for every
+    // planned burn to be marked done, so a pilot who hand-trimmed their way in never saw gates.)
     if(!training){
-      if(!approachGates && nextBurn>=planBurns.length && Math.abs(re-42164)<5000) buildGates(cp);
+      if(!approachGates && Math.abs(re-42164)<5000){
+        const v=Math.hypot(fs[2],fs[3]), vc=Math.sqrt(F7.MU_E/re);
+        if(nextBurn>=planBurns.length || (Math.abs(re-42164)<3000 && Math.abs(v-vc)/vc<0.06)) buildGates(cp);
+      }
       else if(approachGates) updateGates(cp,re); } }
   if(training){   // sandbox: no scored endings. Crashing just respawns you in LEO; nothing else terminates.
     if(re<F7.R_E){ crashFlash=performance.now(); crashText='🔥 RE-ENTRY'; fs=F7.leoState(400,0); fsT=0; actualPath=[]; missionMsg='🎮 TRAINING — reset to LEO (you hit the atmosphere)'; capcomSaid={}; capcom('CAPCOM: whoa — you dipped into the atmosphere and burned up. Respawned in LEO. Easy on the retrograde.'); }
@@ -1102,22 +1137,39 @@ function startBurn(dir,btn){
   // timebase), so the first visible tick comes on the very next frame with the full elapsed dt —
   // the old two-frame seed sentinel read as latency between the button and the meter.
   firing=dir; lastFire=performance.now();
+  // freeze the live guidance at ignition: the burn order shouldn't slide while you hold
+  { const b=planBurns[nextBurn]; if(b && burnWindow && planTarget==='geo'){ const L=liveNeedMS(nextBurn);
+      if(L!==null) b.frozen={dv:Math.abs(L), dir:(L>=0?'FORWARDS':'BACKWARDS'), live:true}; } }
   btn&&btn.classList.add('firing'); }
 function stopBurn(){ const wasFiring=!!firing;
   if(firing){ const b=planBurns[nextBurn]; if(b && burnWindow){ b.got+=lastPulse; } }  // credit this pulse
   firing=null; lastPulse=0; document.querySelectorAll('.bbtn').forEach(b=>b.classList.remove('firing'));
   if(!wasFiring) return;
-  // if enough of the current burn has accrued (across pulses) and we're in its window, mark done & advance
-  const b=planBurns[nextBurn];
-  if(b && burnWindow && b.got>=b.dvTarget*0.6){ const err=Math.abs(b.got-b.dvTarget)/b.dvTarget;
-    b.done=true; b.err=err; nextBurn++; burnWindow=false;
-    capcom('CAPCOM: '+b.name+' complete — '+Math.round(b.got)+' m/s ('+(err<0.05?'right on the numbers ✓':err<0.15?'close enough':'off by '+Math.round(err*100)+'% — watch the next one')+').'+(nextBurn<planBurns.length?' Coasting to the next burn.':' Coasting to the target now.'));
-    // burn COMPLETE → keep the final total on screen for ~5 s so the pilot can read what they
-    // actually flew (it supports incremental trim decisions); the next press starts fresh (burnDone).
-    burnDone=true; burnHoldUntil=performance.now()+BURN_PERSIST; updateBurnMeter();
-  } else {
-    burnHoldUntil=performance.now()+BURN_PERSIST;       // burn NOT done → keep total for pulsed top-ups
+  const b=planBurns[nextBurn]; if(b) delete b.frozen;   // guidance thaws — next pulse re-targets the residual
+  /* Is this burn DONE? For the GEO mission judge by the LIVE RESIDUAL — what the current orbit
+     still needs — not by "60% of the planned value flown". (The old rule both completed burn 1
+     prematurely when a pilot pulse-released past 60% — flipping the panel to burn 2's ~1,457 m/s
+     mid-burn — and kept demanding the full planned Δv from an orbit that was already circular.)
+     The Moon mission keeps the flown-fraction rule (no clean residual exists at a 3-body arrival). */
+  if(b && burnWindow){
+    const L=(planTarget==='geo')? liveNeedMS(nextBurn) : null;
+    const doneNow = (L!==null)? Math.abs(L) < Math.max(40, 0.03*b.dvTarget)
+                              : b.got>=b.dvTarget*0.6;
+    if(doneNow){
+      const err=(L!==null)? Math.abs(L)/(b.dvTarget||1) : Math.abs(b.got-b.dvTarget)/b.dvTarget;
+      b.done=true; b.err=err; nextBurn++; burnWindow=false;
+      capcom('CAPCOM: '+b.name+' complete — '+Math.round(b.got)+' m/s flown'+
+        (L!==null?(', residual '+Math.round(Math.abs(L))+' m/s'):'')+' ('+
+        (err<0.05?'right on the numbers ✓':err<0.15?'close enough':'off by '+Math.round(err*100)+'% — watch the next one')+').'+
+        (nextBurn<planBurns.length?' Coasting to the next burn.':' Coasting to the target now.'));
+      // burn COMPLETE → keep the final total on screen for ~5 s so the pilot can read what they
+      // actually flew (it supports incremental trim decisions); the next press starts fresh (burnDone).
+      burnDone=true; burnHoldUntil=performance.now()+BURN_PERSIST; updateBurnMeter();
+      return;
+    }
   }
+  burnHoldUntil=performance.now()+BURN_PERSIST;         // burn NOT done → keep total for pulsed top-ups
+  updateBurnMeter();                                     // re-target the meter to the remaining residual
 }
 let lastPulse=0;               // Δv accrued in the current continuous press (for crediting b.got)
 function resetBurnMeter(){ burnDv=0; lastPulse=0; burnHoldUntil=0; burnDone=false; updateBurnMeter(); }
@@ -1135,7 +1187,11 @@ function stepBurn(now){
   dvSpent+=add; burnDv+=add; lastPulse+=add; updateBurnMeter();
 }
 function updateBurnMeter(){ $('burnDv').textContent=Math.round(burnDv);
-  const b=flying?planBurns[nextBurn]:null; const tgt=b?b.dvTarget:0;
+  // target (and therefore the bar's FULL SCALE) comes from the live guidance: the current orbit's
+  // residual inside a burn window (frozen while firing), the planned value otherwise
+  const b=flying?planBurns[nextBurn]:null;
+  const gd=b? (firing&&b.frozen? b.frozen : burnGuidance(nextBurn,b)) : null;
+  const tgt=gd? gd.dv : 0;
   // Scale so the TARGET sits at 80% of the bar — leaving 20% headroom to SEE an overshoot.
   // The white marker (with a green ±tolerance band) shows exactly where to stop; pulse up to it.
   const markPct=80;
@@ -1465,8 +1521,10 @@ function loop(ts){ requestAnimationFrame(loop);
   { const bn=$('burnNow'), nb=planBurns[nextBurn];
     const bnOn = flying && !training && burnWindow && !!nb;
     bn.classList.toggle('on', bnOn);
-    if(bnOn){ const html='🔴 BURN NOW · '+Math.round(nb.dvTarget).toLocaleString()+' m/s '+nb.dir+
-        '<small>'+nb.name+' — hold '+nb.dir+', release at the target</small>';
+    if(bnOn){ // the order shows the LIVE guidance (frozen while firing): what THIS orbit needs now
+      const gd=(firing&&nb.frozen)? nb.frozen : burnGuidance(nextBurn,nb);
+      const html='🔴 BURN NOW · '+Math.round(gd.dv).toLocaleString()+' m/s '+gd.dir+
+        '<small>'+nb.name+' — hold '+gd.dir+', release at the target</small>';
       if(bn._msg!==html){ bn._msg=html; bn.innerHTML=html; } } }
   // current speed + altitude readout
   if(flying&&fs){ const v=Math.hypot(fs[2],fs[3]); const re=Math.hypot(fs[0],fs[1]);
