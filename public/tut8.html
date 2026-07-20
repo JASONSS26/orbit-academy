@@ -566,11 +566,22 @@ function segDist(p,q,T){ const vx=q[0]-p[0],vy=q[1]-p[1], wx=T[0]-p[0],wy=T[1]-p
    re-computes on release, so each pulse's target is the remaining residual.
    Earth-centric vis-viva only — the Moon mission keeps its planned values (capture is a
    three-body outcome; the plan itself is the guidance there). */
-function liveNeedMS(idx){ if(!fs || planTarget!=='geo') return null;
-  const re=Math.hypot(fs[0],fs[1]), v=Math.hypot(fs[2],fs[3]), R=42164;
-  if(idx===0){ const a=(re+R)/2; return (Math.sqrt(F7.MU_E*(2/re-1/a))-v)*1000; }  // raise apogee to GEO from HERE
-  return (Math.sqrt(F7.MU_E/re)-v)*1000;                                            // circularize at THIS radius
+function liveNeedMS(idx){ if(!fs) return null;
+  const re=Math.hypot(fs[0],fs[1]), v=Math.hypot(fs[2],fs[3]);
+  if(planTarget==='geo'){
+    if(idx===0){ const a=(re+42164)/2; return (Math.sqrt(F7.MU_E*(2/re-1/a))-v)*1000; } // raise apogee to GEO from HERE
+    return (Math.sqrt(F7.MU_E/re)-v)*1000;                                              // circularize at THIS radius
+  }
+  if(planTarget==='moon' && idx===0){   // TLI is Earth-centric too: raise apogee to the aim point past the Moon
+    const AIM=395000, a=(re+AIM)/2; return (Math.sqrt(F7.MU_E*(2/re-1/a))-v)*1000;
+  }
+  return null;   // LOI: no clean vis-viva residual at a 3-body arrival — planned value + capture check instead
 }
+// LOI's real goal: is the craft BOUND to the Moon? (same gate the mission-success check uses)
+function boundToMoon(){ if(!fs) return false; const ts=tShiftSec();
+  const mp=F7.moonPos(fsT+ts), rm=Math.hypot(fs[0]-mp[0],fs[1]-mp[1]);
+  const mv=F7.moonVel(fsT+ts), rv2=(fs[2]-mv[0])**2+(fs[3]-mv[1])**2;
+  return (rv2/2 - F7.MU_M/Math.max(F7.R_M,rm)) < 0 && rm < 79200; }
 // what the panel/cue should demand right now: {dv (m/s, magnitude), dir, live}
 function burnGuidance(idx,b){
   if(!(burnWindow||firing)) return {dv:b.dvTarget, dir:b.dir, live:false};   // outside the window: planned context
@@ -583,6 +594,27 @@ const navCv=$('cNav'); let navCtx=fit(navCv);
 /* shared co-rotating trajectory map. mode:'wide' fits Earth+Moon+path; 'zoom' centers on the Moon.
    Draws: Moon-orbit ring, Earth, Moon (fixed +x), planned ghost, actual path, and YOU-ARE-HERE. */
 let plannedCorot=null;   // cached co-rotating planned path (built when a plan loads / on the fly)
+/* LIVE trajectory prediction (lunar mission): propagate the CURRENT state ~5 days ahead with the
+   same RK4 model and cache the co-rotating polyline. Refreshed ~2.5×/s (every frame while firing),
+   fine-stepped near Earth so the departure orbit doesn't wobble. */
+let livePred=null, livePredAt=0;
+function computeLivePred(){
+  if(!flying||!fs||planTarget!=='moon'){ livePred=null; return; }
+  const now=performance.now(); if(livePred && !firing && now-livePredAt<400) return;
+  livePredAt=now;
+  const ts=tShiftSec(); let s=fs.slice(), t=fsT; const pts=[];
+  const horizon=5*86400; let steps=0;
+  while(t-fsT<horizon && steps<1600){ steps++;
+    const re=Math.hypot(s[0],s[1]);
+    const H=(re<20000)?120:600;                       // fine steps low, coarse on the cruise
+    s=F7.step(t+ts,s,H); t+=H;
+    if(steps%2===0) pts.push(F7.toCorot(s[0],s[1],t+ts));
+    if(re<F7.R_E) break;
+    const mp=F7.moonPos(t+ts); if(Math.hypot(s[0]-mp[0],s[1]-mp[1])<F7.R_M) break;
+    if(re>2.5*F7.D_EM) break;
+  }
+  livePred=pts;
+}
 function buildPlannedGhost(){ const src=F7.planToSim(flightPlan||{target:'geo',dv1:2399,dv2:1457,leadDeg:124});
   const tMax=(src.target==='geo'?0.6:9)*86400;
   const r=F7.simulate(src,{dt:40,tMax}); const ts=r.tShift; const dtPer=40*3;
@@ -591,13 +623,24 @@ let plannedBurnMarks=[];
 function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.clearRect(0,0,w,h);
   g.fillStyle=mode==='zoom'?'#02060c':'#020806'; g.fillRect(0,0,w,h);
   const moonX=F7.D_EM, isGeo=(planTarget==='geo'), R_GEO=42164;
-  let cx,cy,sc;
+  let cx,cy,sc, phaseLbl=null;
   if(isGeo){ // GEO mission: fit Earth + the GEO belt (never the Moon). zoom view is tighter.
     const span=(mode==='zoom'? R_GEO*1.35 : R_GEO*1.5); sc=Math.min(w,h)/(2*span); cx=w/2; cy=h/2; }
-  else if(mode==='zoom'){ // Moon mission zoom: center on the Moon
-    const span=90000; sc=Math.min(w,h)/(2*span); cx=w/2-moonX*sc; cy=h/2; }
+  else if(mode==='zoom'){
+    /* ADAPTIVE lunar NAV: frame wherever the action is. The old fixed Moon-centered box left the
+       pilot staring at empty space for the first four days (the ship starts 384,000 km away at
+       Earth). Departure → Earth-centered zoom; cruise → the whole Earth–Moon corridor; arrival
+       (within 90,000 km of the Moon) → Moon-centered, as before. */
+    const cpz=(flying&&fs)? F7.toCorot(fs[0],fs[1],fsT+tShiftSec()) : null;
+    const rmz=cpz? Math.hypot(cpz[0]-moonX,cpz[1]) : 0, rez=cpz? Math.hypot(cpz[0],cpz[1]) : 0;
+    if(!cpz || rmz<90000){ const span=90000; sc=Math.min(w,h)/(2*span); cx=w/2-moonX*sc; cy=h/2; phaseLbl=cpz?'arrival':null; }
+    else if(rez<80000){ const span=Math.max(30000,rez*1.7); sc=Math.min(w,h)/(2*span); cx=w/2; cy=h/2; phaseLbl='departure'; }
+    else { let mx=F7.D_EM*1.15; mx=Math.max(mx,rez*1.1);
+      sc=Math.min(w,h)/(2*mx); cx=w/2; cy=h/2; phaseLbl='cruise'; }
+  }
   else { let mx=F7.D_EM*1.2; if(plannedCorot) for(const p of plannedCorot) mx=Math.max(mx,Math.hypot(p[0],p[1])*1.08);
     sc=Math.min(w,h)/(2*mx); cx=w/2; cy=h/2; }
+  if(phaseLbl) title='NAV · '+phaseLbl;
   const X=x=>cx+x*sc, Y=y=>cy-y*sc;
   if(isGeo){ g.strokeStyle='rgba(216,210,196,.5)'; g.lineWidth=1; g.beginPath(); g.arc(X(0),Y(0),R_GEO*sc,0,7); g.stroke(); }  // GEO belt
   else { g.strokeStyle='rgba(60,120,200,.18)'; g.lineWidth=1; g.beginPath(); g.arc(X(0),Y(0),F7.D_EM*sc,0,7); g.stroke(); }  // Moon ring
@@ -607,6 +650,12 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
   // actual path (green)
   if(actualPath.length>1){ g.strokeStyle='#39d353'; g.lineWidth=2; g.beginPath();
     actualPath.forEach((p,i)=>{i?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1]));}); g.stroke(); }
+  // LIVE PREDICTED trajectory (cyan dashed, lunar mission): where the CURRENT state is headed,
+  // propagated ~5 days ahead — reshapes with every burn, so "where am I going?" is always on screen
+  if(!isGeo && livePred && livePred.length>1){
+    g.setLineDash([4,4]); g.strokeStyle='rgba(95,208,255,'+(firing?0.95:0.6)+')'; g.lineWidth=firing?2.2:1.5;
+    g.beginPath(); livePred.forEach((p,i)=>{i?g.lineTo(X(p[0]),Y(p[1])):g.moveTo(X(p[0]),Y(p[1]));});
+    g.stroke(); g.setLineDash([]); }
   // LIVE osculating orbit (cyan): the ellipse the current velocity would coast on — recomputed every
   // frame from fs, so it reshapes INSTANTLY as you thrust (even while the coast is frozen mid-burn). GEO only.
   if(isGeo && flying && fs){ const el=orbElems();
@@ -743,6 +792,7 @@ function startFlight(){ loadPlanFromStore();
   nextBurn=0; burnWindow=false; missionMsg=''; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; lastBeltAlert=0;
   approachGates=null; gatePrevAng=null; collPrev=null;   // fresh ILS gates + collision tracking per flight
   userWarp=1;                                             // fresh time-warp trim per flight
+  livePred=null; livePredAt=0;                            // fresh live-prediction cache per flight
   $('debrief').classList.remove('show');
   moonLead=(p.leadDeg||124);
   buildPlannedGhost();                                   // ghost path for the nav screens
@@ -866,7 +916,13 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   const wasWindow=burnWindow;
   burnWindow = b && tToBurn>-BURN_LEAD && tToBurn<BURN_LEAD;   // window straddles the planned time
   if(burnWindow && !wasWindow && b){
-    const L=(planTarget==='geo' && !firing)? liveNeedMS(nextBurn) : null;
+    // LOI window opening on an already-captured craft → nothing to brake for
+    if(planTarget==='moon' && nextBurn===1 && !firing && boundToMoon()){
+      b.done=true; b.err=0; nextBurn++; burnWindow=false;
+      capcom('CAPCOM: '+b.name+' — you are already gravitationally bound to the Moon. No brake needed; skipping this cue.');
+      return;
+    }
+    const L=(!firing)? liveNeedMS(nextBurn) : null;
     if(L!==null && Math.abs(L)<25){
       // the current orbit already satisfies this burn (pilot trimmed en route) — skip the cue
       b.done=true; b.err=0; nextBurn++; burnWindow=false;
@@ -1155,7 +1211,7 @@ function startBurn(dir,btn){
   // the old two-frame seed sentinel read as latency between the button and the meter.
   firing=dir; lastFire=performance.now();
   // freeze the live guidance at ignition: the burn order shouldn't slide while you hold
-  { const b=planBurns[nextBurn]; if(b && burnWindow && planTarget==='geo'){ const L=liveNeedMS(nextBurn);
+  { const b=planBurns[nextBurn]; if(b && burnWindow){ const L=liveNeedMS(nextBurn);
       if(L!==null) b.frozen={dv:Math.abs(L), dir:(L>=0?'FORWARDS':'BACKWARDS'), live:true}; } }
   btn&&btn.classList.add('firing'); }
 function stopBurn(){ const wasFiring=!!firing;
@@ -1171,9 +1227,10 @@ function stopBurn(){ const wasFiring=!!firing;
      mid-burn — and kept demanding the full planned Δv from an orbit that was already circular.)
      The Moon mission keeps the flown-fraction rule (no clean residual exists at a 3-body arrival). */
   if(b && burnWindow){
-    const L=(planTarget==='geo')? liveNeedMS(nextBurn) : null;
+    const L=liveNeedMS(nextBurn);   // live for GEO burns + TLI; null for LOI
     const doneNow = (L!==null)? Math.abs(L) < Math.max(40, 0.03*b.dvTarget)
-                              : b.got>=b.dvTarget*0.6;
+                  : (planTarget==='moon' && nextBurn===1)? boundToMoon()   // LOI is done when you're CAPTURED
+                  : b.got>=b.dvTarget*0.6;
     if(doneNow){
       const err=(L!==null)? Math.abs(L)/(b.dvTarget||1) : Math.abs(b.got-b.dvTarget)/b.dvTarget;
       b.done=true; b.err=err; nextBurn++; burnWindow=false;
@@ -1564,6 +1621,7 @@ function loop(ts){ requestAnimationFrame(loop);
   else { $('curSpeed').textContent='0.00'; $('curAlt').textContent='—'; }
   updateBurnMeter();   // meter target + full-scale track the live guidance EVERY frame (it used to
                        // render only on thruster events, so a new flight showed the old run's target)
+  computeLivePred();   // lunar NAV: keep the dashed where-am-I-headed line current (cheap, cached)
   drawWindow(t); drawNav(); drawFuel(); drawSide(); drawIls();
   if(DEV){ $('calHud').style.display='block'; $('calHud').textContent=
     'flying='+flying+' training='+training+' firing='+firing+' tourOn='+tourOn+' planMode='+planMode+
