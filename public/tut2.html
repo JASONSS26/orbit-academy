@@ -210,10 +210,16 @@ const toScene=km=>km/UNIT;
 /* ---------------- LEFT: 3-D orbit view ---------------- */
 const r3d=new THREE.WebGLRenderer({canvas:$('c3d'),antialias:true}); r3d.setPixelRatio(Math.min(devicePixelRatio,2)); r3d.setClearColor(0x000407,1);
 const sc3=new THREE.Scene(); const cam3=new THREE.PerspectiveCamera(50,1,0.01,500);
-(function stars3(){const g=new THREE.BufferGeometry(),N=800,p=new Float32Array(N*3);
-  for(let i=0;i<N;i++){const r=60+Math.random()*60,th=Math.random()*6.28,ph=Math.acos(2*Math.random()-1);
-    p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);}
-  g.setAttribute('position',new THREE.BufferAttribute(p,3));sc3.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x8fa4c6,size:0.4})));})();
+(function stars3(){ // randomized backdrop: brightness spread (many dim + a few bright) + subtle tint
+  function layer(N,size,bmin,bspan,pow){ const g=new THREE.BufferGeometry(),p=new Float32Array(N*3),c=new Float32Array(N*3);
+    for(let i=0;i<N;i++){ const r=60+Math.random()*60,th=Math.random()*6.28,ph=Math.acos(2*Math.random()-1);
+      p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);
+      const b=bmin+bspan*Math.pow(Math.random(),pow), w=Math.random();
+      c[i*3]=b*(0.78+0.22*w); c[i*3+1]=b*(0.84+0.13*w); c[i*3+2]=b*(1.0-0.18*w); }
+    g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(c,3));
+    sc3.add(new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size,transparent:true}))); }
+  layer(680,0.35,0.25,0.55,2.2); layer(160,0.75,0.65,0.35,1.0);
+})();
 const sunLight=new THREE.DirectionalLight(0xfff4e0,1.5); sc3.add(sunLight); sc3.add(sunLight.target);
 sc3.add(new THREE.AmbientLight(0x334455,0.6));
 // visible Sun far out; it circles once per day (drives the ride-along "sunlight sweeps by" effect)
@@ -306,7 +312,9 @@ scopeC.addEventListener('click',e=>{
 // Stars scattered across a wide strip of sky (x along the E–W drift, y = up/down in FOV).
 const FOV_DEG=5;                                  // 5° × 5° telescope field of view
 // fewer, well-separated stars so each 1° streak in an exposure reads individually (no merging)
-const skyStars=[];for(let i=0;i<90;i++)skyStars.push({x:Math.random(),y:Math.random(),b:0.4+Math.random()*0.6});
+// brightness spread (many dim + a few bright — power law) with size tracking brightness
+const skyStars=[];for(let i=0;i<90;i++){const m=Math.pow(Math.random(),2.2);
+  skyStars.push({x:Math.random(),y:Math.random(),b:0.35+0.65*m,r:0.9+1.5*m});}
 // Several GEO satellites at different belt longitudes, so when we TRACK STARS they drift
 // through the field one after another (spaced across the sky-strip like the stars).
 const fovSats=[];for(let i=0;i<5;i++)fovSats.push({x:Math.random(),y:0.35+Math.random()*0.3});
@@ -515,7 +523,7 @@ function drawScope(sky){
   // ----- LIVE view: always running. Everything is a moving POINT. -----
   sx.save(); sx.beginPath(); sx.rect(x0,y0,S,S); sx.clip(); sx.fillStyle='#02040d'; sx.fillRect(x0,y0,S,S);
   for(const s of skyStars){ const fx=starFX(s.x,off); const px=x0+fx*S, py=y0+s.y*S+(fx-0.5)*dyPerX*S;
-    sx.fillStyle='rgba(225,235,252,'+s.b+')'; sx.beginPath(); sx.arc(px,py,1.6,0,6.283); sx.fill(); }
+    sx.fillStyle='rgba(225,235,252,'+s.b+')'; sx.beginPath(); sx.arc(px,py,s.r,0,6.283); sx.fill(); }
   // GEO sats: when tracking stars, several drift through the FOV; when tracking a sat, one sits still
   const showSats = (G.drive==='sat') ? [fovSats[0]] : fovSats;
   satHit=null;
@@ -539,9 +547,9 @@ function renderExposure(ctx,x0,y0,S,off,dyPerX,drive){
   const sfx=b=>frac(b+((drive==='stars')?0:off));       // star screen-x for this frozen frame
   const satfx=b=>frac(b+((drive==='sat')?0:off));
   for(const s of skyStars){ const fx=sfx(s.x); const px=x0+fx*S, py=y0+s.y*S+(fx-0.5)*dyPerX*S;
-    if(starsMove){ const L=expFrac*S; ctx.strokeStyle='rgba(210,224,248,'+s.b+')'; ctx.lineWidth=1.6; ctx.lineCap='round';
+    if(starsMove){ const L=expFrac*S; ctx.strokeStyle='rgba(210,224,248,'+s.b+')'; ctx.lineWidth=s.r; ctx.lineCap='round';
       ctx.beginPath(); ctx.moveTo(px-L/2,py-dyPerX*L/2); ctx.lineTo(px+L/2,py+dyPerX*L/2); ctx.stroke(); }
-    else { ctx.fillStyle='rgba(230,238,255,'+s.b+')'; ctx.beginPath(); ctx.arc(px,py,1.7,0,6.283); ctx.fill(); } }
+    else { ctx.fillStyle='rgba(230,238,255,'+s.b+')'; ctx.beginPath(); ctx.arc(px,py,s.r,0,6.283); ctx.fill(); } }
   const showSats=(drive==='sat')?[fovSats[0]]:fovSats;
   for(const sO of showSats){ const fx=satfx(sO.x); const px=x0+fx*S, py=y0+sO.y*S;
     if(!starsMove){ const L=expFrac*S; ctx.strokeStyle='rgba(255,90,80,0.95)'; ctx.lineWidth=3; ctx.lineCap='round';

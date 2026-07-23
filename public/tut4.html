@@ -213,11 +213,17 @@ const toU=km=>km/UNIT;
 const r3=new THREE.WebGLRenderer({canvas:$('c'),antialias:true}); r3.setPixelRatio(Math.min(devicePixelRatio,2)); r3.setClearColor(0x000407,1);
 const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(50,1,0.001,5000);
 // stars
-(function(){const g=new THREE.BufferGeometry(),N=1800,p=new Float32Array(N*3);
-  for(let k=0;k<N;k++){const rr=200+((k*97)%400),th=(k*2.399),ph=Math.acos(((k*53)%1000)/500-1);
-    p[k*3]=rr*Math.sin(ph)*Math.cos(th);p[k*3+1]=rr*Math.sin(ph)*Math.sin(th);p[k*3+2]=rr*Math.cos(ph);}
-  g.setAttribute('position',new THREE.BufferAttribute(p,3));
-  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xbfd0ee,size:0.7})));})();
+(function(){ // randomized backdrop (the old golden-angle pattern drew visible spiral bands):
+  // uniform random positions, brightness spread (many dim + a few bright) + subtle tint
+  function layer(N,size,bmin,bspan,pow){ const g=new THREE.BufferGeometry(),p=new Float32Array(N*3),c=new Float32Array(N*3);
+    for(let k=0;k<N;k++){ const rr=200+Math.random()*400,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+      p[k*3]=rr*Math.sin(ph)*Math.cos(th);p[k*3+1]=rr*Math.sin(ph)*Math.sin(th);p[k*3+2]=rr*Math.cos(ph);
+      const b=bmin+bspan*Math.pow(Math.random(),pow), w=Math.random();
+      c[k*3]=b*(0.78+0.22*w); c[k*3+1]=b*(0.84+0.13*w); c[k*3+2]=b*(1.0-0.18*w); }
+    g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(c,3));
+    scene.add(new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size,transparent:true}))); }
+  layer(1450,0.65,0.3,0.55,2.2); layer(350,1.25,0.7,0.3,1.0);
+})();
 const sunLight=new THREE.DirectionalLight(0xffffff,1.6); sunLight.position.set(6,3,6); scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x516079,0.42));   // modest fill so the night side reads as dark
 // Earth (textured, like Module 3)

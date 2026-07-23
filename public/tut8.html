@@ -369,9 +369,10 @@ let crashFlash=0;  // performance.now() of the last crash → drives a brief red
 // projected through the SAME pinhole camera as everything else, so as the nadir-locked craft pitches
 // once per orbit about the orbit normal, the stars sweep the true way (vertically, since the spin axis
 // is screen-horizontal) — no more fake horizontal strip-scroll in the wrong direction.
-const stars=Array.from({length:340},(_,i)=>{ const ha=((i*40503)%1009)/1009, hb=((i*92821)%1013)/1013, hc=((i*13)%100)/100;
-  const lon=ha*2*Math.PI, lat=Math.asin(2*hb-1);        // uniform on the sphere
-  return { d:[Math.cos(lat)*Math.cos(lon), Math.cos(lat)*Math.sin(lon), Math.sin(lat)], b:0.35+0.6*hc, sz:hc>0.85?2.2:1.4 }; });
+const stars=Array.from({length:380},()=>{ const lon=Math.random()*2*Math.PI, lat=Math.asin(2*Math.random()-1);   // uniform on the sphere
+  const m=Math.pow(Math.random(),2.2);                  // many dim, a few bright (fixed per star for the session)
+  return { d:[Math.cos(lat)*Math.cos(lon), Math.cos(lat)*Math.sin(lon), Math.sin(lat)],
+           b:0.3+0.65*m, sz:m>0.72?2.4:(m>0.35?1.7:1.1) }; });
 function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect(0,0,w,h);
   g.fillStyle='#01020a'; g.fillRect(0,0,w,h);
   /* ================= TRUE 3-D PERSPECTIVE OUT-THE-WINDOW ==================

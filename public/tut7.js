@@ -454,7 +454,7 @@ function iodDrawMain(){ const cv=$('iodMain'); if(!cv) return; if(!iodMainCtx) i
   g.fillText('tracking the target — stars STREAK, the satellite holds',fs*0.6,fs*1.4);
   const sl=w*IOD_STREAK, shift=iodFrame*w*IOD_STARSHIFT;
   for(const st of iodStars){ let cx=((st.x*w+shift)%w+w)%w; const cy=st.y*h;
-    g.strokeStyle='rgba(200,218,255,'+(0.35+0.5*st.b)+')'; g.lineWidth=Math.max(2,w*0.0028); g.lineCap='round';
+    g.strokeStyle='rgba(200,218,255,'+(0.35+0.5*st.b)+')'; g.lineWidth=Math.max(1.5,w*0.0028*(0.55+0.8*st.b)); g.lineCap='round';
     g.beginPath(); g.moveTo(cx-sl/2,cy); g.lineTo(cx+sl/2,cy); g.stroke(); st._cx=cx; st._cy=cy; }
   // plate-solve reticles: animate on during the solve, then STAY on for an already-solved frame
   // (so the astrometry lock stays visible until you step to the next exposure).
@@ -672,7 +672,9 @@ function iodInit(){ const cv=$('iodMain'); if(cv) cv.addEventListener('click',io
 
 /* ===================== SCENE: take a picture (streaks) ===================== */
 let camCtx=null, camMode='stars', camStars=[], camSat={x:0.5};
-for(let i=0;i<40;i++) camStars.push({x:(i*57%100)/100,y:(i*37%100)/100,b:0.4+((i*13)%60)/100});
+// random positions + realistic brightness spread (many dim, a few bright); size tracks brightness
+for(let i=0;i<48;i++){ const m=Math.pow(Math.random(),2.2);
+  camStars.push({x:Math.random(), y:0.06+0.88*Math.random(), b:0.35+0.6*m, r:0.8+1.6*m}); }
 function setCamMode(m){ camMode=m; $('modeStars').classList.toggle('sel',m==='stars'); $('modeSat').classList.toggle('sel',m==='sat'); }
 window.setCamMode=setCamMode;
 function drawCam(live){ const cv=$('cam'); if(!cv) return; if(!camCtx) camCtx=fit(cv);
@@ -685,9 +687,9 @@ function drawCam(live){ const cv=$('cam'); if(!cv) return; if(!camCtx) camCtx=fi
   // stars move. The moving thing DRIFTS as a point live, and STREAKS in a developed exposure.
   const starsMove=(camMode==='sat'), satMoves=(camMode==='stars');
   for(const s of camStars){ let sx=((s.x+(starsMove?drift:0))%1)*w, sy=s.y*h;
-    if(live && starsMove){ g.strokeStyle='rgba(210,224,248,'+s.b+')'; g.lineWidth=Math.max(2,w*0.003); g.lineCap='round';
+    if(live && starsMove){ g.strokeStyle='rgba(210,224,248,'+s.b+')'; g.lineWidth=Math.max(1.5,w*0.0022*s.r); g.lineCap='round';
       g.beginPath(); g.moveTo(sx,sy); g.lineTo(sx+w*0.05,sy); g.stroke(); }
-    else { g.fillStyle='rgba(230,238,255,'+s.b+')'; g.beginPath(); g.arc(sx,sy,sf,0,7); g.fill(); } }
+    else { g.fillStyle='rgba(230,238,255,'+s.b+')'; g.beginPath(); g.arc(sx,sy,sf*s.r,0,7); g.fill(); } }
   let px=((camSat.x+(satMoves?drift:0))%1)*w, py=h*0.5;
   if(live && satMoves){ g.strokeStyle='#ff5a52'; g.lineWidth=Math.max(3,w*0.004); g.lineCap='round';
     g.beginPath(); g.moveTo(px,py); g.lineTo(px+w*0.05,py); g.stroke(); }

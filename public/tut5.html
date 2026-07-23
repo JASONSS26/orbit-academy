@@ -194,14 +194,19 @@ const sunLight=new THREE.DirectionalLight(0xffffff,1.5); scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x55627a,0.5));
 // Starfield on a UNIT sphere; re-scaled and re-centred on each camera every frame so it always
 // sits just inside the far plane — a proper distant backdrop at every zoom scale and in every frame.
-const starDirs=[];
-const starGeo=new THREE.BufferGeometry(); {const N=1600,p=new Float32Array(N*3);
-  for(let k=0;k<N;k++){const th=k*2.399,ph=Math.acos(((k*57)%1000)/500-1);
-    const d=new THREE.Vector3(Math.sin(ph)*Math.cos(th),Math.sin(ph)*Math.sin(th),Math.cos(ph));
-    starDirs.push(d); p[k*3]=d.x;p[k*3+1]=d.y;p[k*3+2]=d.z;}
-  starGeo.setAttribute('position',new THREE.BufferAttribute(p,3)); }
-const starMat=new THREE.PointsMaterial({color:0xcfe0ff,sizeAttenuation:false,size:1.8});
-const starField=new THREE.Points(starGeo,starMat); starField.frustumCulled=false; scene.add(starField);
+// Randomized unit-sphere directions (the old golden-angle pattern drew visible spiral bands),
+// with a realistic brightness spread (many dim + a few bright, two pixel sizes) + subtle tint.
+const starField=new THREE.Group(); scene.add(starField);
+(function(){ function layer(N,size,bmin,bspan,pow){ const g=new THREE.BufferGeometry(),p=new Float32Array(N*3),c=new Float32Array(N*3);
+    for(let k=0;k<N;k++){ const th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+      p[k*3]=Math.sin(ph)*Math.cos(th);p[k*3+1]=Math.sin(ph)*Math.sin(th);p[k*3+2]=Math.cos(ph);
+      const b=bmin+bspan*Math.pow(Math.random(),pow), w=Math.random();
+      c[k*3]=b*(0.78+0.22*w); c[k*3+1]=b*(0.84+0.13*w); c[k*3+2]=b*(1.0-0.18*w); }
+    g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(c,3));
+    const pts=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,sizeAttenuation:false,size,transparent:true}));
+    pts.frustumCulled=false; starField.add(pts); }
+  layer(1300,1.5,0.3,0.55,2.2); layer(320,2.6,0.7,0.3,1.0);
+})();
 // place the star shell around a given camera, scaled well beyond its view distance so stars always
 // read as a distant backdrop (called per view in renderView, before that view renders)
 function placeStars(v){ const R=Math.max(2e6, v.R*20); starField.position.copy(v.cam.position); starField.scale.setScalar(R); }

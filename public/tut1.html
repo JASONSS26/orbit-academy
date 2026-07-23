@@ -141,11 +141,18 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setClearColor(0x000407,1);
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(50,1,0.01,2000);
-(function stars(){const g=new THREE.BufferGeometry(),N=1500,p=new Float32Array(N*3);
-  for(let i=0;i<N;i++){const r=120+Math.random()*200,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
-    p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);}
-  g.setAttribute('position',new THREE.BufferAttribute(p,3));
-  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x8fa4c6,size:0.5})));})();
+(function stars(){ // randomized backdrop: uniform positions on the sphere, realistic brightness
+  // spread (many dim + a few bright, in two size layers) and a subtle warm/cool tint per star
+  function layer(N,size,bmin,bspan,pow){ const g=new THREE.BufferGeometry(),p=new Float32Array(N*3),c=new Float32Array(N*3);
+    for(let i=0;i<N;i++){ const r=120+Math.random()*200,th=Math.random()*6.283,ph=Math.acos(2*Math.random()-1);
+      p[i*3]=r*Math.sin(ph)*Math.cos(th);p[i*3+1]=r*Math.sin(ph)*Math.sin(th);p[i*3+2]=r*Math.cos(ph);
+      const b=bmin+bspan*Math.pow(Math.random(),pow), w=Math.random();
+      c[i*3]=b*(0.78+0.22*w); c[i*3+1]=b*(0.84+0.13*w); c[i*3+2]=b*(1.0-0.18*w); }
+    g.setAttribute('position',new THREE.BufferAttribute(p,3)); g.setAttribute('color',new THREE.BufferAttribute(c,3));
+    scene.add(new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size,transparent:true}))); }
+  layer(1250,0.45,0.25,0.55,2.2);   // the many dim ones
+  layer(300,0.95,0.65,0.35,1.0);    // the few bright ones
+})();
 const sun=new THREE.DirectionalLight(0xffffff,1.5); sun.position.set(5,3,8); scene.add(sun);
 scene.add(new THREE.AmbientLight(0x223344,0.6));
 
