@@ -61,7 +61,7 @@
         <input id="argp" type="range" min="0" max="360" step="1" value="60"></div>
       <div class="el"><div class="q">5 · WHERE along the orbit is the satellite?</div>
         <div class="lab">position (true anomaly) <b><span id="nuV">0</span>°</b></div>
-        <input id="nu" type="range" min="0" max="360" step="1" value="0"></div>
+        <input id="nu" type="range" min="0" max="360" step="0.1" value="0"></div>
     </div>
     <div class="sec">
       <label style="font-size:17px"><input type="checkbox" id="animate" checked> auto-move the satellite along the orbit</label>
@@ -324,6 +324,7 @@ $('animate').addEventListener('change',()=>{});
 // camera — left-drag = PAN · Shift/right/middle-drag = ROTATE · wheel = ZOOM · arrows = ROTATE · R = reset
 // The camera orbits a movable pivot (panPivot); panning slides that pivot in the view plane.
 let camR=9,camTh=0.6,camPh=0.9,drag=0,lx=0,ly=0,warp=1;   // warp: ,/. halve/double the auto-move rate
+let animNu=null;   // continuous true anomaly (deg) — the animation's real state (see the animate block)
 const panPivot=new THREE.Vector3(0,0,0);
 $('c').addEventListener('contextmenu',e=>e.preventDefault());
 $('c').addEventListener('mousedown',e=>{drag=(e.button===2||e.button===1||e.shiftKey||e.altKey)?2:1;lx=e.clientX;ly=e.clientY;e.preventDefault();});
@@ -368,10 +369,19 @@ function loop(){requestAnimationFrame(loop);
     const e=+$('e').value, a=+$('a').value;
     const P=2*Math.PI*Math.sqrt(a*a*a/MU);              // true period of the CURRENT orbit (s)
     const simDt=(P/12)*dt*warp;                          // simulated seconds this frame
-    const M0=trueToMean(+$('nu').value*Math.PI/180, e);
+    /* CONTINUOUS animation state. The animation must NOT round-trip its position through the
+       slider: range inputs snap programmatic writes to their step grid, and with the old 1° step
+       that quantization exceeded the per-frame Δν near a Molniya apogee (Kepler crawl ≈0.1°/frame)
+       — the marker literally froze at apogee, worst at low ',' warp, while perigee (≈5°/frame)
+       moved fine. animNu carries the exact angle; the slider is display/UI only, and we re-seed
+       from it when the user (or a preset) moves it. */
+    const sv=+$('nu').value;
+    if(animNu===null) animNu=sv;
+    else { const d=Math.abs(animNu-sv); if(Math.min(d,360-d)>0.5) animNu=sv; }
+    const M0=trueToMean(animNu*Math.PI/180, e);
     const M=M0 + (2*Math.PI/P)*simDt;
-    const nuDeg=meanToTrue(M,e)*180/Math.PI;
-    $('nu').value=nuDeg; $('nuV').textContent=Math.round(nuDeg); rebuild();
+    animNu=meanToTrue(M,e)*180/Math.PI;
+    $('nu').value=animNu; $('nuV').textContent=Math.round(animNu); rebuild();
     earth.rotation.y += (2*Math.PI/86164)*simDt;         // sidereal spin, same clock as the satellite
   }
   // animation off → both clocks freeze together (a spinning Earth under a frozen satellite would

@@ -112,7 +112,12 @@ Client-only apart from two console-hint strings in `server.js`.
   Earth spins at the sidereal rate on the same clock) — the GEO preset genuinely hovers and
   Molniya flies exactly two orbits per Earth rotation. Molniya/GPS presets pinned to the exact
   semi-synchronous axis (a = 26,562 km; were 26,600/26,560, drifting ~0.4%/orbit). Both clocks
-  freeze together when the animation is off.
+  freeze together when the animation is off. **Apogee-stall fix:** the animation used to
+  round-trip its position through the 1°-step position slider, whose snap-to-grid exceeded the
+  per-frame Δν at a Molniya apogee (Kepler crawl ≈0.1°/frame) — the marker literally froze there,
+  worst at low `,` warp. The animation now carries a continuous state variable (slider is
+  display-only, step refined to 0.1°); verified: 300 frames at warp 0.5 from apogee now advance
+  correctly, and the sim reproduces Kepler's 92.4% apogee-side dwell for e=0.74.
 - **Module 5 (+6):** the Earth–Moon **barycenter is now drawn at its true position** — inside the
   Earth, ~4,670 km from the center (73% of the way to the surface), rendered through the globe —
   instead of a 6× exaggerated offset that floated it 4 Earth-radii out in space. In the 2×2
