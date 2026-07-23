@@ -324,14 +324,46 @@ function buildZoo(){ const pts=[]; const rational=(zooRatio!=='irr');
   for(let k=0;k<=N;k++) pts.push(zooLocal(span*k/N));
   zooLine.geometry.setFromPoints(pts); }
 
-/* --- fan-release particles (live RK4, inertial frame) --- */
+/* --- fan-release particles (live RK4, inertial frame) ---
+   TRAILS ARE FRAME-SPECIFIC. The physics integrates in Earth-centered inertial coordinates, but a
+   trajectory's SHAPE depends on the frame you watch it from: during a ~1-day lunar encounter the
+   Moon itself travels ~88,000 km, so drawing the ECI polyline in the Moon-centered (MCI) panel put
+   every "scattering" tens of thousands of km from the on-screen Moon — flybys looked like
+   repulsion or pure nonsense. Each object therefore keeps THREE trail representations:
+     trail    — world/ECI points               → shown in the ECI panel (correct as recorded)
+     trailMci — Moon-RELATIVE points (P − moonPos(t)), re-anchored to the Moon's current position
+                via fanMoonGroup               → shown in the MCI panel
+     trailRot — CO-ROTATING points (rotated by −θ(t) at record time), spun to the current line
+                angle via fanRotGroup          → shown in the synodic & ECL-EMBR panels
+   renderView switches which line is visible per panel (one scene serves all four cameras). */
 const fanColors=[0xff5a52,0xffcf4d,0x39d353,0x5fd0ff,0xc080ff,0xff7bd0,0x9fe0af];
-const fan=[];   // {s:[x,y,z? no—2D in x-z], mesh, trail:[], line}
+const fan=[];
 let fanActive=false, fanSpot='l1', fanMode='mixed', fanT0=0;
+const Y_AX=new THREE.Vector3(0,1,0);
+function azAt(t){ const mp=moonPos(t); return Math.atan2(-mp.z, mp.x); }   // E–M line angle at time t (days)
+const fanRotGroup=new THREE.Group(); scene.add(fanRotGroup);    // spun to the current E–M line each frame
+const fanMoonGroup=new THREE.Group(); scene.add(fanMoonGroup);  // translated to the Moon each frame
 for(let i=0;i<7;i++){ const c=fanColors[i];
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(4500,8,6),new THREE.MeshBasicMaterial({color:c})); mesh.frustumCulled=false; mesh.visible=false; scene.add(mesh);
-  const line=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.7})); line.frustumCulled=false; line.visible=false; scene.add(line);
-  fan.push({mesh,line,trail:[],st:null,dead:null,c}); }
+  const mk=()=>new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.7}));
+  const line=mk(); line.frustumCulled=false; line.visible=false; scene.add(line);
+  const lineRot=mk(); lineRot.frustumCulled=false; lineRot.visible=false; fanRotGroup.add(lineRot);
+  const lineMci=mk(); lineMci.frustumCulled=false; lineMci.visible=false; fanMoonGroup.add(lineMci);
+  fan.push({mesh,line,lineRot,lineMci,trail:[],trailRot:[],trailMci:[],st:null,dead:null,deadRelRot:null,c,_on:false}); }
+// record one trail sample at time t (days), in all three frame representations
+function fanRecord(p, t){
+  const P=new THREE.Vector3(p.st[0],p.st[1],p.st[2]);
+  p.trail.push(P);
+  const a=azAt(t);
+  p.trailRot.push(P.clone().applyAxisAngle(Y_AX,-a));
+  p.trailMci.push(P.clone().sub(moonPos(t)));
+  if(p.trail.length>2400){ p.trail.shift(); p.trailRot.shift(); p.trailMci.shift(); }
+}
+function fanRebuildLines(p){
+  p.line.geometry.setFromPoints(p.trail);
+  p.lineRot.geometry.setFromPoints(p.trailRot);
+  p.lineMci.geometry.setFromPoints(p.trailMci);
+}
 
 // inertial-frame gravity from Earth (origin) + Moon (moonPos), FULLY 3-D. The Moon orbits in the x-z
 // plane (y=0); objects can have out-of-plane (y) motion, so releases can carry an inclination spread.
@@ -557,7 +589,10 @@ $('spread').addEventListener('input',()=>$('spreadV').textContent=(+$('spread').
 // then swallowed just to blur the control, so the ▶ release button "won't activate" until a second
 // click. Blur on release (change) so the very next click goes straight to the button.
 $('spread').addEventListener('change',()=>$('spread').blur());
-function clearFan(){ fanActive=false; fan.forEach(p=>{p.mesh.visible=false;p.line.visible=false;p.trail=[];p.st=null;}); $('scatterV').textContent='—'; }
+function clearFan(){ fanActive=false; fan.forEach(p=>{ p.mesh.visible=false; p._on=false;
+  p.line.visible=p.lineRot.visible=p.lineMci.visible=false;
+  p.trail=[]; p.trailRot=[]; p.trailMci=[]; p.st=null; p.dead=null; p.deadRelRot=null;
+  fanRebuildLines(p); }); $('scatterV').textContent='—'; }
 const W_MOON=2*Math.PI/(T_MOON*86400);   // lunar angular rate (rad/s)
 const D2R=Math.PI/180;
 // MIXED design rows = [label, tf (along-track ×v_corotating), rf (radial-out toward Moon ×v)]:
@@ -604,8 +639,9 @@ function releaseFan(){
       vz=pz*vmag*tf + uz*vmag*rf;
     }
     p.st=[x, y, z, vx, vy, vz];
-    p.trail=[]; p.mesh.visible=true; p.line.visible=true;
-    p.dead=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
+    p.trail=[]; p.trailRot=[]; p.trailMci=[]; fanRebuildLines(p);
+    p.mesh.visible=true; p._on=true;                   // per-panel line visibility is set in renderView
+    p.dead=null; p.deadRelRot=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
   fan._blew=false; fan._hit=false; fanActive=true; warp=(fanMode==='scatter'?86400:21600); showWarp(); paused=false;
   $('fanMsg').innerHTML = fanMode==='scatter'
     ? 'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b> off the Moon: most stay looping, a couple are flung <b>unbound</b> out of the system (the “unbound so far” counter keeps score). The tightest flyby (the <b>red</b> object, ~1.6 lunar radii) whips through a <b>hairpin around the far side</b> — slow to <kbd>,</kbd> as it closes in and rotate with the <b>arrow keys</b>: the sharp turn is the Moon’s gravity <i>pulling</i> it around, never pushing. Paths spread <b>out of the plane</b> in 3-D.'
@@ -625,6 +661,12 @@ function resize(){ const st=$('stage'); CW=st.clientWidth; CH=st.clientHeight; r
 addEventListener('resize',resize);
 
 function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.updateProjectionMatrix(); aimCamera(f);
+  // frame-appropriate fan trails: each panel shows the trajectory AS SEEN IN ITS OWN FRAME
+  // (ECI = world path · MCI = Moon-relative path · synodic/ECL-EMBR = co-rotating path)
+  for(const p of fan){ const on=!!p._on;
+    p.line.visible    = on && f==='eci';
+    p.lineMci.visible = on && f==='mci';
+    p.lineRot.visible = on && frameCorotates(f); }
   // Lock the star field to this camera so the stars sit at effective infinity (no parallax):
   // in an INERTIAL frame (ECI/MCI) they hold still even as the camera translates with the Moon.
   if(starField) starField.position.copy(v.cam.position);
@@ -640,6 +682,8 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
   // Moon + markers
   const mp=moonPos(simT); moon.position.copy(mp); moon.rotation.y=Math.atan2(mp.x,mp.z)+Math.PI;
   lagGroup.rotation.y=emAzimuth(); forceGroup.rotation.y=emAzimuth();
+  fanRotGroup.rotation.y=emAzimuth();                 // co-rotating trails spin with the E–M line
+  fanMoonGroup.position.copy(moonPos(simT));          // Moon-relative trails re-anchor to the Moon
   emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);   // red Earth–Moon line
   baryMark.position.copy(baryPos(simT)); baryMark.visible=(quad||frame==='embr');   // barycenter shown in the ECL-EMBR frame
   if(tessDot.visible) tessDot.position.copy(orbPoint(tessA,tessE,tessIncl,2*Math.PI*(simT/tessPer)));
@@ -677,25 +721,32 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
         if(rm2<R_MOON){ const f=R_MOON/Math.max(rm2,1e-6);
           p.st[0]=mp2.x+dxm*f; p.st[1]=mp2.y+dym*f; p.st[2]=mp2.z+dzm*f; p.st[3]=p.st[4]=p.st[5]=0;
           p.dead='moon'; p.mesh.material.color.set(0x8a8a8a);
-          p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2]));
+          // the crater rides the Moon: remember the impact offset in co-rotating (Moon-fixed) coords
+          p.deadRelRot=new THREE.Vector3(p.st[0]-mp2.x,p.st[1]-mp2.y,p.st[2]-mp2.z).applyAxisAngle(Y_AX,-azAt(tAbs));
+          fanRecord(p, tAbs);
           if(!fan._hit){ fan._hit=true; banner('💥 One object hit the Moon — a flyby that cuts below the surface ends as a crater, not a slingshot.','#33150f','#ffb08a'); }
           continue; }
         const re2=Math.hypot(p.st[0],p.st[1],p.st[2]);
         if(re2<R_EARTH){ const f=R_EARTH/Math.max(re2,1e-6);
           p.st[0]*=f; p.st[1]*=f; p.st[2]*=f; p.st[3]=p.st[4]=p.st[5]=0;
           p.dead='earth'; p.mesh.material.color.set(0x8a8a8a);
-          p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2])); continue; }
-        if(sampleK && rm2<TRAIL_NEAR){ p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2]));
-          if(p.trail.length>2400)p.trail.shift(); }
+          fanRecord(p, tAbs); continue; }
+        if(sampleK && rm2<TRAIL_NEAR) fanRecord(p, tAbs);
       } }
     // update meshes + trails + scatter metric; also count how many are now UNBOUND from Earth.
     // State is [x,y,z,vx,vy,vz] with y = out of the orbital plane (scene y-up).
     let cx=0,cy=0,cz=0,n=0; for(const p of fan){ if(!p.st) continue; cx+=p.st[0]; cy+=p.st[1]; cz+=p.st[2]; n++; }
     cx/=n; cy/=n; cz/=n; let scatter=0, unbound=0, hits=0;
-    for(const p of fan){ if(!p.st) continue; p.mesh.position.set(p.st[0],p.st[1],p.st[2]);
-      if(p.dead){ hits++; p.line.geometry.setFromPoints(p.trail); continue; }   // frozen at the impact site
-      p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2])); if(p.trail.length>2400)p.trail.shift();
-      p.line.geometry.setFromPoints(p.trail);
+    for(const p of fan){ if(!p.st) continue;
+      if(p.dead){ hits++;
+        // a Moon crater rides the Moon (its surface co-rotates with the E–M line)
+        if(p.dead==='moon' && p.deadRelRot){ const rel=p.deadRelRot.clone().applyAxisAngle(Y_AX,emAzimuth());
+          const mpn=moonPos(simT); p.mesh.position.set(mpn.x+rel.x, mpn.y+rel.y, mpn.z+rel.z); }
+        else p.mesh.position.set(p.st[0],p.st[1],p.st[2]);
+        fanRebuildLines(p); continue; }
+      p.mesh.position.set(p.st[0],p.st[1],p.st[2]);
+      fanRecord(p, simT);
+      fanRebuildLines(p);
       scatter=Math.max(scatter,Math.hypot(p.st[0]-cx,p.st[1]-cy,p.st[2]-cz));
       // specific orbital energy wrt Earth: ε = v²/2 − μ/r. ε ≥ 0 ⇒ unbound (escaping).
       const de=Math.hypot(p.st[0],p.st[1],p.st[2]), v2=p.st[3]*p.st[3]+p.st[4]*p.st[4]+p.st[5]*p.st[5];

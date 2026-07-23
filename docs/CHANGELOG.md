@@ -137,6 +137,16 @@ Client-only apart from two console-hint strings in `server.js`.
   "impacted" — nothing flies through a body, matching Module 1's honesty rule), and force
   softening floors raised to the body radii. Scatter message now names the red object's ~1.6 R_M
   hairpin and tells students to slow down and rotate to watch the pull-around.
+  **Frame-appropriate trails (the deeper fix — "none of the scattering looks realistic in MCI"):**
+  the trails were world/ECI polylines rendered under every panel's camera, but a trajectory's
+  SHAPE depends on the frame — during a ~1-day encounter the Moon itself travels ~88,000 km, so
+  the Moon-centered panel drew every "scattering" tens of thousands of km from the on-screen
+  Moon, and the co-rotating panels displaced the hairpin similarly. Each object now keeps three
+  trail representations — world (ECI panel), Moon-relative re-anchored to the live Moon (MCI
+  panel), and co-rotating spun to the live Earth–Moon line (synodic + ECL-EMBR panels) — with
+  renderView switching per panel. Verified numerically: the closest-approach point now sits at
+  exactly the flyby distance from the on-screen Moon in every representation (2,693 km = 1.55 R_M
+  for the red object). Moon-impact craters ride the Moon's surface in all frames.
 - **Module 1:** inclination now defined against **Earth's equatorial plane** (the equator extended
   into space, ⊥ the spin axis) with the rule of thumb *inclination = highest latitude reached*.
 - **Onboarding:** README/guide quick-start walks the GitHub download first (sign-in, `<> Code` →
