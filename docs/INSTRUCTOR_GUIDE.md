@@ -290,6 +290,11 @@ The deck for this module is `slides/module2.pptx` (8 slides matching this outlin
 a TLE is just those numbers in a text format. The invariance idea is key — re-orienting an orbit
 (RAAN, argument of perigee) does **not** change its size, shape, or period. The Molniya "invent it
 by trial and error" exercise is a highlight; let students discover the ~12-hour period themselves.
+The **sun-synchronous preset** is the second designer-orbit payoff: the tool now draws the **Sun's
+direction** (advancing 0.9856°/day on the shared clock) and, with auto-move on, precesses the RAAN
+at the real **J2 nodal rate** — at 700 km / i = 98.2° the node−Sun readout freezes ("☀-synchronous")
+while the ISS preset drifts −5°/day. Same J2 that pins Molniya's apogee: perturbations as tools,
+not nuisances.
 
 **Learning goals.**
 
@@ -301,6 +306,9 @@ by trial and error" exercise is a highlight; let students discover the ~12-hour 
   motion) and connect each back to one of the sliders.
 - Students can explain what makes a Molniya orbit work — 63.4° inclination, ~12-hour period,
   e ≈ 0.74 — and why its apogee loiters over high northern latitudes.
+- Students can explain what makes a sun-synchronous orbit work — ~98° retrograde tilt so J2
+  precesses the plane at the Sun's +0.9856°/day — and why imaging satellites want the same local
+  solar time every pass.
 - Students can explain why the orbit itself ignores Earth's spin: it is set by gravity and the
   velocity in the fixed-star frame.
 

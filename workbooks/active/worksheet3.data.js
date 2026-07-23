@@ -57,7 +57,7 @@ const WORKSHEET = {
     { title:'PART A · Exercise the six elements', blurb:'Drag one slider at a time and watch the readouts. The goal is to feel which numbers do what.', tasks:['a1','a2','a3','a4'] },
     { title:'PART B · What stays fixed? (invariants)', blurb:'Some elements reshape the orbit; others only turn it in space. This distinction is the heart of the module.', tasks:['b1','b2'] },
     { title:'PART C · Reading a TLE', blurb:'Connect your six sliders to the text format the Space Force actually publishes.', tasks:['c1','c2','c3'] },
-    { title:'PART D · Real orbits & why they’re chosen', blurb:'Load real satellites and discover why their orbits look the way they do.', tasks:['d1','d2','d3'] },
+    { title:'PART D · Real orbits & why they’re chosen', blurb:'Load real satellites and discover why their orbits look the way they do.', tasks:['d1','d2','d3','d4'] },
   ],
 
   summary: [
@@ -315,6 +315,25 @@ const WORKSHEET = {
               'Molniya orbits use no fuel','Geostationary orbits don’t exist that far north — the Earth blocks them entirely'],
         a:1, why:'Correct — from far-northern latitudes a GEO bird barely clears the horizon. A highly eccentric Molniya loiters near apogee high over the north, giving hours of good, high-elevation coverage per pass. The 63.4° inclination keeps apogee parked there.',
         feedback:['Launch cost isn’t the reason — it’s coverage geometry.','','Every orbit needs some station-keeping; that’s not the driver.','GEO satellites are visible from the north, just too low on the horizon to be useful.'] } },
+    { id:'d4', title:'Sun-synchronous: the orbit that tells time',
+      teach:[
+        'One more “designer orbit,” and it flies more real satellites than any other on the preset list. An imaging satellite wants to photograph the same places at the <b>same local solar time</b> every day — same Sun angle, same shadows — so yesterday’s picture compares cleanly with today’s. That requires the <b>orbit plane to keep a fixed angle to the Sun</b> while Earth goes around it: the plane must swivel (precess its RAAN) by <b>+0.9856° every day</b>, exactly matching the Sun’s apparent annual motion.',
+        'Nature sells exactly that swivel, free of charge. Earth’s <b>equatorial bulge (J2)</b> — the same effect that pins Molniya’s apogee at 63.4° — torques every orbit plane by an amount that depends on altitude and tilt. Tip a ~700-km orbit <b>past the pole to i = 98.2°</b> (slightly <b>retrograde</b>) and the bulge precesses the plane at precisely the Sun’s rate, forever, with no fuel. Ride the day–night <b>terminator</b> and your solar panels never see shadow.',
+      ],
+      predict:'The Sun’s direction moves ~1°/day around the sky over a year. What would happen to a normal (say ISS-like) orbit plane’s lighting over a few months? What must an orbit do to keep its lighting constant?',
+      do:'Load the <b>Sun-synchronous</b> preset and turn on <b>auto-move</b>. Watch the ☀ readout in the corner: the <b>node−Sun angle holds fixed</b> while the stars wheel past — the plane and the Sun swivel together (the readout flags it “☀-synchronous!”). Speed up with <kbd>.</kbd> to watch weeks pass. Then load the <b>ISS</b> and watch the same readout drift by about <b>−5°/day</b> — its lighting never repeats. Try dragging <b>inclination</b> a few degrees off 98.2° and watch the lock break.',
+      observe:'at i = 98.2° and ~700 km, J2 precesses the plane at exactly the Sun’s +0.9856°/day — the node−Sun angle freezes. Any other tilt (or the ISS) drifts out of step within days.',
+      think:[
+        'Why must the orbit be tilted PAST the pole (retrograde) to get an eastward plane-swivel? (Which way does J2 push a prograde orbit’s node — check the ☀ readout’s sign on the ISS.)',
+        'Why is “same local solar time every pass” so valuable for reconnaissance and change detection?',
+        'This trick and Molniya’s frozen apogee both come from J2. What does that tell you about “perturbations” — are they always a nuisance?',
+      ],
+      quiz:{ q:'What makes a sun-synchronous orbit sun-synchronous?',
+        opts:['It is high enough to see the Sun at all times',
+              'Its ~98° retrograde tilt lets Earth’s equatorial bulge precess the orbit plane +0.9856°/day — exactly tracking the Sun — so every pass happens at the same local solar time',
+              'It orbits exactly once per day, staying over one longitude','Its solar panels rotate to face the Sun'],
+        a:1, why:'Correct — J2 nodal precession, tuned by altitude and inclination to match the Sun’s annual rate. Constant lighting geometry for free — which is why nearly every imaging satellite flies it.',
+        feedback:['Altitude alone doesn’t lock lighting geometry — the plane must precess with the Sun.','','That’s GEO — a completely different (equatorial, high) orbit.','Panel pointing doesn’t change the orbit’s lighting geometry each pass.'] } },
   ],
 
   exam: [

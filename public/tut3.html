@@ -55,7 +55,7 @@
         <input id="i" type="range" min="0" max="90" step="0.1" value="30"></div>
       <div class="el"><div class="q">4a · SWIVEL of the orbit plane (vs. the stars)</div>
         <div class="lab">RAAN <b><span id="raanV">40</span>°</b></div>
-        <input id="raan" type="range" min="0" max="360" step="1" value="40"></div>
+        <input id="raan" type="range" min="0" max="360" step="0.1" value="40"></div>
       <div class="el"><div class="q">4b · TWIST of the ellipse within its plane</div>
         <div class="lab">argument of perigee <b><span id="argpV">60</span>°</b></div>
         <input id="argp" type="range" min="0" max="360" step="1" value="60"></div>
@@ -180,6 +180,39 @@ const apoM=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),new THREE.MeshBasi
 const periM=new THREE.Mesh(new THREE.SphereGeometry(0.07,10,8),new THREE.MeshBasicMaterial({color:0x39d353})); scene.add(periM);
 const nodeLine=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:0xffcf4d,transparent:true,opacity:0.5})); scene.add(nodeLine);
 
+/* ---- the Sun (direction marker) + J2 nodal precession -------------------------------------
+   The Sun is drawn as a DIRECTION in the equatorial plane (obliquity ignored for clarity),
+   advancing 360° per 365.25 days on the SAME simulated clock as everything else. When auto-move
+   is on, the orbit's RAAN precesses at the real J2 rate  Ω̇ = −(3/2)·J2·(R⊕/p)²·n·cos i  (nodal
+   precession only; the Molniya note covers why apsidal rotation vanishes at 63.4°). At i≈98.2°,
+   700 km, Ω̇ = +0.9856°/day — exactly the Sun's annual rate: the plane and the Sun swivel
+   TOGETHER, which is the whole trick of a sun-synchronous orbit. */
+const J2=1.08263e-3, RE_J2=6378.137, YEAR_S=365.25*86400;
+let sunAng=0, animRaan=null;
+const sunGrp=new THREE.Group(); scene.add(sunGrp);
+{ const core=new THREE.Mesh(new THREE.SphereGeometry(0.55,20,16),new THREE.MeshBasicMaterial({color:0xffd75a}));
+  core.position.set(14,0,0); sunGrp.add(core);
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(0.9,20,16),new THREE.MeshBasicMaterial({color:0xffd75a,transparent:true,opacity:0.22}));
+  glow.position.set(14,0,0); sunGrp.add(glow);
+  const ray=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(1.6,0,0),new THREE.Vector3(13.2,0,0)]),
+    new THREE.LineBasicMaterial({color:0xffd75a,transparent:true,opacity:0.3})); sunGrp.add(ray);
+  const cv=document.createElement('canvas'); cv.width=cv.height=64; const g2=cv.getContext('2d');
+  g2.font='44px serif'; g2.textAlign='center'; g2.textBaseline='middle'; g2.fillStyle='#ffd75a'; g2.fillText('☀',32,34);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));
+  sp.position.set(14,1.3,0); sp.scale.set(1.2,1.2,1.2); sunGrp.add(sp); }
+const sunHud=document.createElement('div');
+sunHud.style.cssText='position:absolute;right:12px;top:12px;z-index:5;font:12.5px ui-monospace,Menlo,monospace;color:#ffd75a;background:rgba(6,12,24,.82);border:1px solid #6b5a1e;border-radius:7px;padding:6px 10px;pointer-events:none';
+document.getElementById('stage').appendChild(sunHud);
+function raanDotDegDay(){ const a=+$('a').value, e=+$('e').value, iR=+$('i').value*Math.PI/180;
+  const p=a*(1-e*e), n=Math.sqrt(MU/(a*a*a));
+  return -1.5*J2*Math.pow(RE_J2/p,2)*n*Math.cos(iR)*86400*180/Math.PI; }
+function updateSunHud(){
+  const rd=raanDotDegDay(), sunDeg=sunAng*180/Math.PI, raanDeg=+$('raan').value;
+  const dnu=((raanDeg-sunDeg)%360+360)%360;
+  const locked=Math.abs(rd-0.9856)<0.05;
+  sunHud.innerHTML='☀ node−Sun angle: <b>'+dnu.toFixed(1)+'°</b><br>plane precession (J2): <b>'+
+    (rd>=0?'+':'')+rd.toFixed(3)+'°/day</b> '+(locked?'<span style="color:#7be0a0">— ☀-synchronous!</span>':'(Sun moves +0.986°/day)'); }
+
 // build a rotation from (i, RAAN, argp): standard 3-1-3 (Rz(RAAN)·Rx(i)·Rz(argp))
 function orbToWorld(vec, i, raan, argp){
   // vec is in perifocal frame (x toward perigee). Apply Rz(argp), Rx(i), Rz(raan).
@@ -293,6 +326,8 @@ const SATS=[
     note:'<b>Medium Earth Orbit,</b> ~20,200 km, half-day period (two orbits per day). Circular by design so signal timing is uniform everywhere.'},
   {id:'geo',  name:'GEO (TV / weather)', c:0xffffff, a:42164, e:0.0002, i:0.1, raan:0, argp:0, nu:0,
     note:'<b>Geostationary.</b> Equatorial (i≈0), exactly one orbit per day, so it hangs over one longitude. Great for the equator — but poor coverage of high latitudes.'},
+  {id:'sso', name:'Sun-synchronous (imaging)', c:0xffb35a, a:7078, e:0.001, i:98.2, raan:315, argp:0, nu:0,
+    note:'<b>Sun-synchronous.</b> ~700 km up, but tilted PAST the pole: <b>i = 98.2°</b> makes it slightly <b>retrograde</b>, and that is the whole trick. Earth’s equatorial bulge (J2) torques every orbit plane; at this altitude and tilt the plane precesses <b>+0.9856°/day — exactly the Sun’s annual rate</b>. Turn on <b>auto-move</b> and watch the ☀ readout: the node–Sun angle holds fixed while the stars wheel past — the plane and the Sun swivel together, forever, for free. So the satellite crosses every latitude at the <b>same local solar time</b> every day: identical lighting for change-detection, or a <b>dawn–dusk terminator ride</b> with continuous solar power. Nearly every imaging and reconnaissance satellite flies this orbit. Now load the <b>ISS</b> and compare: its plane drifts <b>−5°/day</b> relative to the Sun — lighting that never repeats.'},
   {id:'moln', name:'Molniya (Soviet comms)', c:0xffcf4d, a:26562, e:0.74, i:63.4, raan:190, argp:270, nu:180,
     note:'<b>Why the Soviets loved it:</b> a GEO satellite sits over the equator and barely clears the horizon from high latitudes — useless for northern Russia. A <b>Molniya</b> orbit is a highly eccentric 12-hour ellipse with <b>apogee ~40,000 km over the north.</b> By Kepler’s 2nd law it <i>crawls</i> near apogee, so it loafs over Russia for ~8 of every 12 hours. Argument of perigee is pinned near 270° (perigee in the south) and inclination is <b>63.4°</b> — the “magic” angle where Earth’s bulge (J2) does <i>not</i> rotate the ellipse, so apogee stays parked over the north. A trio covers the high Arctic 24/7. US missile-warning sensors (SBIRS-HEO) fly Molniya-style 12-hour orbits for the same reason.'},
   {id:'tund', name:'Tundra (SiriusXM)', c:0xff7bd0, a:42164, e:0.24, i:63.4, raan:180, argp:270, nu:180,
@@ -381,9 +416,20 @@ function loop(){requestAnimationFrame(loop);
     const M0=trueToMean(animNu*Math.PI/180, e);
     const M=M0 + (2*Math.PI/P)*simDt;
     animNu=meanToTrue(M,e)*180/Math.PI;
-    $('nu').value=animNu; $('nuV').textContent=Math.round(animNu); rebuild();
+    $('nu').value=animNu; $('nuV').textContent=Math.round(animNu);
+    /* Sun + J2 nodal precession run on the SAME simulated clock. animRaan is a continuous state
+       (same slider-snap trap as animNu: the per-frame precession is ~0.006°, far below the step
+       grid, so accumulating through the slider would freeze it). Re-seed when the user drags. */
+    sunAng=(sunAng+(2*Math.PI/YEAR_S)*simDt)%(2*Math.PI);
+    const rv=+$('raan').value;
+    if(animRaan===null) animRaan=rv;
+    else { const dr=Math.abs(animRaan-rv); if(Math.min(dr,360-dr)>0.5) animRaan=rv; }
+    animRaan=((animRaan + raanDotDegDay()*simDt/86400)%360+360)%360;
+    $('raan').value=animRaan; $('raanV').textContent=animRaan.toFixed(1);
+    rebuild();
     earth.rotation.y += (2*Math.PI/86164)*simDt;         // sidereal spin, same clock as the satellite
   }
+  sunGrp.rotation.y=sunAng; updateSunHud();
   // animation off → both clocks freeze together (a spinning Earth under a frozen satellite would
   // silently wreck any ground-track reasoning)
   cam.position.set(panPivot.x+camR*Math.sin(camPh)*Math.cos(camTh),panPivot.y+camR*Math.cos(camPh),panPivot.z+camR*Math.sin(camPh)*Math.sin(camTh));

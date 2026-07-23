@@ -230,13 +230,14 @@ $env:PORT=9000; node server.js
 <li><i>Misconception to pre-empt</i> — "geosynchronous means it hovers." Only if it is also equatorial; tilt a 24-hour orbit and it traces a daily figure-8 over the ground.</li>
 </ul>
 <p>The deck for this module is <code>slides/module2.pptx</code> (8 slides matching this outline).</p>
-<p><b>Module 3 — Naming Orbits &amp; TLEs.</b> Goal: an orbit has a six-number "name tag" (the elements), and a TLE is just those numbers in a text format. The invariance idea is key — re-orienting an orbit (RAAN, argument of perigee) does <b>not</b> change its size, shape, or period. The Molniya "invent it by trial and error" exercise is a highlight; let students discover the ~12-hour period themselves.</p>
+<p><b>Module 3 — Naming Orbits &amp; TLEs.</b> Goal: an orbit has a six-number "name tag" (the elements), and a TLE is just those numbers in a text format. The invariance idea is key — re-orienting an orbit (RAAN, argument of perigee) does <b>not</b> change its size, shape, or period. The Molniya "invent it by trial and error" exercise is a highlight; let students discover the ~12-hour period themselves. The <b>sun-synchronous preset</b> is the second designer-orbit payoff: the tool now draws the <b>Sun's direction</b> (advancing 0.9856°/day on the shared clock) and, with auto-move on, precesses the RAAN at the real <b>J2 nodal rate</b> — at 700 km / i = 98.2° the node−Sun readout freezes ("☀-synchronous") while the ISS preset drifts −5°/day. Same J2 that pins Molniya's apogee: perturbations as tools, not nuisances.</p>
 <p><b>Learning goals.</b></p>
 <ul>
 <li>Students can name the six element "sliders" — size, shape, tilt, swivel, twist, position — and say what each one controls.</li>
 <li>Students can explain why size alone sets the period, and why re-orienting an orbit (RAAN, argument of perigee) changes none of period, apogee, or perigee.</li>
 <li>Students can find the load-bearing fields of a TLE (epoch, inclination, eccentricity, mean motion) and connect each back to one of the sliders.</li>
 <li>Students can explain what makes a Molniya orbit work — 63.4° inclination, ~12-hour period, e ≈ 0.74 — and why its apogee loiters over high northern latitudes.</li>
+<li>Students can explain what makes a sun-synchronous orbit work — ~98° retrograde tilt so J2 precesses the plane at the Sun's +0.9856°/day — and why imaging satellites want the same local solar time every pass.</li>
 <li>Students can explain why the orbit itself ignores Earth's spin: it is set by gravity and the velocity in the fixed-star frame.</li>
 </ul>
 <p><b>Intro lecture (10 minutes, before students open the worksheet).</b></p>
