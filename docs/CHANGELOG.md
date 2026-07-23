@@ -127,6 +127,16 @@ Client-only apart from two console-hint strings in `server.js`.
   the ECL-EMBR panel. Dragging in tut5 now **rotates only** — panning could silently slide a
   frame's origin off its body, wrecking the module's central lesson. Worksheet 5 and the
   instructor guide updated to match.
+- **Module 6 (fan/scatter):** the "Moon repels the red object" illusion fixed. The physics was
+  verified sound (headless RK4: scatter closest passes 1.3–18 lunar radii, mixed ≥3.5 R_M, zero
+  penetrations, 2 unbound) — the artifact was TRAIL SAMPLING: one point per frame ≈ 1,440 s of
+  sim, while the tightest hairpin swing lasts ~2,500–5,000 s, so the 180° gravity-bend drew as a
+  2–3-point V that looked like a bounce. Trails now densify to one point per 150 s within
+  25,000 km of the Moon (cap 2,400 pts). Also hardened: real **impact checks** (an object inside
+  the Moon's or Earth's radius pins to the surface, greys out, banners, and counts as
+  "impacted" — nothing flies through a body, matching Module 1's honesty rule), and force
+  softening floors raised to the body radii. Scatter message now names the red object's ~1.6 R_M
+  hairpin and tells students to slow down and rotate to watch the pull-around.
 - **Module 1:** inclination now defined against **Earth's equatorial plane** (the equator extended
   into space, ⊥ the spin axis) with the rule of thumb *inclination = highest latitude reached*.
 - **Onboarding:** README/guide quick-start walks the GitHub download first (sign-in, `<> Code` →

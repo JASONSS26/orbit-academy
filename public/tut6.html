@@ -331,7 +331,7 @@ let fanActive=false, fanSpot='l1', fanMode='mixed', fanT0=0;
 for(let i=0;i<7;i++){ const c=fanColors[i];
   const mesh=new THREE.Mesh(new THREE.SphereGeometry(4500,8,6),new THREE.MeshBasicMaterial({color:c})); mesh.frustumCulled=false; mesh.visible=false; scene.add(mesh);
   const line=new THREE.Line(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.7})); line.frustumCulled=false; line.visible=false; scene.add(line);
-  fan.push({mesh,line,trail:[],st:null}); }
+  fan.push({mesh,line,trail:[],st:null,dead:null,c}); }
 
 // inertial-frame gravity from Earth (origin) + Moon (moonPos), FULLY 3-D. The Moon orbits in the x-z
 // plane (y=0); objects can have out-of-plane (y) motion, so releases can carry an inclination spread.
@@ -339,7 +339,8 @@ for(let i=0;i<7;i++){ const c=fanColors[i];
 function fanAcc(t,st){
   const mp=moonPos(t); const x=st[0],y=st[1],z=st[2];
   const dxe=x, dye=y, dze=z, dxm=x-mp.x, dym=y-mp.y, dzm=z-mp.z;
-  const re=Math.max(1e6,(dxe*dxe+dye*dye+dze*dze))**1.5, rm=Math.max(1e5,(dxm*dxm+dym*dym+dzm*dzm))**1.5;
+  // force floors at the BODY RADII (impacts end trajectories before these matter — belt & braces)
+  const re=Math.max(R_EARTH*R_EARTH,(dxe*dxe+dye*dye+dze*dze))**1.5, rm=Math.max(R_MOON*R_MOON,(dxm*dxm+dym*dym+dzm*dzm))**1.5;
   return [ -MU_E*dxe/re - MU_M*dxm/rm, -MU_E*dye/re - MU_M*dym/rm, -MU_E*dze/re - MU_M*dzm/rm ];
 }
 function fanStep(st,t,h){ const a1=fanAcc(t,st);
@@ -603,10 +604,11 @@ function releaseFan(){
       vz=pz*vmag*tf + uz*vmag*rf;
     }
     p.st=[x, y, z, vx, vy, vz];
-    p.trail=[]; p.mesh.visible=true; p.line.visible=true; });
-  fan._blew=false; fanActive=true; warp=(fanMode==='scatter'?86400:21600); showWarp(); paused=false;
+    p.trail=[]; p.mesh.visible=true; p.line.visible=true;
+    p.dead=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
+  fan._blew=false; fan._hit=false; fanActive=true; warp=(fanMode==='scatter'?86400:21600); showWarp(); paused=false;
   $('fanMsg').innerHTML = fanMode==='scatter'
-    ? 'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b> off the Moon: most stay looping, a couple are flung <b>unbound</b> out of the system (the “unbound so far” counter keeps score). Use <kbd>,</kbd><kbd>.</kbd> for speed, and the <b>arrow keys to rotate</b> — the paths spread <b>out of the plane</b> in 3-D.'
+    ? 'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b> off the Moon: most stay looping, a couple are flung <b>unbound</b> out of the system (the “unbound so far” counter keeps score). The tightest flyby (the <b>red</b> object, ~1.6 lunar radii) whips through a <b>hairpin around the far side</b> — slow to <kbd>,</kbd> as it closes in and rotate with the <b>arrow keys</b>: the sharp turn is the Moon’s gravity <i>pulling</i> it around, never pushing. Paths spread <b>out of the plane</b> in 3-D.'
     : 'Released 7 objects from the <b>same spot</b> at a range of angles: two lean <b>retrograde</b> (peel inward), three form a near-identical <b>cluster</b> ('+(+$('spread').value).toFixed(1)+'% speed spread) that blows apart — chaos — and two aim at the Moon: one <b>flies past</b> and one <b>scatters off it</b> and escapes.';
 }
 
@@ -656,21 +658,50 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
 
   // fan: live RK4 (inertial) over this frame's worth of sim time
   if(fanActive && !paused){ const dtSec=2, simDelta=warp*wall, nsteps=Math.min(3000,Math.max(1,Math.round(simDelta/dtSec)));
+    /* DENSE TRAIL through lunar encounters: the trail used to record one point per FRAME
+       (~1,440 s of sim at scatter warp), but the tightest hairpin of a close flyby — the whole
+       180°+ swing around the far side — lasts only ~2,500-5,000 s. Drawn with 2-3 points it
+       rendered as a sharp V short of the Moon, which reads as "the Moon repelled it." Within
+       25,000 km of the Moon we now also record every 150 s, so the hairpin draws as the smooth
+       gravity-bent curve it really is. Impacts are also real now: inside a body's radius the
+       trajectory ENDS at the surface (nothing flies through a planet — same honesty rule as
+       Module 1's re-entry arcs). */
+    const TRAIL_NEAR=25000, TRAIL_EVERY=75;
     for(let k=0;k<nsteps;k++){ const tAbs=(simT - (warp*wall)/86400) + (k*dtSec)/86400;
-      for(const p of fan){ if(p.st) p.st=fanStep(p.st, tAbs, dtSec); } }
+      const sampleK=(k%TRAIL_EVERY===0);
+      for(const p of fan){ if(!p.st||p.dead) continue;
+        p.st=fanStep(p.st, tAbs, dtSec);
+        const mp2=moonPos(tAbs);
+        const dxm=p.st[0]-mp2.x, dym=p.st[1]-mp2.y, dzm=p.st[2]-mp2.z;
+        const rm2=Math.hypot(dxm,dym,dzm);
+        if(rm2<R_MOON){ const f=R_MOON/Math.max(rm2,1e-6);
+          p.st[0]=mp2.x+dxm*f; p.st[1]=mp2.y+dym*f; p.st[2]=mp2.z+dzm*f; p.st[3]=p.st[4]=p.st[5]=0;
+          p.dead='moon'; p.mesh.material.color.set(0x8a8a8a);
+          p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2]));
+          if(!fan._hit){ fan._hit=true; banner('💥 One object hit the Moon — a flyby that cuts below the surface ends as a crater, not a slingshot.','#33150f','#ffb08a'); }
+          continue; }
+        const re2=Math.hypot(p.st[0],p.st[1],p.st[2]);
+        if(re2<R_EARTH){ const f=R_EARTH/Math.max(re2,1e-6);
+          p.st[0]*=f; p.st[1]*=f; p.st[2]*=f; p.st[3]=p.st[4]=p.st[5]=0;
+          p.dead='earth'; p.mesh.material.color.set(0x8a8a8a);
+          p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2])); continue; }
+        if(sampleK && rm2<TRAIL_NEAR){ p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2]));
+          if(p.trail.length>2400)p.trail.shift(); }
+      } }
     // update meshes + trails + scatter metric; also count how many are now UNBOUND from Earth.
     // State is [x,y,z,vx,vy,vz] with y = out of the orbital plane (scene y-up).
     let cx=0,cy=0,cz=0,n=0; for(const p of fan){ if(!p.st) continue; cx+=p.st[0]; cy+=p.st[1]; cz+=p.st[2]; n++; }
-    cx/=n; cy/=n; cz/=n; let scatter=0, unbound=0;
+    cx/=n; cy/=n; cz/=n; let scatter=0, unbound=0, hits=0;
     for(const p of fan){ if(!p.st) continue; p.mesh.position.set(p.st[0],p.st[1],p.st[2]);
-      p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2])); if(p.trail.length>1200)p.trail.shift();
+      if(p.dead){ hits++; p.line.geometry.setFromPoints(p.trail); continue; }   // frozen at the impact site
+      p.trail.push(new THREE.Vector3(p.st[0],p.st[1],p.st[2])); if(p.trail.length>2400)p.trail.shift();
       p.line.geometry.setFromPoints(p.trail);
       scatter=Math.max(scatter,Math.hypot(p.st[0]-cx,p.st[1]-cy,p.st[2]-cz));
       // specific orbital energy wrt Earth: ε = v²/2 − μ/r. ε ≥ 0 ⇒ unbound (escaping).
       const de=Math.hypot(p.st[0],p.st[1],p.st[2]), v2=p.st[3]*p.st[3]+p.st[4]*p.st[4]+p.st[5]*p.st[5];
       if(v2/2 - MU_E/de >= 0) unbound++; }
-    $('scatterV').textContent = fanMode==='scatter'
-      ? unbound+' of '+n+' unbound' : (scatter/D_EM*100).toFixed(1)+'% of D';
+    $('scatterV').textContent = (fanMode==='scatter'
+      ? unbound+' of '+n+' unbound' : (scatter/D_EM*100).toFixed(1)+'% of D') + (hits? ' · '+hits+' impacted':'');
     if(fanMode==='scatter' && unbound>0 && !fan._blew){ fan._blew=true; banner('🚀 An object just went UNBOUND — flung by the Moon onto an escape trajectory, gone from the Earth–Moon system for good.','#12331f','#7be0a0'); }
   }
 
