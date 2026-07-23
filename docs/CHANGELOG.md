@@ -2,6 +2,60 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v4.0 — 2026-07-23 (Module 6 becomes a cislunar dynamics laboratory; M3 sun-synch)
+Major-version bump: the Module 6 fan release grows from one chaos demo into **six tuned
+experiments on the true restricted three-body field**, the effective-potential surface returns,
+and Module 3 gains real J2 physics with a sun-synchronous preset. All client-side; the only
+server.js change is the version header.
+
+- **Module 6 physics upgrade — the INDIRECT TERM:** `fanAcc` now includes Earth's own
+  acceleration toward the Moon (−μ_M·r̂_M/D²), making the fan the true CR3BP expressed in
+  Earth-centered coordinates. Without it the off-axis equilibria sat at ±118° (solved
+  numerically) — nowhere near the ±60° L4/L5 markers; with it, L1 solves to 0.8493 D (marker
+  0.8491) and L4 to 59.97°. The scatter set was retuned for the corrected field (passes
+  1.2–12.7 R_M; yellow skims ~307 km — Apollo-8 altitude — and is flung to a ~4 M-km orbit,
+  past Earth's ~1.5 M-km **Hill sphere**, the new "flung away" test and banner). The old
+  "mixed fan" mode was retired (its "prograde" basis was in fact reversed — releases
+  counter-rotated); a warp-cap bug that silently **dropped sim time** at high `,`/`.` warp was
+  fixed (step size grows past the 3,000-substep cap instead; dense-trail sampling is by sim
+  time). Every number above was verified by **executing the shipped functions and parameter
+  arrays, extracted verbatim from the file, at the page's own RK4 step sizes**
+  (`test/tut6-physics.verify.js`; MAINTENANCE §6.5).
+- **Six fan-release scenarios** (each with its own live counter, banner, and teaching text):
+  **🌙 lunar scatter** (retuned slingshot family); **⚖ L1 knife-edge** (7 objects AT the model's
+  L1, kicks ≤8 m/s decide moonward ~d9 / earthward ~d13 / hover — the un-kicked one departs
+  ~d21 from round-off alone: unstable equilibrium made visceral); **🐸 L4 tadpoles** (kicks to
+  30 m/s just librate 1–22° for 120 days; a 50 m/s outlier breaks out — the stable pocket has a
+  rim); **🔄 DRO vs prograde** (Earth's tide strips prograde lunar orbits at 40k/55k km in days
+  and craters one from 30k, while every distant-retrograde twin persists — why Artemis I parked
+  Orion in a DRO; close-in 20k prograde survives); **∞ free return** (7 ships spanning ~6 m/s of
+  departure speed: two re-enter ~d8, one ~d13, one hits the Moon, three stranded at
+  88k–380k km — the Apollo 13 fail-safe); **🌒 minimoons** (7 identical slightly-hyperbolic
+  arrivals differing only in arrival DAY; lunar flybys ballistically capture yellow & pink for
+  >1 year and green & purple for ~3 weeks, cyan sails through, red craters — the real
+  2006 RH120 / 2020 CD3 mechanism, with a live "captured right now" moon-count).
+- **Gravity landscape restored:** the effective-potential surface removed from early Module 5
+  ("deferred to Module 6") is finally delivered — a toggleable wireframe of
+  U_eff = −μ_E/r_E − μ_M/r_M − ½ω²ρ² (ρ from the barycenter): Earth/Moon funnels, L1/L2/L3
+  saddle passes, L4/L5 hilltops. It rides the rotating E–M line and appears only in co-rotating
+  panels (in inertial panels the landscape itself would spin — which is the lesson). The stale
+  "potential surface" claim in the Module 5 README bullet was corrected.
+- **Module 3 — sun-synchronous orbits:** tut3 now draws the **Sun's direction** advancing
+  0.9856°/day on the shared sim clock and precesses the RAAN at the true **J2 nodal rate**
+  Ω̇ = −(3/2)J2(R⊕/p)²n·cos i when auto-move is on (continuous `animRaan` state — same
+  slider-snap trap as the Molniya `animNu` fix; RAAN slider step 1→0.1). A corner ☀ HUD shows
+  the node−Sun angle and precession rate and flags the lock. New **sun-synchronous preset**
+  (700 km, i = 98.2°, retrograde): +0.987°/day, locked to the Sun — verified by executing the
+  shipped `raanDotDegDay()` (ISS drifts −4.95°/day; Molniya −0.148). Worksheet 3 gains task
+  d4 ("the orbit that tells time") + exam-quality quiz.
+- **Worksheet 6 rebuilt around the six releases** (Part D now d1 knife-edge, d1t tadpoles,
+  d1b scatter — students switch to **Moon-centered inertial before arrival** to read the
+  flybys' true shapes, d1c 3-D rotate, d1d DRO, d1e free return, d1m minimoons, d2 tracking),
+  with new exam questions (DRO/Artemis, free return, minimoon capture) and Hill-sphere framing
+  replacing bare "unbound" throughout. Worksheet b3 walks the gravity landscape.
+- **Instructor guide** M3/M6 sections, learning goals, and live-demo scripts updated;
+  `module3.pptx` and `module6.pptx` refreshed; `guide.html` regenerated.
+
 ## v3.1 — 2026-07-20 → 23 (post-3.0 flight-test series)
 Two rounds of owner flight-testing of Module 8 (the second via a prior CLI session, folded in
 here) drove major cockpit upgrades; plus onboarding, Module 1/3/5 content and physics fixes.

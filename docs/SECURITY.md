@@ -4,6 +4,21 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v4.0 — audit result: **PASS**
+The v4.0 change set is **entirely client-side content** (tut3/tut6 physics + UI, worksheet 3/6
+data, instructor guide + regenerated guide.html, module3/6 decks, README/CHANGELOG); the ONLY
+`server.js` change is the version-header comment — zero changes to auth, sessions, roles,
+routing, parsing, or file access. Audit performed 2026-07-23 on this basis plus the full scripted
+suites: `bash test/run.sh` → functional 28+ ✓, security 30 ✓ (path traversal, unauth access,
+priv-esc, session forgery, prereq bypass, input validation, workbook-editor authz + id
+validation), DoS 300 KB body ✓ — **ALL SUITES PASSED**. New client code review: worksheet strings
+render through the existing engine (quiz data is trusted course content, no user data in
+`innerHTML` paths); tut3 sun HUD and tut6 fan messages are static template strings (no user
+input); no `eval`/`document.write`; the one new DOM node (sun HUD) is `pointer-events:none`.
+`academy_data.json` confirmed gitignored (`git check-ignore`). Physics verification per
+MAINTENANCE §6.5: all six tut6 fan scenarios + tut3 J2 rates re-verified by executing the shipped
+code verbatim on the release candidate. Cleared to ship v4.0.
+
 ## v3.1 — audit result: **PASS**
 The v3.1 change set is the post-3.0 flight-test series (two rounds; the second via a prior CLI
 session, folded in and verified here): Module 8 cockpit upgrades (autopilot, live guidance,
