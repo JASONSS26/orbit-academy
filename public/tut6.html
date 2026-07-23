@@ -455,9 +455,9 @@ addEventListener('mousemove',e=>{ if(!drag)return; const v=views[dragFrame]; con
   if(drag===2){ v.th-=dx*0.005; v.ph=Math.max(0.05,Math.min(Math.PI-0.05,v.ph-dy*0.005)); }
   else { const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);
     const k=v.R*0.0016; v.target.addScaledVector(right,-dx*k); v.target.addScaledVector(up,dy*k); } });
-canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*3,Math.min(D_EM*8,v.R*(1+Math.sign(e.deltaY)*0.12)));},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*3,Math.min(D_EM*15,v.R*(1+Math.sign(e.deltaY)*0.12)));},{passive:false});
 canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;dragFrame=activeFrame(lx,ly);}else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);const k=v.R*0.0016;v.target.addScaledVector(right,-dx*k);v.target.addScaledVector(up,dy*k);}else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinchD)v.R=Math.max(R_MOON*3,Math.min(D_EM*8,v.R*(pinchD/d)));pinchD=d;}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);const k=v.R*0.0016;v.target.addScaledVector(right,-dx*k);v.target.addScaledVector(up,dy*k);}else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinchD)v.R=Math.max(R_MOON*3,Math.min(D_EM*15,v.R*(pinchD/d)));pinchD=d;}},{passive:false});
 canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
 addEventListener('keyup',e=>{keys[e.key]=false;});
 addEventListener('keydown',e=>{ keys[e.key]=true;
@@ -691,6 +691,14 @@ const HILL_KM=1.5e6;    // Earth's Hill-sphere radius: beyond this, in reality, 
    (~day 51/45); pale is barely bent (ε<0 for ~6 days); cyan sails straight through, never bound. */
 const MINI_R0=1.0e6, MINI_VINF=0.05, MINI_RP=300000;
 const MINI_PH=[15,340,330,45,80,150,215];    // arrival phase (deg) per object — the only knob that differs
+// Earth's HILL SPHERE drawn to scale (faint dashed ring at 1.5 M km): inside it Earth rules; an
+// object carried past it is, in the real Solar System, the Sun's to keep. Shown while the scatter
+// or minimoon experiment is live — it gives "flung away" and "captured" a visible boundary.
+const hillRing=(function(){ const pts=[]; for(let k=0;k<=256;k++){ const t=k/256*2*Math.PI;
+    pts.push(new THREE.Vector3(HILL_KM*Math.cos(t),0,HILL_KM*Math.sin(t))); }
+  const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineDashedMaterial({color:0x7be0a0,transparent:true,opacity:0.35,dashSize:60000,gapSize:40000}));
+  l.computeLineDistances(); l.frustumCulled=false; l.visible=false; scene.add(l); return l; })();
 // Defaults sit ON the warp ladder so ,/. step cleanly from them. Minimoon runs at 1 d/s — slow
 // enough to READ the capture loops (lopsided week-to-month orbits); step up with '.' for the
 // long haul, down with ',' at each lunar encounter.
@@ -763,6 +771,8 @@ function releaseFan(){
     p.trail=[]; p.trailRot=[]; p.trailMci=[]; fanRebuildLines(p);
     p.mesh.visible=true; p._on=true; p.ring.visible=false;   // per-panel line visibility is set in renderView
     p.dead=null; p.deadRelRot=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
+  // minimoons play out over ±2 million km — zoom every panel out far enough to see the whole story
+  if(fanMode==='minimoon') for(const f of FRAMES){ if(views[f].R<D_EM*6.5) views[f].R=D_EM*6.5; }
   fan._blew=false; fan._hit=false; fan._home=false; fan._mini=false; fanActive=true; warp=FAN_WARP[fanMode]; showWarp(); paused=false;
   $('fanMsg').innerHTML=FAN_MSG[fanMode];
 }
@@ -805,6 +815,7 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
   fanRotGroup.rotation.y=emAzimuth();                 // co-rotating trails spin with the E–M line
   fanMoonGroup.position.copy(moonPos(simT));          // Moon-relative trails re-anchor to the Moon
   potGroup.rotation.y=emAzimuth();                    // the gravity landscape rides the E–M line too
+  hillRing.visible = fanActive && (fanMode==='minimoon'||fanMode==='scatter');
   emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);   // red Earth–Moon line
   baryMark.position.copy(baryPos(simT)); baryMark.visible=(quad||frame==='embr');   // barycenter shown in the ECL-EMBR frame
   if(tessDot.visible) tessDot.position.copy(orbPoint(tessA,tessE,tessIncl,2*Math.PI*(simT/tessPer)));
