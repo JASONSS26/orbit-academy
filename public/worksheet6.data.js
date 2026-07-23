@@ -381,7 +381,7 @@ const WORKSHEET = {
       do:[
         'Pick <b>🌒 minimoons</b> and press <b>▶ release</b>. Watch in the <b>Earth-centered inertial</b> frame, zoomed well out.',
         'A green banner marks the first <b>ballistic capture</b>. Watch the counter rise and fall as objects are caught and released.',
-        'Follow individual fates: <b>yellow</b> and <b>pink</b> stay captured for over a <i>year</i> of sim time; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and hits the Moon.',
+        'Be patient: the infall takes ~3 weeks of sim time (~25 s at the default speed) before anything can be captured — a <b>green halo ring</b> lights around each object while it is bound to Earth. Follow individual fates: <b>yellow</b> and <b>pink</b> stay captured for over a <i>year</i> of sim time; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and hits the Moon.',
         'Note how irregular the captured orbits look — huge, lopsided, never repeating. Real minimoons are like this, which is one reason they’re hard to spot.',
       ],
       observe:'objects that arrived unbound end up looping Earth for weeks to over a year — captured and eventually released by nothing but lunar flybys — while identical twins arriving on other days pass straight through.',

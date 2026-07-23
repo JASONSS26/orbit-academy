@@ -350,7 +350,13 @@ for(let i=0;i<7;i++){ const c=fanColors[i];
   const line=mk(); line.frustumCulled=false; line.visible=false; scene.add(line);
   const lineRot=mk(); lineRot.frustumCulled=false; lineRot.visible=false; fanRotGroup.add(lineRot);
   const lineMci=mk(); lineMci.frustumCulled=false; lineMci.visible=false; fanMoonGroup.add(lineMci);
-  fan.push({mesh,line,lineRot,lineMci,trail:[],trailRot:[],trailMci:[],st:null,dead:null,deadRelRot:null,c,_on:false}); }
+  // capture halo (minimoon mode): a green ring that lights up while THIS object is gravitationally
+  // bound to Earth (ε<0) — makes ballistic capture visible at a glance, not just a counter tick
+  const rcv=document.createElement('canvas'); rcv.width=rcv.height=64; const rg=rcv.getContext('2d');
+  rg.strokeStyle='#7be0a0'; rg.lineWidth=5; rg.beginPath(); rg.arc(32,32,25,0,7); rg.stroke();
+  const ring=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(rcv),transparent:true,opacity:0.95,depthTest:false}));
+  ring.scale.set(30000,30000,1); ring.visible=false; ring.renderOrder=9; scene.add(ring);
+  fan.push({mesh,line,lineRot,lineMci,ring,trail:[],trailRot:[],trailMci:[],st:null,dead:null,deadRelRot:null,c,_on:false}); }
 // record one trail sample at time t (days), in all three frame representations
 function fanRecord(p, t){
   const P=new THREE.Vector3(p.st[0],p.st[1],p.st[2]);
@@ -632,7 +638,7 @@ function setFanMode(m){ fanMode=m; $('fanModeLbl').textContent=FAN_MODE_LBL[m];
   $('fanModeNote').innerHTML=FAN_MODE_NOTE[m];
   document.querySelectorAll('#fanModeSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.mode===m));
 }
-function clearFan(){ fanActive=false; fan.forEach(p=>{ p.mesh.visible=false; p._on=false;
+function clearFan(){ fanActive=false; fan.forEach(p=>{ p.mesh.visible=false; p._on=false; p.ring.visible=false;
   p.line.visible=p.lineRot.visible=p.lineMci.visible=false;
   p.trail=[]; p.trailRot=[]; p.trailMci=[]; p.st=null; p.dead=null; p.deadRelRot=null;
   fanRebuildLines(p); }); $('scatterV').textContent='—'; }
@@ -694,7 +700,7 @@ const FAN_MSG={
   tadpole:'The same kicks that doomed the L1 set (and bigger — up to 30 m/s) just make these objects <b>librate</b>: lazy tadpole loops around L4, weeks per lap, going nowhere. L4 is a genuinely <b>stable</b> parking spot — it’s why Trojan asteroids camp at Jupiter’s L4/L5 for billions of years. Only <b>red</b>, kicked 50 m/s, breaks out of the tadpole and wanders off along the Moon’s orbit: the stable pocket has a finite rim.',
   dro:'Seven satellites parked around the <b>Moon</b>. Prograde at 40k and 55k km are <b>stripped by Earth’s tide</b> within days (one flung 2.3 million km); prograde from 30k spirals in and <b>craters</b> (~day 39). Every <b>retrograde</b> twin — a <b>Distant Retrograde Orbit</b> — persists: DROs are famously stable, which is why <b>Artemis I parked Orion in one</b>. Close-in prograde (20k) also survives — tides only win far out. Backwards is better, out there.',
   freeret:'7 ships leave a 330-km parking orbit with departure speeds spanning just <b>~6 m/s</b>. <b>Green</b> and <b>cyan</b> thread the <b>free-return figure-8</b> — around the far side and home to re-entry (~day 8) with <i>no burn at the Moon</i>, the trajectory Apollo trusted (and that saved Apollo 13). <b>Pale</b> straggles home the long way (~day 13). <b>Red</b> cuts too close and <b>hits the Moon</b>. The rest are slung wide — stranded with perigees from 88,000 to 380,000 km. A walking-pace speed difference at Earth decides who comes home.',
-  minimoon:'7 objects fall in from a <b>million km out</b>, every one slightly <b>hyperbolic</b> — not bound to Earth — with identical speed and aim. The only difference is <b>which day they arrive</b>, i.e. where the Moon happens to be. Watch the “captured right now” counter: a well-timed lunar flyby steals enough energy to make an object a genuine <b>temporary moon of Earth</b>. <b>Yellow</b> and <b>pink</b> stay captured for over a <i>year</i>; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks before slipping away; <b>pale</b> is bent but barely lingers; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and <b>hits the Moon</b>. This is real: asteroid <b>2006 RH120</b> was Earth’s minimoon for ~11 months, <b>2020 CD3</b> for ~2 years — captured and released by exactly this mechanism.'};
+  minimoon:'7 objects fall in from a <b>million km out</b>, every one slightly <b>hyperbolic</b> — not bound to Earth — with identical speed and aim. The only difference is <b>which day they arrive</b>, i.e. where the Moon happens to be. <b>Be patient: the infall takes ~3 weeks of sim time (about 25 s at the default 1 d/s)</b> — captures start when they reach the Moon’s neighborhood. A <b>green halo ring</b> lights up around any object the moment it becomes gravitationally <b>bound to Earth</b>, and the “captured right now” counter keeps the tally. <b>Yellow</b> and <b>pink</b> keep their halos for over a <i>year</i>; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks before the halo dies and they slip away; <b>pale</b> flickers for days; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and <b>hits the Moon</b> (~day 14). This is real: asteroid <b>2006 RH120</b> was Earth’s minimoon for ~11 months, <b>2020 CD3</b> for ~2 years — captured and released by exactly this mechanism.'};
 function releaseFan(){
   fanT0=simT;
   const mp=moonPos(simT); const ux=mp.x/D_EM, uz=mp.z/D_EM;    // unit vector Earth→Moon (in-plane)
@@ -753,7 +759,7 @@ function releaseFan(){
     }
     p.st=[x, y, z, vx, vy, vz];
     p.trail=[]; p.trailRot=[]; p.trailMci=[]; fanRebuildLines(p);
-    p.mesh.visible=true; p._on=true;                   // per-panel line visibility is set in renderView
+    p.mesh.visible=true; p._on=true; p.ring.visible=false;   // per-panel line visibility is set in renderView
     p.dead=null; p.deadRelRot=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
   fan._blew=false; fan._hit=false; fan._home=false; fan._mini=false; fanActive=true; warp=FAN_WARP[fanMode]; showWarp(); paused=false;
   $('fanMsg').innerHTML=FAN_MSG[fanMode];
@@ -852,7 +858,7 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
     let cx=0,cy=0,cz=0,n=0; for(const p of fan){ if(!p.st) continue; cx+=p.st[0]; cy+=p.st[1]; cz+=p.st[2]; n++; }
     cx/=n; cy/=n; cz/=n; let scatter=0, flung=0, stripped=0, hits=0, home=0, captured=0;
     for(const p of fan){ if(!p.st) continue;
-      if(p.dead){ hits++; if(p.dead==='earth') home++;
+      if(p.dead){ hits++; if(p.dead==='earth') home++; p.ring.visible=false;
         // a Moon crater rides the Moon (its surface co-rotates with the E–M line)
         if(p.dead==='moon' && p.deadRelRot){ const rel=p.deadRelRot.clone().applyAxisAngle(Y_AX,emAzimuth());
           const mpn=moonPos(simT); p.mesh.position.set(mpn.x+rel.x, mpn.y+rel.y, mpn.z+rel.z); }
@@ -868,6 +874,9 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
       const eps=v2/2 - MU_E/de;
       if(eps >= 0 || de > HILL_KM) flung++;
       if(eps < 0) captured++;
+      // capture halo: light the ring while this object is bound to Earth (minimoon mode only)
+      p.ring.visible = (fanMode==='minimoon' && eps<0);
+      if(p.ring.visible) p.ring.position.set(p.st[0],p.st[1],p.st[2]);
       const mpc=moonPos(simT);
       if(Math.hypot(p.st[0]-mpc.x,p.st[1]-mpc.y,p.st[2]-mpc.z) > 90000) stripped++; }
     $('scatterV').textContent = (
