@@ -89,6 +89,7 @@
         <div class="note" style="margin-top:4px;color:#6f86a8">Note: a <b>fudged linear approximation</b> — the shapes and rhythms are honest, and the center is nudged toward the Moon at high out-of-plane amplitude via a lookup, but it isn’t a full nonlinear integration.</div>
       </div>
       <label class="chk" style="margin-top:9px"><input type="checkbox" id="showLpts" checked onchange="toggleLpts()"> show <b style="color:var(--accent)">▲ Lagrange points</b> (overlay)</label>
+      <label class="chk" style="margin-top:6px"><input type="checkbox" id="showPot" onchange="togglePot()"> show <b style="color:#7be0a0">gravity landscape</b> (effective-potential surface — co-rotating panels)</label>
     </div>
 
     <div class="sec" id="frameBox">
@@ -113,6 +114,7 @@
         <button data-mode="tadpole" onclick="setFanMode('tadpole')">🐸 L4 tadpoles</button>
         <button data-mode="dro" onclick="setFanMode('dro')">🔄 DRO vs prograde</button>
         <button data-mode="freeret" onclick="setFanMode('freeret')">∞ free return</button>
+        <button data-mode="minimoon" onclick="setFanMode('minimoon')">🌒 minimoons</button>
       </div>
       <div class="note" id="fanModeNote"></div>
       <button class="go" id="fanGo" onclick="releaseFan()">▶ release</button>
@@ -494,6 +496,32 @@ function applyLptsVis(){ lagGroup.visible = lptsOverlay; }
 function toggleLpts(){ lptsOverlay=$('showLpts').checked; applyLptsVis(); }
 let scen='lpts', lptsOverlay=true;
 
+/* --- GRAVITY LANDSCAPE: the rotating-frame effective-potential surface (restored from early
+   Module 5, where a note deferred it "to Module 6"). U_eff = −μE/rE − μM/rM − ½ω²ρ², with ρ
+   measured from the BARYCENTER (matching the true-CR3BP field fanAcc integrates). Height is a
+   scaled, clamped U_eff: the famous landscape — deep funnels at Earth and Moon, saddle passes at
+   L1/L2/L3, gentle hilltops at L4/L5, and the outer slope falling away. The mesh lives in a group
+   spun to the Earth–Moon line each frame, so it's meaningful (and shown) ONLY in the co-rotating
+   panels — in inertial panels the landscape itself would be spinning, which is exactly the lesson. */
+let potShown=false;
+const potGroup=new THREE.Group(); scene.add(potGroup); potGroup.visible=false;
+(function buildPotential(){
+  const NG=110, EXT=1.35*D_EM, W2=(2*Math.PI/(T_MOON*86400))**2;   // (W_MOON is declared further down)
+  const bx=massFrac*D_EM;                                   // barycenter (rotating axes: Moon at (D,0))
+  const UL4=-MU_E/D_EM - MU_M/D_EM - 0.5*W2*((0.5*D_EM-bx)**2+(Math.sqrt(3)/2*D_EM)**2);
+  const K=90000, YMIN=-95000;                               // km of height per (km/s)² above U(L4); clamp depth
+  const g=new THREE.PlaneGeometry(2*EXT,2*EXT,NG,NG); g.rotateX(-Math.PI/2);
+  const pos=g.attributes.position;
+  for(let i=0;i<pos.count;i++){ const x=pos.getX(i), z=pos.getZ(i);
+    const rE=Math.max(Math.hypot(x,z), R_EARTH*2), rM=Math.max(Math.hypot(x-D_EM,z), R_MOON*2);
+    const U=-MU_E/rE - MU_M/rM - 0.5*W2*((x-bx)*(x-bx)+z*z);
+    pos.setY(i, Math.max(YMIN, K*(U-UL4)) - 4000); }        // −4000: sit just under the orbital plane
+  g.computeVertexNormals();
+  const mesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x2e7d5b,wireframe:true,transparent:true,opacity:0.42}));
+  mesh.frustumCulled=false; potGroup.add(mesh);
+})();
+function togglePot(){ potShown=$('showPot').checked; }
+
 const ZOO_MSG={
   '1/3':'<b>1:3.</b> Now the <b>in-plane</b> rhythm is the fast one — three in-plane loops for each single out-of-plane swing. The Lissajous figure tips into the <b>other orientation</b> (stretched the opposite way from 3:1). Takes three in-plane loops to close.',
   '1/2':'<b>1:2.</b> Two in-plane loops per out-of-plane swing — the mirror-orientation partner of 2:1. Whole-number ratios always close eventually.',
@@ -581,14 +609,15 @@ function buildHalo(){ const moonX=(1-massFrac)*D_EM; haloPtsLocal=[];
   haloLine.geometry.setFromPoints(haloPtsLocal); }
 
 /* --- fan release --- */
-const FAN_MODE_LBL={scatter:'🌙 lunar scatter', l1knife:'⚖ L1 knife-edge', tadpole:'🐸 L4 tadpoles', dro:'🔄 DRO vs prograde', freeret:'∞ free return'};
-const FAN_METRIC_LBL={scatter:'flung away so far', l1knife:'current scatter', tadpole:'current scatter', dro:'stripped from the Moon', freeret:'came home so far'};
+const FAN_MODE_LBL={scatter:'🌙 lunar scatter', l1knife:'⚖ L1 knife-edge', tadpole:'🐸 L4 tadpoles', dro:'🔄 DRO vs prograde', freeret:'∞ free return', minimoon:'🌒 minimoons'};
+const FAN_METRIC_LBL={scatter:'flung away so far', l1knife:'current scatter', tadpole:'current scatter', dro:'stripped from the Moon', freeret:'came home so far', minimoon:'captured right now'};
 const FAN_MODE_NOTE={
   scatter:'7 objects ride one transfer arc up to the Moon, arriving minutes apart — then each gets a different <b>slingshot</b>. Best watched in the <b>Moon-centered inertial</b> panel.',
   l1knife:'All 7 start <b>exactly at L1</b>, riding the rotating Earth–Moon line, kicked by at most 8 m/s — bicycle pace. L1 is a <b>saddle</b>: balanced, but unstable. Watch the <b>synodic</b> panel.',
   tadpole:'Same experiment at <b>L4</b> (60° ahead of the Moon) — the opposite result, because L4 is <b>stable</b>. Kicks up to 30 m/s just make lazy <b>tadpole loops</b>. Watch the <b>synodic</b> panel.',
   dro:'7 satellites parked around the <b>Moon</b>: retrograde vs prograde at matched radii. Earth’s tide strips the far prograde ones; the <b>retrograde (DRO)</b> ones persist. Watch <b>MCI</b> or <b>synodic</b>.',
-  freeret:'7 ships leave a 330-km parking orbit for the Moon with speeds differing by <b>~6 m/s total</b>. That whisker decides who comes home. Watch the <b>Earth-centered</b> panel.'};
+  freeret:'7 ships leave a 330-km parking orbit for the Moon with speeds differing by <b>~6 m/s total</b>. That whisker decides who comes home. Watch the <b>Earth-centered</b> panel.',
+  minimoon:'7 objects arrive from <b>a million km out</b>, none bound to Earth — identical except for <b>which day they show up</b>. A lunar flyby can <b>capture</b> some as temporary <b>minimoons</b> (it really happens: 2006 RH120, 2020 CD3). Watch <b>Earth-centered</b>, zoomed out.'};
 function setFanMode(m){ fanMode=m; $('fanModeLbl').textContent=FAN_MODE_LBL[m];
   $('scatterLbl').textContent=FAN_METRIC_LBL[m];
   $('fanModeNote').innerHTML=FAN_MODE_NOTE[m];
@@ -636,13 +665,24 @@ const DRO_SET=[[40000,-1],[40000,1],[55000,-1],[55000,1],[30000,-1],[30000,1],[2
 const FR_RP=R_EARTH+330;
 const FRET=[1.00005,0.99995,1.00025,1.00035,1.00015,0.99985,0.99975];
 const HILL_KM=1.5e6;    // Earth's Hill-sphere radius: beyond this, in reality, the Sun owns the object
-const FAN_WARP={scatter:86400, l1knife:172800, tadpole:345600, dro:172800, freeret:43200};
+/* MINIMOON (temporary capture): 7 objects arrive from 1,000,000 km out, all slightly HYPERBOLIC
+   (v∞ = 50 m/s, ε > 0 — not bound to Earth), all with the same aim (perigee ≈ lunar distance).
+   The ONLY difference is the ARRIVAL PHASE — where the Moon happens to be, i.e. WHICH DAY they
+   show up. A lunar flyby can drop ε below zero: genuine BALLISTIC CAPTURE, the real mechanism
+   behind Earth's transient minimoons (2006 RH120 stayed ~11 months; 2020 CD3 ~2 years).
+   Verified fates (365-d runs): red impacts the Moon (day ~14); yellow & pink are captured and
+   still Earth-orbiting after a YEAR; green & purple are minimoons for ~3 weeks then slip away
+   (~day 51/45); pale is barely bent (ε<0 for ~6 days); cyan sails straight through, never bound. */
+const MINI_R0=1.0e6, MINI_VINF=0.05, MINI_RP=300000;
+const MINI_PH=[15,340,330,45,80,150,215];    // arrival phase (deg) per object — the only knob that differs
+const FAN_WARP={scatter:86400, l1knife:172800, tadpole:345600, dro:172800, freeret:43200, minimoon:345600};
 const FAN_MSG={
   scatter:'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b>: closest passes span ~1.2 to ~13 lunar radii. The <b>yellow</b> object skims ~300 km above the surface — Apollo-8 territory — and is flung onto a ~4-million-km orbit, far beyond Earth’s <b>Hill sphere</b> (~1.5 M km), where in reality the Sun’s gravity takes it away for good. The <b>red</b> object whips a tight <b>hairpin around the far side</b> (~1.4 lunar radii) — slow to <kbd>,</kbd> as it closes in and rotate with the <b>arrow keys</b>: the sharp turn is the Moon’s gravity <i>pulling</i> it around, never pushing.',
   l1knife:'7 objects released <b>exactly at L1</b> with kicks of at most 8 m/s — differences you couldn’t feel. For days they hover together: the balance is real. Then the saddle wins: nudged-toward-the-Moon falls to the <b>Moon</b> (~day 8–9), nudged-toward-Earth falls <b>home</b> (~day 11–14), the out-of-plane one holds to ~day 18 — and the un-kicked <b>yellow</b> one hovers ~3 weeks until even <i>numerical round-off</i> pries it loose. Nothing sits at L1 forever without station-keeping. Same place, same speed to within bicycle pace — completely different fates: that is <b>unstable equilibrium</b>.',
   tadpole:'The same kicks that doomed the L1 set (and bigger — up to 30 m/s) just make these objects <b>librate</b>: lazy tadpole loops around L4, weeks per lap, going nowhere. L4 is a genuinely <b>stable</b> parking spot — it’s why Trojan asteroids camp at Jupiter’s L4/L5 for billions of years. Only <b>red</b>, kicked 50 m/s, breaks out of the tadpole and wanders off along the Moon’s orbit: the stable pocket has a finite rim.',
   dro:'Seven satellites parked around the <b>Moon</b>. Prograde at 40k and 55k km are <b>stripped by Earth’s tide</b> within days (one flung 2.3 million km); prograde from 30k spirals in and <b>craters</b> (~day 39). Every <b>retrograde</b> twin — a <b>Distant Retrograde Orbit</b> — persists: DROs are famously stable, which is why <b>Artemis I parked Orion in one</b>. Close-in prograde (20k) also survives — tides only win far out. Backwards is better, out there.',
-  freeret:'7 ships leave a 330-km parking orbit with departure speeds spanning just <b>~6 m/s</b>. <b>Green</b> and <b>cyan</b> thread the <b>free-return figure-8</b> — around the far side and home to re-entry (~day 8) with <i>no burn at the Moon</i>, the trajectory Apollo trusted (and that saved Apollo 13). <b>Pale</b> straggles home the long way (~day 13). <b>Red</b> cuts too close and <b>hits the Moon</b>. The rest are slung wide — stranded with perigees from 88,000 to 380,000 km. A walking-pace speed difference at Earth decides who comes home.'};
+  freeret:'7 ships leave a 330-km parking orbit with departure speeds spanning just <b>~6 m/s</b>. <b>Green</b> and <b>cyan</b> thread the <b>free-return figure-8</b> — around the far side and home to re-entry (~day 8) with <i>no burn at the Moon</i>, the trajectory Apollo trusted (and that saved Apollo 13). <b>Pale</b> straggles home the long way (~day 13). <b>Red</b> cuts too close and <b>hits the Moon</b>. The rest are slung wide — stranded with perigees from 88,000 to 380,000 km. A walking-pace speed difference at Earth decides who comes home.',
+  minimoon:'7 objects fall in from a <b>million km out</b>, every one slightly <b>hyperbolic</b> — not bound to Earth — with identical speed and aim. The only difference is <b>which day they arrive</b>, i.e. where the Moon happens to be. Watch the “captured right now” counter: a well-timed lunar flyby steals enough energy to make an object a genuine <b>temporary moon of Earth</b>. <b>Yellow</b> and <b>pink</b> stay captured for over a <i>year</i>; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks before slipping away; <b>pale</b> is bent but barely lingers; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and <b>hits the Moon</b>. This is real: asteroid <b>2006 RH120</b> was Earth’s minimoon for ~11 months, <b>2020 CD3</b> for ~2 years — captured and released by exactly this mechanism.'};
 function releaseFan(){
   fanT0=simT;
   const mp=moonPos(simT); const ux=mp.x/D_EM, uz=mp.z/D_EM;    // unit vector Earth→Moon (in-plane)
@@ -683,6 +723,16 @@ function releaseFan(){
       x=mp.x+r0*ux; z=mp.z+r0*uz;                               // radially outside the Moon on the E–M line
       const mvx=W_MOON*mp.z, mvz=-W_MOON*mp.x;                  // the Moon's own inertial velocity
       vx=mvx - s*vc*wx; vz=mvz - s*vc*wz;                       // +1 = retrograde around the Moon (DRO), −1 = prograde
+    } else if(fanMode==='minimoon'){
+      // ICs designed in "Moon at angle 0" axes, then rotated to the CURRENT Moon angle (exact by symmetry)
+      const E0=MINI_VINF*MINI_VINF/2, v0=Math.sqrt(2*(E0+MU_E/MINI_R0));
+      const L=MINI_RP*Math.sqrt(2*(E0+MU_E/MINI_RP));           // angular momentum for perigee ≈ lunar distance
+      const ph=MINI_PH[i]*D2R, rx=Math.cos(ph), rz=Math.sin(ph), tx=-Math.sin(ph), tz=Math.cos(ph);
+      const vr=-Math.sqrt(v0*v0-(L/MINI_R0)*(L/MINI_R0)), vt=L/MINI_R0;
+      const p0x=MINI_R0*rx, p0z=MINI_R0*rz, v0x=vr*rx+vt*tx, v0z=vr*rz+vt*tz;
+      const a=emAzimuth(), ca=Math.cos(a), sa=Math.sin(a);      // applyAxisAngle(Y, +az): x'=x·ca+z·sa, z'=−x·sa+z·ca
+      x=p0x*ca+p0z*sa;  z=-p0x*sa+p0z*ca;
+      vx=v0x*ca+v0z*sa; vz=-v0x*sa+v0z*ca;
     } else { // freeret
       const {vp,pa}=frX;
       x=FR_RP*Math.cos(pa); z=FR_RP*Math.sin(pa);
@@ -693,7 +743,7 @@ function releaseFan(){
     p.trail=[]; p.trailRot=[]; p.trailMci=[]; fanRebuildLines(p);
     p.mesh.visible=true; p._on=true;                   // per-panel line visibility is set in renderView
     p.dead=null; p.deadRelRot=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
-  fan._blew=false; fan._hit=false; fan._home=false; fanActive=true; warp=FAN_WARP[fanMode]; showWarp(); paused=false;
+  fan._blew=false; fan._hit=false; fan._home=false; fan._mini=false; fanActive=true; warp=FAN_WARP[fanMode]; showWarp(); paused=false;
   $('fanMsg').innerHTML=FAN_MSG[fanMode];
 }
 
@@ -716,6 +766,7 @@ function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.update
     p.line.visible    = on && f==='eci';
     p.lineMci.visible = on && f==='mci';
     p.lineRot.visible = on && frameCorotates(f); }
+  potGroup.visible = potShown && frameCorotates(f);   // the landscape only means something co-rotating
   // Lock the star field to this camera so the stars sit at effective infinity (no parallax):
   // in an INERTIAL frame (ECI/MCI) they hold still even as the camera translates with the Moon.
   if(starField) starField.position.copy(v.cam.position);
@@ -733,6 +784,7 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
   lagGroup.rotation.y=emAzimuth(); forceGroup.rotation.y=emAzimuth();
   fanRotGroup.rotation.y=emAzimuth();                 // co-rotating trails spin with the E–M line
   fanMoonGroup.position.copy(moonPos(simT));          // Moon-relative trails re-anchor to the Moon
+  potGroup.rotation.y=emAzimuth();                    // the gravity landscape rides the E–M line too
   emLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), mp.clone()]);   // red Earth–Moon line
   baryMark.position.copy(baryPos(simT)); baryMark.visible=(quad||frame==='embr');   // barycenter shown in the ECL-EMBR frame
   if(tessDot.visible) tessDot.position.copy(orbPoint(tessA,tessE,tessIncl,2*Math.PI*(simT/tessPer)));
@@ -786,7 +838,7 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
     // update meshes + trails + scatter metric; also count how many are now UNBOUND from Earth.
     // State is [x,y,z,vx,vy,vz] with y = out of the orbital plane (scene y-up).
     let cx=0,cy=0,cz=0,n=0; for(const p of fan){ if(!p.st) continue; cx+=p.st[0]; cy+=p.st[1]; cz+=p.st[2]; n++; }
-    cx/=n; cy/=n; cz/=n; let scatter=0, flung=0, stripped=0, hits=0, home=0;
+    cx/=n; cy/=n; cz/=n; let scatter=0, flung=0, stripped=0, hits=0, home=0, captured=0;
     for(const p of fan){ if(!p.st) continue;
       if(p.dead){ hits++; if(p.dead==='earth') home++;
         // a Moon crater rides the Moon (its surface co-rotates with the E–M line)
@@ -801,15 +853,19 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
       // "flung away": unbound from Earth (ε = v²/2 − μ/r ≥ 0) OR carried beyond Earth's Hill
       // sphere, where in the real Solar System the Sun's gravity takes over and it never returns.
       const de=Math.hypot(p.st[0],p.st[1],p.st[2]), v2=p.st[3]*p.st[3]+p.st[4]*p.st[4]+p.st[5]*p.st[5];
-      if(v2/2 - MU_E/de >= 0 || de > HILL_KM) flung++;
+      const eps=v2/2 - MU_E/de;
+      if(eps >= 0 || de > HILL_KM) flung++;
+      if(eps < 0) captured++;
       const mpc=moonPos(simT);
       if(Math.hypot(p.st[0]-mpc.x,p.st[1]-mpc.y,p.st[2]-mpc.z) > 90000) stripped++; }
     $('scatterV').textContent = (
-      fanMode==='scatter' ? flung+' of '+n+' flung away' :
-      fanMode==='dro'     ? stripped+' of '+n+' stripped' :
-      fanMode==='freeret' ? home+' of 7 home' :
-                            (scatter/D_EM*100).toFixed(1)+'% of D')
+      fanMode==='scatter'  ? flung+' of '+n+' flung away' :
+      fanMode==='dro'      ? stripped+' of '+n+' stripped' :
+      fanMode==='freeret'  ? home+' of 7 home' :
+      fanMode==='minimoon' ? captured+' of '+n+' bound to Earth' :
+                             (scatter/D_EM*100).toFixed(1)+'% of D')
       + (hits && fanMode!=='freeret' ? ' · '+hits+' impacted' : '');
+    if(fanMode==='minimoon' && captured>0 && !fan._mini){ fan._mini=true; banner('🌒 Ballistic capture — a lunar flyby just stole enough energy to make an incoming object a temporary moon of Earth.','#12331f','#7be0a0'); }
     if(fanMode==='scatter' && flung>0 && !fan._blew){ fan._blew=true; banner('🚀 An object was just flung past Earth’s Hill sphere (~1.5 million km) — out where the Sun’s gravity dominates. In the real Solar System it never comes back.','#12331f','#7be0a0'); }
     if(fanMode==='freeret' && home>0 && !fan._home){ fan._home=true; banner('🌍 Splashdown — a free-return ship came home and re-entered with no burn at the Moon.','#12331f','#7be0a0'); }
   }
