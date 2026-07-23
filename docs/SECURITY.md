@@ -4,6 +4,19 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v4.1 — audit result: **PASS**
+The v4.1 change set is the owner flight-test round on the v4.0 fan lab plus the star-field
+upgrade — **entirely client-side** (tut1–8 star fields, tut6 warp/halos/Hill-ring/banner/zoom,
+tut7.js camera stars, worksheet 3/6 text, README/CHANGELOG); the ONLY `server.js` change is the
+version-header comment. Audit performed 2026-07-23: `bash test/run.sh` → functional + security
+(30) + DoS — **ALL SUITES PASSED** on fresh isolated servers. New client code review: capture-halo
+sprites, Hill ring, and banner-clearing touch no user data and no `innerHTML` with non-course
+strings; star generators use `Math.random()` only for cosmetics; no `eval`/`document.write`; no
+new network or storage access. Physics re-verified per MAINTENANCE §6.5 on the release candidate:
+all five deterministic fan suites PASS (`test/tut6-physics.verify.js`, free-return window
+extended to 20 d showing pink's day-18 return), minimoon set verified over 300 d at a non-zero
+release time. `academy_data.json` confirmed gitignored. Cleared to ship v4.1.
+
 ## v4.0 — audit result: **PASS**
 The v4.0 change set is **entirely client-side content** (tut3/tut6 physics + UI, worksheet 3/6
 data, instructor guide + regenerated guide.html, module3/6 decks, README/CHANGELOG); the ONLY

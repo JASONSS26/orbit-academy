@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v4.0
+# 🛰 ORBIT ACADEMY — v4.1
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -46,7 +46,7 @@ identically on **Windows, macOS, and Linux**. Two steps: download the files, the
 installing Node. "Port 8080 already in use" → the Academy is probably already running; just open
 http://localhost:8080. Full install walkthrough: `docs/INSTRUCTOR_GUIDE.md` §2–3.
 
-## What’s here (v4.0)
+## What’s here (v4.1)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
@@ -69,8 +69,10 @@ http://localhost:8080. Full install walkthrough: `docs/INSTRUCTOR_GUIDE.md` §2�
   TESS's 2:1 resonance, and **six live RK4 fan-release experiments** on the true restricted
   three-body field: lunar-scatter slingshots (one object flung past Earth's Hill sphere), the
   **L1 knife-edge** (≤8 m/s decides moonward vs earthward), stable **L4 tadpoles**,
-  **DRO vs prograde** lunar parking (the Artemis I story), the Apollo **free-return figure-8**,
-  and **temporary minimoons** captured and released by lunar flybys (à la 2006 RH120 / 2020 CD3).
+  **DRO vs prograde** lunar parking (the Artemis I story), the Apollo **free-return figure-8**
+  (4 of 7 eventually make it home — only the true free-returns on Apollo's schedule), and
+  **temporary minimoons** captured and released by lunar flybys (à la 2006 RH120 / 2020 CD3),
+  with green **capture halos**, a to-scale dashed **Hill-sphere ring**, and auto-zoom.
 - **Module 7 — Observability** (complete): how we actually find & track objects — **radar**
   (range⁴ law, gain-vs-integration, pulse SNR ∝ √N), **optical** reflected-sunlight phases &
   light curves, **RA/DEC** on a 3-D celestial sphere, a **tag-&-fit initial-orbit-determination**
@@ -152,7 +154,7 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v4.0: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v4.1: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. All modules and the v2.x worksheet engine are
 static client-side files (no new server surface). For internet-facing use, front it with HTTPS +

@@ -94,8 +94,8 @@ for(let i=0;i<7;i++){ const r=runObj('dro',i,90,15);
   if(DRO_SET[i][1]>0 && (stripped||r.hitM)) fail.push(names[i]+' DRO not stable');
   if(DRO_SET[i][1]<0 && DRO_SET[i][0]>=40000 && !(stripped||r.hitM)) fail.push(names[i]+' far prograde survived'); } }
 if(want('freeret')){
-console.log('== FREE RETURN (16 d, h=2) ==');
-for(let i=0;i<7;i++){ const r=runObj('freeret',i,16,2);
+console.log('== FREE RETURN (20 d, h=2) ==');
+for(let i=0;i<7;i++){ const r=runObj('freeret',i,20,2);
   console.log(names[i].padEnd(7),'pass '+(r.minRm/R_MOON).toFixed(1)+' R_M ·',r.hitM?'MOON IMPACT d'+r.tHit.toFixed(1):(r.hitE?'RE-ENTERED d'+r.tHit.toFixed(1):'return perigee '+Math.round(r.minReAfter).toLocaleString()+' km'));
   if(i===2&&!r.hitE) fail.push('green did not come home'); if(i===3&&!r.hitE) fail.push('cyan did not come home');
   if(i===0&&!r.hitM) fail.push('red did not impact Moon'); } }

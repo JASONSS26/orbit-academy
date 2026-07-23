@@ -2,6 +2,44 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v4.1 — 2026-07-23 (owner flight-test round on the v4.0 fan lab; star fields)
+All client-side; `server.js` changes only its version header.
+
+- **Time controls were dead in three fan modes (the big one):** `warpUp/warpDown` used
+  `WARPS.indexOf(warp)`; scenario defaults that sat between ladder rungs (tadpole/minimoon
+  345600, free-return 43200) returned −1, so pressing `.` snapped the sim to **1×** and `,` did
+  nothing — this is also why no minimoon captures were ever seen (they begin ~day 25, and the
+  sim was frozen). Stepping is now nearest-rung, 12 h/s was added to the ladder, and every
+  scenario default sits ON the ladder. Minimoons now default to a readable **1 d/s** (tadpoles
+  5 d/s, free return 6 h/s).
+- **Minimoon captures made visible:** a green **capture halo** ring lights around any object
+  while its Earth-relative energy is negative (cleared on death/re-release); the message and
+  worksheet set the timing expectation (~3 weeks of infall ≈ 25 s before the first halo can
+  appear). Release path re-verified by executing the shipped branch at a NONZERO release time
+  (simT = 13.7 d): fates identical to the design — the rotation onto the live Earth–Moon line
+  is exact.
+- **Free return corrected — 4 of 7 come home (owner caught it):** pink RE-ENTERS at day 18;
+  the original 16-day verification window had mislabeled it "stranded at 320,000 km".
+  Confirmed over 120 days: green d7.8, cyan d8.3, pale d13.3, pink d18.0 re-enter; yellow &
+  purple still out at day 120; red impacts d4.9. Teaching point sharpened: everyone who comes
+  home used no propellant, but only true free-returns arrive on a crew-survivable schedule.
+  (`test/tut6-physics.verify.js` window extended 16 → 20 d so the committed evidence shows
+  pink's return.)
+- **Minimoon viewing:** wheel/pinch zoom cap raised 8 → **15 lunar distances** (~5.8 M-km
+  camera height — the scenario plays out over ±2 M km and ran off-screen); releasing minimoons
+  auto-zooms any panel closer than 6.5 D out to the full picture; Earth's **Hill sphere** is
+  drawn to scale (faint dashed ring at 1.5 M km) while the scatter or minimoon experiment is
+  live, giving "flung away" and "captured" a visible boundary.
+- **Stale banners cleared:** the bottom banner ('splashdown', 'ballistic capture', …) now
+  clears on every ▶ release and on scenario-mode switch instead of lingering over the next run.
+- **Star fields across all eight sims:** tut4/5/6's "random" stars were deterministic
+  hash/golden-angle patterns that drew visible spiral bands; all 3-D fields now use uniform
+  random positions with a power-law brightness spread (many dim + a few bright), subtle
+  warm/cool per-star tint, and two size layers (tut5/tut6 keep their camera-following
+  star-shell mechanics). 2-D scenes match: tut8 cockpit window, tut7 exposure camera (was a
+  coarse 100-cell grid; plate-solve streak layouts stay seeded for the IOD exercise), tut2
+  telescope FOV — sizes track brightness in live views and developed exposures.
+
 ## v4.0 — 2026-07-23 (Module 6 becomes a cislunar dynamics laboratory; M3 sun-synch)
 Major-version bump: the Module 6 fan release grows from one chaos demo into **six tuned
 experiments on the true restricted three-body field**, the effective-potential surface returns,
