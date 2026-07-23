@@ -357,10 +357,10 @@ const WORKSHEET = {
       predict:'Seven ships, departure speeds within 6 m/s of each other. How different can their fates be?',
       do:[
         'Pick <b>∞ free return</b> and press <b>▶ release</b>. Watch in the <b>Earth-centered inertial</b> frame to see the figure-8 shape.',
-        'Follow them out (~5 days to the Moon). <b>Green</b> and <b>cyan</b> thread the figure-8 and <b>re-enter around day 8</b> — a green splashdown banner marks the first one home. <b>Pale</b> makes it home the long way, around day 13.',
-        'Track the failures: <b>red</b> cuts inside one lunar radius and craters; <b>purple</b> is slung back to miss Earth by ~88,000 km; <b>yellow</b> and <b>pink</b> end up stranded with perigees hundreds of thousands of km out. The “came home so far” counter keeps score.',
+        'Follow them out (~5 days to the Moon). <b>Green</b> and <b>cyan</b> thread the figure-8 and <b>re-enter around day 8</b> — a green splashdown banner marks the first one home. Keep watching: <b>pale</b> straggles home around day 13 and <b>pink</b> around day 18 — <b>4 of 7 eventually make it back</b>, but only the true free-returns arrive on a schedule a crew could survive on.',
+        'Track the failures: <b>red</b> cuts inside one lunar radius and craters (~day 5); <b>yellow</b> and <b>purple</b> are slung wide and still haven’t come home after <i>months</i>. The “came home so far” counter keeps score.',
       ],
-      observe:'a ~6 m/s spread at departure fans out into re-entry, stranding, and a lunar impact — and the ships that do come home used no propellant at all after leaving Earth.',
+      observe:'a ~6 m/s spread at departure fans out into on-time re-entry, days-late re-entry, months of stranding, and a lunar impact — and the ships that do come home used no propellant at all after leaving Earth.',
       think:[
         'Why is a free-return trajectory the safest way to send people to the Moon?',
         'The speed differences are ~0.05% of the departure speed. Why does the Moon amplify them so violently? (Which earlier release does this echo?)',

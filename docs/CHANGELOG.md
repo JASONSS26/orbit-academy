@@ -29,8 +29,10 @@ server.js change is the version header.
   rim); **🔄 DRO vs prograde** (Earth's tide strips prograde lunar orbits at 40k/55k km in days
   and craters one from 30k, while every distant-retrograde twin persists — why Artemis I parked
   Orion in a DRO; close-in 20k prograde survives); **∞ free return** (7 ships spanning ~6 m/s of
-  departure speed: two re-enter ~d8, one ~d13, one hits the Moon, three stranded at
-  88k–380k km — the Apollo 13 fail-safe); **🌒 minimoons** (7 identical slightly-hyperbolic
+  departure speed: two re-enter ~d8, stragglers at d13 and d18 — 4 of 7 eventually home — one
+  hits the Moon, two still out after 120 d; the Apollo 13 fail-safe. The d18 return was first
+  caught by the course owner in flight-testing: the original 16-day verification window had
+  mislabeled pink "stranded"); **🌒 minimoons** (7 identical slightly-hyperbolic
   arrivals differing only in arrival DAY; lunar flybys ballistically capture yellow & pink for
   >1 year and green & purple for ~3 weeks, cyan sails through, red craters — the real
   2006 RH120 / 2020 CD3 mechanism, with a live "captured right now" moon-count).
