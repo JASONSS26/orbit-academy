@@ -133,16 +133,18 @@ Client-only apart from two console-hint strings in `server.js`.
   accelerations — the RK4 mid/end stages sampled the Moon **1 and 2 days in the future**
   (88,000–176,000 km away), so three of four stage forces pulled toward phantom Moons and every
   close encounter was dynamically wrong (transfer arcs looked fine — Earth's field is static).
-  A/B verified: shipped stage times gave closest passes of 1,857–82,000 km, nothing unbound;
-  fixed times reproduce the designed 1.3–18 R_M family with a genuine slingshot ejection.
+  A/B verified: shipped stage times gave closest passes of 1,857–82,000 km, nothing unbound.
   (Earlier "physics verified sound" note was wrong about the shipped code: the verification
-  harness had inadvertently corrected the units, masking the bug.) **(2)** TRAIL SAMPLING: one point per frame ≈ 1,440 s of
+  harness had inadvertently corrected the units, masking the bug. Numbers quoted from that
+  harness — a "1.3–18 R_M family", a red-object pass of "2,693 km = 1.55 R_M" — were harness
+  artifacts too; executing the shipped functions verbatim gave a much tighter 2.2–2.9 R_M
+  cluster with nothing unbound, which prompted the retune below.) **(2)** TRAIL SAMPLING: one point per frame ≈ 1,440 s of
   sim, while the tightest hairpin swing lasts ~2,500–5,000 s, so the 180° gravity-bend drew as a
   2–3-point V that looked like a bounce. Trails now densify to one point per 150 s within
   25,000 km of the Moon (cap 2,400 pts). Also hardened: real **impact checks** (an object inside
   the Moon's or Earth's radius pins to the surface, greys out, banners, and counts as
   "impacted" — nothing flies through a body, matching Module 1's honesty rule), and force
-  softening floors raised to the body radii. Scatter message now names the red object's ~1.6 R_M
+  softening floors raised to the body radii. Scatter message now names the red object's tight
   hairpin and tells students to slow down and rotate to watch the pull-around.
   **(3) Frame-appropriate trails ("none of the scattering looks realistic in MCI"):**
   the trails were world/ECI polylines rendered under every panel's camera, but a trajectory's
@@ -152,8 +154,19 @@ Client-only apart from two console-hint strings in `server.js`.
   trail representations — world (ECI panel), Moon-relative re-anchored to the live Moon (MCI
   panel), and co-rotating spun to the live Earth–Moon line (synodic + ECL-EMBR panels) — with
   renderView switching per panel. Verified numerically: the closest-approach point now sits at
-  exactly the flyby distance from the on-screen Moon in every representation (2,693 km = 1.55 R_M
-  for the red object). Moon-impact craters ride the Moon's surface in all frames.
+  exactly the flyby distance from the on-screen Moon in every representation. Moon-impact
+  craters ride the Moon's surface in all frames.
+  **(4) Scatter retune for outcome diversity ("not as diverse as before"):** with the corrected
+  physics, the old flight-angle spread (±4.5°) collapsed onto near-identical 2.2–2.9 R_M passes —
+  flight angle is a weak impact-parameter knob. Each object now also gets a small per-object
+  **speed factor** (`SCAT_SF`, ±1.2%), which shifts arrival timing — the strong knob. Tuned and
+  verified by executing the shipped `fanStep`/`fanAcc`/`moonPos` **and the shipped parameter
+  arrays, extracted verbatim from the file**, at the page's own 2-s RK4 step: closest passes now
+  span **1.09–12.7 R_M** — yellow grazes ~160 km above the surface and is slingshotted **unbound**,
+  red whips a tight bound hairpin at 1.67 R_M, zero impacts (20-day run). Also fixed: past the
+  3,000-substep cap the fan loop silently **dropped sim time** at high warp (`,`/`.` keys),
+  desyncing objects from the Moon — the step size now grows instead, and dense-trail sampling is
+  by sim time rather than step count.
 - **Module 1:** inclination now defined against **Earth's equatorial plane** (the equator extended
   into space, ⊥ the spin axis) with the rule of thumb *inclination = highest latitude reached*.
 - **Onboarding:** README/guide quick-start walks the GitHub download first (sign-in, `<> Code` →
