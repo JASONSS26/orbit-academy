@@ -462,10 +462,12 @@ addEventListener('keydown',e=>{ keys[e.key]=true;
 function resetView(){ for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].target.set(0,0,0); } }
 
 /* ------------------------------ warp/pause ------------------------------- */
-const WARPS=[1,60,600,3600,21600,86400,172800,432000];
-function warpUp(){ let i=WARPS.indexOf(warp); if(i<WARPS.length-1) warp=WARPS[++i]; showWarp(); }
-function warpDown(){ let i=WARPS.indexOf(warp); if(i>0) warp=WARPS[--i]; showWarp(); }
-function showWarp(){ $('warpV').textContent=warp<3600?warp+'×':warp<86400?(warp/3600).toFixed(0)+'h/s':(warp/86400).toFixed(0)+'d/s'; }
+const WARPS=[1,60,600,3600,21600,43200,86400,172800,432000];
+// Step to the next ladder rung above/below the CURRENT warp (not indexOf: scenario defaults may sit
+// between rungs, and indexOf's −1 made '.' snap to 1× and ',' do nothing — time control felt dead).
+function warpUp(){ const next=WARPS.find(w=>w>warp); if(next) warp=next; showWarp(); }
+function warpDown(){ const lower=WARPS.filter(w=>w<warp); if(lower.length) warp=lower[lower.length-1]; showWarp(); }
+function showWarp(){ $('warpV').textContent=warp<3600?warp+'×':warp<86400?(warp/3600).toFixed(0)+'h/s':(warp/86400).toFixed(1).replace(/\.0$/,'')+'d/s'; }
 function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶':'⏸'; }
 
 /* ------------------------------ scenarios -------------------------------- */
@@ -682,7 +684,10 @@ const HILL_KM=1.5e6;    // Earth's Hill-sphere radius: beyond this, in reality, 
    (~day 51/45); pale is barely bent (ε<0 for ~6 days); cyan sails straight through, never bound. */
 const MINI_R0=1.0e6, MINI_VINF=0.05, MINI_RP=300000;
 const MINI_PH=[15,340,330,45,80,150,215];    // arrival phase (deg) per object — the only knob that differs
-const FAN_WARP={scatter:86400, l1knife:172800, tadpole:345600, dro:172800, freeret:43200, minimoon:345600};
+// Defaults sit ON the warp ladder so ,/. step cleanly from them. Minimoon runs at 1 d/s — slow
+// enough to READ the capture loops (lopsided week-to-month orbits); step up with '.' for the
+// long haul, down with ',' at each lunar encounter.
+const FAN_WARP={scatter:86400, l1knife:172800, tadpole:432000, dro:172800, freeret:21600, minimoon:86400};
 const FAN_MSG={
   scatter:'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b>: closest passes span ~1.2 to ~13 lunar radii. The <b>yellow</b> object skims ~300 km above the surface — Apollo-8 territory — and is flung onto a ~4-million-km orbit, far beyond Earth’s <b>Hill sphere</b> (~1.5 M km), where in reality the Sun’s gravity takes it away for good. The <b>red</b> object whips a tight <b>hairpin around the far side</b> (~1.4 lunar radii) — slow to <kbd>,</kbd> as it closes in and rotate with the <b>arrow keys</b>: the sharp turn is the Moon’s gravity <i>pulling</i> it around, never pushing.',
   l1knife:'7 objects released <b>exactly at L1</b> with kicks of at most 8 m/s — differences you couldn’t feel. For days they hover together: the balance is real. Then the saddle wins: nudged-toward-the-Moon falls to the <b>Moon</b> (~day 8–9), nudged-toward-Earth falls <b>home</b> (~day 11–14), the out-of-plane one holds to ~day 18 — and the un-kicked <b>yellow</b> one hovers ~3 weeks until even <i>numerical round-off</i> pries it loose. Nothing sits at L1 forever without station-keeping. Same place, same speed to within bicycle pace — completely different fates: that is <b>unstable equilibrium</b>.',
