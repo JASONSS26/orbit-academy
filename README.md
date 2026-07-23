@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v3.0
+# 🛰 ORBIT ACADEMY — v3.1
 
 An interactive course that teaches orbital dynamics to non-specialists — from "what is an orbit?"
 through cislunar space — using a live 3-D simulator, guided worksheets, quizzes, and a real
@@ -46,7 +46,7 @@ identically on **Windows, macOS, and Linux**. Two steps: download the files, the
 installing Node. "Port 8080 already in use" → the Academy is probably already running; just open
 http://localhost:8080. Full install walkthrough: `docs/INSTRUCTOR_GUIDE.md` §2–3.
 
-## What's here (v3.0)
+## What's here (v3.1)
 
 - **Module 1 — How Orbits Work** (complete): circular/elliptical orbits, speed-vs-altitude,
   prograde/retrograde, geosynchronous vs. geostationary, inclination, launch geography.
@@ -69,12 +69,16 @@ http://localhost:8080. Full install walkthrough: `docs/INSTRUCTOR_GUIDE.md` §2�
   (range⁴ law, gain-vs-integration, pulse SNR ∝ √N), **optical** reflected-sunlight phases &
   light curves, **RA/DEC** on a 3-D celestial sphere, a **tag-&-fit initial-orbit-determination**
   tool, parallax, and the orbitology → characterization → intent ladder.
-- **Module 8 — Lunar Transfers & Artemis** (the capstone flight sim): plan a two-burn transfer in
-  a flight computer, then **fly it** from an Artemis-class cockpit — **two missions flown in
-  order**: GEO servicing, then (unlocked by a successful GEO run) the **lunar graduation flight**
-  (TLI → lead the Moon → retrograde LOI brake into lunar orbit) — with a real RK4 three-body model,
-  a Δv budget/logbook, ILS-style track & speed instruments, a true 3-D out-the-window view (with a
-  physically-lit 3-D target satellite), a **TRAIN** free-flight sandbox, and a scored debrief.
+- **Module 8 — Lunar Transfers & Artemis** (the capstone flight sim): plan the transfer in a
+  flight computer, then **fly it** from an Artemis-class cockpit — **two missions flown in
+  order**: GEO servicing, then (unlocked by a successful GEO run) the **lunar graduation flight**,
+  a genuine **three-burn** profile (TLI → lead the Moon → retrograde LOI brake → cued
+  circularization in lunar orbit) — with a real RK4 three-body model, thrust in the **local
+  flight frame** (Earth-relative, Moon-relative inside its sphere of influence), burn
+  **countdowns** and **live guidance** recomputed from the current orbit, an **🤖 AUTO FLY**
+  autopilot that flies the same controls as the pilot, ILS-style instruments + approach gates,
+  a Δv budget/logbook, a true 3-D out-the-window view (physically-lit 3-D target satellite),
+  a **TRAIN** free-flight sandbox, and a scored debrief.
 - The **live simulators** (`tut1.html`–`tut8.html`) with matching camera/time controls.
 - **Interactive worksheets** (shared engine): each opens beside its simulator with learning
   **objectives**, a one-page **tutorial** (analogy + diagram), and **numbered exercises** built on a
@@ -142,7 +146,7 @@ See `docs/TESTING.md`. Zero dependencies; run before every release.
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v3.0: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v3.1: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. All modules and the v2.x worksheet engine are
 static client-side files (no new server surface). For internet-facing use, front it with HTTPS +

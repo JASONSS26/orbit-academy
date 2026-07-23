@@ -4,6 +4,20 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v3.1 — audit result: **PASS**
+The v3.1 change set is the post-3.0 flight-test series (two rounds; the second via a prior CLI
+session, folded in and verified here): Module 8 cockpit upgrades (autopilot, live guidance,
+countdowns, local-frame thrust, gates, collision, budgets), Module 1/3/5/6 content and physics
+fixes, onboarding docs, and distributable-bundle tooling. **All client-side** except two
+`console.error` strings in `server.js` (a friendlier port-in-use hint) — zero changes to auth,
+sessions, roles, gating, body-size limits, path handling, or the workbook editor. New client
+surface reviewed: the autopilot is pure client JS driving the existing thrust handlers (nothing
+network-facing, no new storage); no new external dependencies or CDN tags; distributable zips
+are gitignored build artifacts. Reference solutions re-verified against the flight model
+(GEO + Moon both captured through the new pre-coast schedule). Full test suite re-run this
+date: **functional + security + DoS — all passing**. `academy_data.json` confirmed gitignored.
+Cleared to ship v3.1.
+
 ## v3.0 — audit result: **PASS**
 The v3.0 change set is overwhelmingly **client content** (worksheet data, tut HTML/JS, docs): the
 QA-walkthrough fixes, the Module 8 lunar-mission enablement, instructor materials (decks, docs,

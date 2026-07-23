@@ -68,9 +68,12 @@ function simulate(plan, opts){ opts=opts||{};
   const corot=(x,y,tt)=>{ const a=-wMoon*(tt+tShift); return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; };
   for(let k=0; t<tMax; k++){
     // fire any burns whose time we've reached, recording where (co-rotating) each burn happens
-    while(bi<burns.length && t>=burns[bi].t){ burnMarks.push({t, xy:corot(s[0],s[1],t), b:burns[bi]});
+    while(bi<burns.length && t>=burns[bi].t-1e-6){ burnMarks.push({t, xy:corot(s[0],s[1],t), b:burns[bi]});
       s=applyBurn(s, burns[bi].fore||0, burns[bi].side||0); bi++; }
-    s=step(t+tShift, s, dt); t+=dt;
+    // land EXACTLY on the next burn time (don't overstep by up to dt): burn geometry — especially
+    // the knife-edge lunar aim — must not depend on the integration step size.
+    let hh=dt; if(bi<burns.length && burns[bi].t-t<dt) hh=Math.max(1e-3, burns[bi].t-t);
+    s=step(t+tShift, s, hh); t+=hh;
     if(k%3===0){ path.push([s[0],s[1]]); moon.push(moonPos(t+tShift)); samples.push({t,x:s[0],y:s[1]}); }
     const re=Math.hypot(s[0],s[1]);
     const mp=moonPos(t+tShift); const rm=Math.hypot(s[0]-mp[0],s[1]-mp[1]);
@@ -97,10 +100,17 @@ function toCorot(x,y,t){ const a=-wMoon*t; return [x*Math.cos(a)-y*Math.sin(a), 
 // Convert a two-step plan {target,dv1,dv2,leadDeg} into a full sim plan (both planner & cockpit use this)
 const PLAN_TARGETS={ geo:{ra:42164, day1:0.0, day2:0.221, budget:4800},
                      moon:{ra:D_EM, day1:0.0, day2:4.18, budget:7500} };
+/* PRE_COAST: every mission now starts with ONE full lap of the LEO parking orbit before burn 1,
+   so the pilot gets a real run-up (countdown, orientation) instead of "BURN NOW" at T+0. The
+   Moon's starting phase is compensated by −wMoon·PRE_COAST, so after exactly one period the craft
+   is back at its start point with the Moon at the dialed lead angle — the geometry AT THE BURN is
+   bit-identical to the old t=0 schedule, and every verified solution still flies. */
+const PRE_COAST=2*Math.PI*Math.sqrt(Math.pow(R_E+400,3)/MU_E);   // one 400 km LEO period ≈ 5,545 s
 function planToSim(p){ const T=PLAN_TARGETS[p.target||'moon'];
-  return { alt:400, leoPhase:0, target:p.target||'moon', moonPhase0:(p.leadDeg||124)*Math.PI/180,
-    burns:[ {name:(p.target==='geo'?'Raise apogee':'Trans-Lunar Injection'), dir:'FORE', t:T.day1*86400, fore:(p.dv1||0)/1000, side:0},
-            {name:(p.target==='geo'?'Circularize at GEO':'Lunar-Orbit Insertion'), dir:'FORE', t:T.day2*86400, fore:(p.dv2||0)/1000, side:0} ] }; }
+  return { alt:400, leoPhase:0, target:p.target||'moon',
+    moonPhase0:(p.leadDeg||124)*Math.PI/180 - wMoon*PRE_COAST,
+    burns:[ {name:(p.target==='geo'?'Raise apogee':'Trans-Lunar Injection'), dir:'FORE', t:T.day1*86400+PRE_COAST, fore:(p.dv1||0)/1000, side:0},
+            {name:(p.target==='geo'?'Circularize at GEO':'Lunar-Orbit Insertion'), dir:'FORE', t:T.day2*86400+PRE_COAST, fore:(p.dv2||0)/1000, side:0} ] }; }
 
 /* The verified reference solution (found by grid search against simulate(), above; re-verified
    for v3.0: 3087 m/s TLI + 900 m/s LOI brake at day 4.18 with a 120° Moon lead → captured).
@@ -158,5 +168,5 @@ function scoreFlight(missionKey, st, t){
   return { pct:Math.max(0,Math.min(100,pct)), grade, lines };
 }
 g.FLIGHT7={ MU_E,MU_M,D_EM,R_E,R_M,T_MOON,wMoon, moonPos,moonVel,accel,step,applyBurn,leoState,simulate,
-  sunAngleInertial,sunDirInertial,sunAngleCorot,toCorot, planToSim, PLAN_TARGETS, SOLUTION, MISSIONS, scoreFlight };
+  sunAngleInertial,sunDirInertial,sunAngleCorot,toCorot, planToSim, PLAN_TARGETS, PRE_COAST, SOLUTION, MISSIONS, scoreFlight };
 })(typeof window!=='undefined'?window:globalThis);

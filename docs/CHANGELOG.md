@@ -2,9 +2,10 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
-## v3.1 — 2026-07-20 (post-3.0 flight-test fixes)
-Owner flight-testing of Module 8 drove a round of cockpit upgrades; plus onboarding and Module 1
-content improvements. Client-only (`server.js` untouched).
+## v3.1 — 2026-07-20 → 23 (post-3.0 flight-test series)
+Two rounds of owner flight-testing of Module 8 (the second via a prior CLI session, folded in
+here) drove major cockpit upgrades; plus onboarding, Module 1/3/5 content and physics fixes.
+Client-only apart from two console-hint strings in `server.js`.
 
 - **Module 8 cockpit:**
   - **🔴 BURN NOW cue spells out the order** — the pilot's own planned Δv and direction, e.g.
@@ -41,6 +42,70 @@ content improvements. Client-only (`server.js` untouched).
     mission in a collision (checked per RK4 substep with a segment test so time-warp can't tunnel
     through); TRAIN mode respawns instead. Crash banner now names the event (RE-ENTRY / LUNAR
     IMPACT / COLLISION).
+  *(Second cockpit round — 2026-07-21/23:)*
+
+- **🤖 AUTO FLY (autopilot)** button on the thrust pad — "computer, do it for me", both missions.
+  Drives the same press-and-hold machinery as the pilot (all gauges/CAPCOM behave identically):
+  fires each ordered burn exactly at its scheduled point and releases on the number (GEO: live
+  residual to ±2 m/s; Moon: plan-exact — TLI aim is a ±1 m/s knife edge, −1.5 m/s impacts the
+  Moon), then flies the hand-flown "third burn": a computed VECTOR circularization
+  (along-track + radial segments) at the current radius, with a 25/8 m/s engage/settle deadband.
+  Verified headless: Moon full-auto = capture + A (96/100) on 4,570 of 7,500 m/s; GEO = success
+  box held. Toggling off mid-burn hands the stick back; hand-flying overrides it.
+- **Pre-burn coast + countdown (no more "BURN NOW" at T+0):** every mission now coasts ONE full
+  LEO parking lap before burn 1 (`F7.PRE_COAST`, ≈5,545 s), with the Moon phase compensated by
+  −wMoon·PRE_COAST so burn-time geometry is identical to the old t=0 schedule (both reference
+  solutions re-verified: moon captured, minMoon 2,486 km; geo captured, 0.07° from target). The
+  annunciator now arms as an amber **⏳ BURN IN m:ss** countdown from window-open and flips to the
+  red flashing order at T−90 s.
+- **Integrator warp floor fixed:** the coast loop's fixed 20 s substep silently floored every
+  warp at ~1,200× (a "3×" burn window actually flew past at 1,200×) — sub-20 s/frame now takes one
+  fractional RK4 step, so the staged window warps (stand-by 60× → cue 4× → overdue 60×) are real.
+  `simulate()`/`buildPlanProfile()` also now step exactly ONTO burn times instead of overstepping
+  by up to dt (lunar aim must not depend on step size).
+- **THIS BURN Δv meter tracks properly:** the cumulative total and the bar's target are now a
+  matched pair — target = (already flown) + (remaining residual), frozen at ignition, held ~5 s
+  after completion for read-back. Previously the cumulative total was compared against the
+  shrinking residual, so the bar jumped past the marker after every pulse release; the total also
+  expired after a 5 s pause mid-window (now it survives until the burn completes or the window
+  closes), and the closed-loop throttle tapered against the same mismatched baseline. HOT (red)
+  now also fires when the live demanded direction flips against the planned one (true overshoot).
+  Fuel MFD gains a white **plan** tick — where the budget bar should still stand if the loaded
+  plan is flown exactly.
+- **Big NAV (sensory-overload fix):** the panels are swapped — the co-rotating trajectory map
+  (auto-zooming departure/cruise/arrival, live prediction, closest-approach marker) now owns the
+  large upper-left panel with a compact status readout (T+, orbit now, next burn) in its corner;
+  CAPCOM moved to a slim newest-messages strip on the small NAV MFD. Map/overlay text is CAPPED at
+  instrument size (uncapped it scaled ~3× with the bigger canvas). Cockpit tour updated
+  (countdown, AUTO FLY, new panel layout) and tour cards now clamp fully on-screen using their
+  measured size (tall cards used to overflow the window).
+- **Thrusters renamed** to FORWARD / REVERSE / UPWARD / DOWNWARD (cockpit, cues, CAPCOM, tour,
+  worksheet 8).
+- **Pad thrust now fires in the LOCAL flight frame** — relative to the body that owns you: Earth
+  normally, the Moon inside its sphere of influence — with UPWARD/DOWNWARD oriented truly
+  radial-out/in of that body. Root cause of "REVERSE barely changes my lunar orbit": inertial-frame
+  thrust near the Moon is dominated by the Moon's own ~1.02 km/s orbital motion, so retro burns
+  mostly ROTATED the lunar orbit instead of braking it (verified: 50 m/s Moon-frame REVERSE now
+  drops periapsis ~930 km). This also made LOI guidance LIVE — brake to the local circular speed
+  (~640 m/s instead of a blind 900 that would over-brake in the new frame to ~150 km off the
+  surface) — full-auto lunar flight now scores A (96) on 3,723 of 7,500 m/s.
+- **Autopilot pacing:** with AUTO engaged the burn window no longer crawls (300× instead of the
+  60×/4× manual staging); the integrator clamps its last step to land the clock EXACTLY on the
+  scheduled burn time, so speed costs no timing precision. Coast integration now splits frames
+  into equal ≤20 s substeps (no per-frame truncation drift).
+- **Planner + worksheet now state the lunar mission takes THREE burns** (planner mission card
+  warns to keep budget for the cued CIRCULARIZE; worksheet 8 flight steps updated).
+- **The lunar mission is now explicitly THREE burns.** Once capture is confirmed, "Circularize
+  lunar orbit" is scheduled as a real cued burn (countdown → BURN NOW), guided as an exact
+  circularization VECTOR flown component by component — the cue demands the largest remaining
+  component ("320 m/s BACKWARDS", then "260 m/s DOWNWARDS"), recomputed live; done under 40 m/s
+  residual. Speed-only matching provably cannot circularize here (the thrust basis is
+  inertial-velocity-aligned, not Moon-relative) — verified headless: 3-burn flight = 5,233×5,273 km
+  lunar orbit, success box held, A (95/100) on 4,605 of 7,500 m/s. Autopilot flies it the same way;
+  missed circularize cues re-cue in minutes (not one Earth period). Live prediction now takes fine
+  (90 s) steps and dense samples near the Moon, so the capture orbit visibly reshapes WHILE
+  thrusting through LOI and the circularize.
+
 - **Module 3:** Earth's rotation is now **synched to the orbit clock**. The satellite animation
   and Earth's spin previously ran on unrelated fixed rates, so the Molniya resonance could never
   show. Both now share one simulated-time base (scaled so the current orbit takes ~12 s at warp 1;

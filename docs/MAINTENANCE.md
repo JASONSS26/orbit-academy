@@ -47,6 +47,13 @@ progress in `localStorage`), so the static files run anywhere.
 - Module 8's planner and cockpit share `flight8.js` — the path a student plans is *exactly* the
   path they fly. Never fork the physics. The lunar plan's go/no-go comes from `simulate()`
   (capture is a three-body outcome; there is no vis-viva shortcut — don't invent one).
+- Module 8 cockpit conventions: pad thrust acts in the **local flight frame** (Earth-relative,
+  Moon-relative inside its SOI — inertial-frame retro burns near the Moon mostly *rotate* the
+  lunar orbit instead of braking it); the lunar profile is **three cued burns** (TLI → LOI →
+  circularize); 🤖 AUTO FLY drives the very same press-and-hold machinery as the pilot, so every
+  gauge and CAPCOM call behaves identically under autopilot — keep it that way; every mission
+  pre-coasts one full parking lap (`F7.PRE_COAST`) before burn 1, with the Moon phase compensated
+  so burn-time geometry matches the planner.
 - Hard language rule in cislunar modules: never "centrifugal"/"centripetal"; explain with real
   gravity + sideways motion.
 

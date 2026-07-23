@@ -500,12 +500,18 @@ The deck for this module is `slides/module7.pptx` (8 slides matching this outlin
 orbits and **flies** one, from an Artemis-style cockpit. Two views: a **PLAN** mode (a flight
 computer where you compute each burn's Δv from vis-viva and iterate to the target, with a live
 trajectory predictor and a "run sim" playback) and a **FLY** mode (the cockpit — window with real
-Earth/Moon at correct angular size, embedded MFD screens, hold-to-thrust controls, and a BURN-NOW
-cue). Two missions, flown in order: **go to GEO** (a gentle two-burn Hohmann warm-up, familiar from
-Modules 2–3), and — **unlocked by a successful GEO run** — **go to the Moon** (aim just *past* it,
-lead it ~120°, then a retrograde **LOI brake** at closest approach; the planner grades lunar plans
-with the full three-body sim, since no clean vis-viva check exists for capture). Launch-to-LEO is
-automated; victory means *holding* the target orbit for a full revolution, not just touching it.
+Earth/Moon at correct angular size, embedded MFD screens, hold-to-thrust controls, burn
+**countdowns**, and a BURN-NOW cue whose numbers are **live guidance** recomputed from the current
+orbit). Two missions, flown in order: **go to GEO** (a gentle two-burn Hohmann warm-up, familiar
+from Modules 2–3), and — **unlocked by a successful GEO run** — **go to the Moon**, a genuine
+**three-burn** profile (aim just *past* it, lead it ~120°; a retrograde **LOI brake** at closest
+approach; then a **cued circularization** in lunar orbit; the planner grades lunar plans with the
+full three-body sim, since no clean vis-viva check exists for capture). Thrust acts in the
+**local flight frame** — Earth-relative normally, Moon-relative inside its sphere of influence —
+so REVERSE genuinely brakes a lunar orbit. Every mission starts with one full parking lap before
+the first cue, and an **🤖 AUTO FLY** autopilot can fly the whole order book through the same
+controls as the pilot — a good demonstrator for students who stall (watch it, then beat it by
+hand). Victory means *holding* the target orbit for a full revolution, not just touching it.
 Everything from Modules 1–6 gets used in anger.
 
 **Learning goals.**
