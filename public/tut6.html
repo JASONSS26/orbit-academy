@@ -375,10 +375,17 @@ function fanAcc(t,st){
   const re=Math.max(R_EARTH*R_EARTH,(dxe*dxe+dye*dye+dze*dze))**1.5, rm=Math.max(R_MOON*R_MOON,(dxm*dxm+dym*dym+dzm*dzm))**1.5;
   return [ -MU_E*dxe/re - MU_M*dxm/rm, -MU_E*dye/re - MU_M*dym/rm, -MU_E*dze/re - MU_M*dzm/rm ];
 }
-function fanStep(st,t,h){ const a1=fanAcc(t,st);
-  const b=[st[0]+st[3]*h/2,st[1]+st[4]*h/2,st[2]+st[5]*h/2,st[3]+a1[0]*h/2,st[4]+a1[1]*h/2,st[5]+a1[2]*h/2],a2=fanAcc(t+h/2,b);
-  const c=[st[0]+b[3]*h/2,st[1]+b[4]*h/2,st[2]+b[5]*h/2,st[3]+a2[0]*h/2,st[4]+a2[1]*h/2,st[5]+a2[2]*h/2],a3=fanAcc(t+h/2,c);
-  const e=[st[0]+c[3]*h,st[1]+c[4]*h,st[2]+c[5]*h,st[3]+a3[0]*h,st[4]+a3[1]*h,st[5]+a3[2]*h],a4=fanAcc(t+h,e);
+function fanStep(st,t,h){ // t is in DAYS (moonPos clock); h is in SECONDS (state integration).
+  // The RK4 STAGE TIMES must convert h to days — the old code passed t+h/2 and t+h raw, which
+  // evaluated the mid/end-stage Moon 1 and 2 DAYS in the future (≈88,000–176,000 km away): three
+  // of the four stage accelerations pulled toward phantom Moons, so close encounters were
+  // dynamically wrong in every display frame. (Kepler arcs far from the Moon looked fine because
+  // Earth's field is static — only the scattering was corrupted.)
+  const hd=h/86400;
+  const a1=fanAcc(t,st);
+  const b=[st[0]+st[3]*h/2,st[1]+st[4]*h/2,st[2]+st[5]*h/2,st[3]+a1[0]*h/2,st[4]+a1[1]*h/2,st[5]+a1[2]*h/2],a2=fanAcc(t+hd/2,b);
+  const c=[st[0]+b[3]*h/2,st[1]+b[4]*h/2,st[2]+b[5]*h/2,st[3]+a2[0]*h/2,st[4]+a2[1]*h/2,st[5]+a2[2]*h/2],a3=fanAcc(t+hd/2,c);
+  const e=[st[0]+c[3]*h,st[1]+c[4]*h,st[2]+c[5]*h,st[3]+a3[0]*h,st[4]+a3[1]*h,st[5]+a3[2]*h],a4=fanAcc(t+hd,e);
   return [st[0]+h/6*(st[3]+2*b[3]+2*c[3]+e[3]), st[1]+h/6*(st[4]+2*b[4]+2*c[4]+e[4]), st[2]+h/6*(st[5]+2*b[5]+2*c[5]+e[5]),
           st[3]+h/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]), st[4]+h/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1]), st[5]+h/6*(a1[2]+2*a2[2]+2*a3[2]+a4[2])]; }
 

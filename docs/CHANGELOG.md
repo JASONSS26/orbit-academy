@@ -127,9 +127,16 @@ Client-only apart from two console-hint strings in `server.js`.
   the ECL-EMBR panel. Dragging in tut5 now **rotates only** — panning could silently slide a
   frame's origin off its body, wrecking the module's central lesson. Worksheet 5 and the
   instructor guide updated to match.
-- **Module 6 (fan/scatter):** the "Moon repels the red object" illusion fixed. The physics was
-  verified sound (headless RK4: scatter closest passes 1.3–18 lunar radii, mixed ≥3.5 R_M, zero
-  penetrations, 2 unbound) — the artifact was TRAIL SAMPLING: one point per frame ≈ 1,440 s of
+- **Module 6 (fan/scatter):** "the Moon repels the red object / nothing looks realistic" — THREE
+  stacked causes, found in order of increasing severity. **(1) The real dynamics bug:** `fanStep`
+  received `t` in days but `h` in seconds, and passed `t+h/2`, `t+h` raw to the stage
+  accelerations — the RK4 mid/end stages sampled the Moon **1 and 2 days in the future**
+  (88,000–176,000 km away), so three of four stage forces pulled toward phantom Moons and every
+  close encounter was dynamically wrong (transfer arcs looked fine — Earth's field is static).
+  A/B verified: shipped stage times gave closest passes of 1,857–82,000 km, nothing unbound;
+  fixed times reproduce the designed 1.3–18 R_M family with a genuine slingshot ejection.
+  (Earlier "physics verified sound" note was wrong about the shipped code: the verification
+  harness had inadvertently corrected the units, masking the bug.) **(2)** TRAIL SAMPLING: one point per frame ≈ 1,440 s of
   sim, while the tightest hairpin swing lasts ~2,500–5,000 s, so the 180° gravity-bend drew as a
   2–3-point V that looked like a bounce. Trails now densify to one point per 150 s within
   25,000 km of the Moon (cap 2,400 pts). Also hardened: real **impact checks** (an object inside
@@ -137,7 +144,7 @@ Client-only apart from two console-hint strings in `server.js`.
   "impacted" — nothing flies through a body, matching Module 1's honesty rule), and force
   softening floors raised to the body radii. Scatter message now names the red object's ~1.6 R_M
   hairpin and tells students to slow down and rotate to watch the pull-around.
-  **Frame-appropriate trails (the deeper fix — "none of the scattering looks realistic in MCI"):**
+  **(3) Frame-appropriate trails ("none of the scattering looks realistic in MCI"):**
   the trails were world/ECI polylines rendered under every panel's camera, but a trajectory's
   SHAPE depends on the frame — during a ~1-day encounter the Moon itself travels ~88,000 km, so
   the Moon-centered panel drew every "scattering" tens of thousands of km from the on-screen
