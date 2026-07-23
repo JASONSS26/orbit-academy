@@ -408,12 +408,23 @@ Core beats: the five Lagrange points as **spots that share the Moon's 27.3-day p
 markers, distinct from bodies); the **1-D force-balance** view (L1 the Moon opposes Earth → gentler
 pull; L2 they add → stronger pull; "balance" never means zero net pull); **L4/L5 stable, L1/L2/L3
 unstable** (golf-ball-on-a-basketball); the **near-rectilinear halo orbit (NRHO)** that CAPSTONE/
-Gateway fly; **TESS** in 2:1 resonance; the **live RK4 fan-release chaos** sandbox (including the
-lunar-scatter slingshot with some objects flung unbound); and the capstone **libration "zoo"** — the
-whole family of L1 orbits from two amplitude knobs and a frequency ratio. This module rewards an
-instructor who understands the physics deeply; **§11 below is a dedicated deep-dive on the L1 orbits**
-because the questions this module provokes are genuinely subtle. Hard language rules the module obeys:
-never say "centrifugal"/"centripetal" — motion is explained with real gravity + sideways motion.
+Gateway fly; **TESS** in 2:1 resonance; the **six fan-release experiments** (live RK4, true
+restricted three-body field): **🌙 lunar scatter** (slingshot family; the deepest skim flung past
+Earth's Hill sphere), **⚖ L1 knife-edge** (seven objects at L1, ≤8 m/s kicks decide moonward vs
+earthward vs weeks-long hover — unstable equilibrium made visceral), **🐸 L4 tadpoles** (the same
+kicks and bigger just librate; a 50 m/s outlier finds the pocket's rim — the Trojan-asteroid story),
+**🔄 DRO vs prograde** (Earth's tide strips distant prograde lunar orbits while every distant
+retrograde orbit persists — why Artemis I parked Orion in a DRO), **∞ free return** (a ~6 m/s
+departure spread decides re-entry vs stranding vs lunar impact — the Apollo 13 fail-safe), and
+**🌒 minimoons** (identical unbound arrivals differing only in arrival DAY; lunar flybys
+ballistically capture some as temporary moons of Earth for weeks to over a year — the real
+2006 RH120 / 2020 CD3 phenomenon); the **gravity landscape** overlay — the co-rotating
+effective-potential surface (Earth/Moon funnels, L1/L2/L3 saddle passes, L4/L5 hilltops) that makes
+"ball in a bowl vs ball on a saddle" literal; and the capstone **libration "zoo"** — the whole
+family of L1 orbits from two amplitude knobs and a frequency ratio. This module rewards an instructor who understands the physics deeply; **§11 below is a
+dedicated deep-dive on the L1 orbits** because the questions this module provokes are genuinely
+subtle. Hard language rules the module obeys: never say "centrifugal"/"centripetal" — motion is
+explained with real gravity + sideways motion.
 
 **Learning goals.**
 
@@ -427,7 +438,15 @@ never say "centrifugal"/"centripetal" — motion is explained with real gravity 
 - Students can explain orbital resonance through TESS's 2:1 lock with the Moon (P = 13.66 d): the
   Moon's repeated tugs are arranged to cancel over time.
 - Students can describe chaos operationally: near-identical starts diverge within days, so cislunar
-  predictions go stale fast.
+  predictions go stale fast — and can cite the knife-edge (≤8 m/s decides the fate) and free-return
+  (~6 m/s decides re-entry vs stranding) releases as concrete evidence.
+- Students can name the stable real estate of cislunar space — L4/L5 tadpoles and distant retrograde
+  orbits (DROs) — and connect each to a real anchor (Jupiter's Trojans; Artemis I's Orion parking).
+- Students can explain a free-return trajectory and why Apollo flew one (no burn needed at the Moon
+  to come home — what saved Apollo 13).
+- Students can explain ballistic capture: a lunar flyby can hand an unbound arrival enough energy to
+  the Moon to leave it temporarily bound — Earth's real minimoons (2006 RH120, 2020 CD3) — and can
+  read the gravity-landscape surface (funnels, saddles, hilltops) as the map of all of the above.
 
 **Intro lecture (10 minutes, before students open the worksheet).**
 
@@ -441,8 +460,13 @@ never say "centrifugal"/"centripetal" — motion is explained with real gravity 
   need constant nudging, so spacecraft fly looping halo orbits around them; L4/L5 are the bowls,
   where dust can collect. (4) Off the special solutions lies real chaos — tiny release differences
   diverge within days, which is why cislunar custody (Module 7's subject) is genuinely hard.
-- *Live demo* — the **💥 Fan release — watch chaos grow** scenario in `tut6` (switch to the
-  **🌙 lunar scatter** mode): a tight fan of releases is shredded within days, some flung unbound.
+- *Live demo* — the **💥 Fan release** scenario in `tut6`. Best 3-minute pairing: turn on the
+  **gravity landscape** in the synodic frame (saddles and hilltops visible), then run **⚖ L1
+  knife-edge** (objects hover at L1 for days, then ≤8 m/s kicks send them to opposite fates),
+  then **🐸 L4 tadpoles** (bigger kicks, and everything just loops in place) — stable vs unstable,
+  with the terrain that explains it in view. If time allows, **🌙 lunar scatter** viewed in the
+  Moon-centered inertial frame is the crowd-pleaser (clean slingshot hairpins, one object flung past
+  Earth's Hill sphere), and **🌒 minimoons** is the closer — Earth catching temporary moons live.
 - *Misconception to pre-empt* — "a Lagrange point is where gravity cancels to zero." At L2 the two
   pulls *add* — the net pull there is stronger, not absent; balance means matching the Moon's
   period, not floating force-free.
