@@ -120,6 +120,22 @@ this sync.
 6. Hub cosmetics: `ROMAN` array in `index.html` and the certificate text if the module count grew.
 7. Run §7.
 
+## 6.5 Verification rules (learned the hard way)
+
+- **Verify by EXECUTING the shipped code, never by re-implementing it.** Extract the actual
+  functions from the page (regex-slice the `<script>` and `eval` with stubs) and drive those.
+  A re-implementation silently fixes the very bugs it is supposed to detect: the tut6 fan's RK4
+  passed stage times mixing a days-clock with a seconds-step (`fanAcc(t+h/2)` with t in days,
+  h in seconds — the mid/end stages sampled the Moon 1–2 *days* ahead), and a hand-rewritten
+  harness "verified the physics sound" because its author instinctively wrote `h/2/86400`.
+  The page and the harness were running different physics; only looking at the screen caught it.
+- **Declare each integrator's time units in one comment at its definition** and grep any file
+  that mixes a days-clock (`moonPos(tDays)`) with a seconds-step for raw `t+h` stage times.
+  Current inventory: `flight8.js` all-seconds ✓ · tut4 static field (no t) ✓ · tut5 TLI analytic ✓
+  · tut6 fan t=days/h=seconds, stages use `h/86400` ✓.
+- A "physics verified" claim in a commit or changelog must name WHAT was executed (shipped file
+  vs. harness). If it wasn't the shipped file, it isn't verification.
+
 ## 7. Release checklist (the QA-walkthrough distillation)
 
 1. Bump the version: `server.js` header, `README.md` (title + "What's here" + security line),
