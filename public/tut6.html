@@ -89,7 +89,7 @@
         <div class="note" style="margin-top:4px;color:#6f86a8">Note: a <b>fudged linear approximation</b> — the shapes and rhythms are honest, and the center is nudged toward the Moon at high out-of-plane amplitude via a lookup, but it isn’t a full nonlinear integration.</div>
       </div>
       <label class="chk" style="margin-top:9px"><input type="checkbox" id="showLpts" checked onchange="toggleLpts()"> show <b style="color:var(--accent)">▲ Lagrange points</b> (overlay)</label>
-      <label class="chk" style="margin-top:6px"><input type="checkbox" id="showPot" onchange="togglePot()"> show <b style="color:#7be0a0">gravity landscape</b> (effective-potential surface — co-rotating panels)</label>
+      <label class="chk" style="margin-top:6px"><input type="checkbox" id="showPot" onchange="togglePot()"> show <b style="color:#7be0a0">gravity landscape</b> (effective-potential surface, <b>Earth + Moon only</b> — no Sun, like all Module-6 physics; co-rotating panels)</label>
     </div>
 
     <div class="sec" id="frameBox">
@@ -102,6 +102,15 @@
         <button data-frame="embr" onclick="setFrame('embr')">ECL-EMBR — barycentric rotating (Lagrange frame)</button>
       </div>
       <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames (2×2)</button>
+      <div class="q" style="margin-top:9px">📍 sit at (parks the co-rotating view on a point — it holds still there):</div>
+      <div class="seg" style="grid-template-columns:repeat(3,1fr)">
+        <button onclick="sitAt('L1')" style="color:#ffcf4d">▲ L1</button>
+        <button onclick="sitAt('L2')" style="color:#ff8a4d">▲ L2</button>
+        <button onclick="sitAt('L4')" style="color:#39d353">▲ L4</button>
+        <button onclick="sitAt('L5')" style="color:#39d353">▲ L5</button>
+        <button onclick="sitAt('moon')">🌙 Moon</button>
+        <button onclick="sitAt('earth')">🌍 Earth</button>
+      </div>
     </div>
 
     <div class="sec" id="fanBox" style="display:none">
@@ -162,6 +171,14 @@
         an object keeps the <b>same 27.3-day period as the Moon</b> and so holds station on the
         rotating Earth–Moon line. L1 and L2 are <b>unstable</b> — like a golf ball balanced on a
         basketball — so real missions there fly small looping <b>halo orbits</b> and nudge often.
+        <br><br>⚠ On the <b>gravity landscape</b>, L4/L5 are gentle <b>HILLTOPS</b> — the surface is
+        honest, and no, that's not a contradiction. The landscape only scores <i>positions</i>;
+        <b>stability is a property of trajectories</b>. Flip to the <b>ECI (inertial) frame</b> and
+        the mystery evaporates: an object near L4 is simply flying an ordinary <b>27.3-day orbit
+        around Earth</b>, like the Moon's but 60° ahead, and the combined pulls of Earth and Moon
+        keep that orbit gently breathing near the point instead of diverging. The slow loop
+        <i>around</i> the summit you see co-rotating (Part D's tadpoles) is just that ordinary
+        orbit, watched from the turning viewpoint.
       </div>
     </div>
   </div>
@@ -436,11 +453,20 @@ function frameCorotates(f){ return f==='emrot'||f==='embr'; }
 function frameCentersBary(f){ return f==='embr'; }
 const BARY_MU=0.01215, BARY_EXAG=1.0;   // Moon mass fraction; barycenter at its TRUE position (inside the Earth)
 function baryPos(t){ return moonPos(t).clone().multiplyScalar(BARY_MU*BARY_EXAG); }
+/* v.target is stored in FRAME-LOCAL coordinates. For the co-rotating frames (synodic / ECL-EMBR)
+   it is rotated to world space by the current Earth–Moon line angle each frame — a panned view
+   then rides WITH the frame. (Previously the pan offset was a fixed inertial point while the
+   camera azimuth co-rotated, so every frame-fixed object appeared to wobble in a circle whose
+   radius was the pan distance.) */
+const _Y=new THREE.Vector3(0,1,0);
 function aimCamera(f){ const v=views[f]; let tgt=v.target.clone();
+  if(frameCorotates(f)) tgt.applyAxisAngle(_Y, emAzimuth());
   if(frameCentersMoon(f)) tgt.add(moonPos(simT)); else if(frameCentersBary(f)) tgt.add(baryPos(simT));
   const th=v.th - (frameCorotates(f)?emAzimuth():0);
   v.cam.position.set(tgt.x+v.R*Math.sin(v.ph)*Math.cos(th), tgt.y+v.R*Math.cos(v.ph), tgt.z+v.R*Math.sin(v.ph)*Math.sin(th));
   v.cam.lookAt(tgt); }
+// pan deltas arrive in world (camera) space — store them frame-locally so they don't wobble
+function panBy(v,f,dxWorld){ if(frameCorotates(f)) dxWorld.applyAxisAngle(_Y,-emAzimuth()); v.target.add(dxWorld); }
 const starShell={pos:new THREE.Vector3()};
 
 let curX=0,curY=0;
@@ -454,10 +480,10 @@ addEventListener('mouseup',()=>drag=0);
 addEventListener('mousemove',e=>{ if(!drag)return; const v=views[dragFrame]; const dx=e.clientX-lx,dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
   if(drag===2){ v.th-=dx*0.005; v.ph=Math.max(0.05,Math.min(Math.PI-0.05,v.ph-dy*0.005)); }
   else { const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);
-    const k=v.R*0.0016; v.target.addScaledVector(right,-dx*k); v.target.addScaledVector(up,dy*k); } });
+    const k=v.R*0.0016; panBy(v,dragFrame, right.multiplyScalar(-dx*k).addScaledVector(up,dy*k)); } });
 canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*3,Math.min(D_EM*15,v.R*(1+Math.sign(e.deltaY)*0.12)));},{passive:false});
 canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;dragFrame=activeFrame(lx,ly);}else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);const k=v.R*0.0016;v.target.addScaledVector(right,-dx*k);v.target.addScaledVector(up,dy*k);}else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinchD)v.R=Math.max(R_MOON*3,Math.min(D_EM*15,v.R*(pinchD/d)));pinchD=d;}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;const right=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(v.cam.matrix,1);const k=v.R*0.0016;panBy(v,dragFrame, right.multiplyScalar(-dx*k).addScaledVector(up,dy*k));}else if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinchD)v.R=Math.max(R_MOON*3,Math.min(D_EM*15,v.R*(pinchD/d)));pinchD=d;}},{passive:false});
 canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
 addEventListener('keyup',e=>{keys[e.key]=false;});
 addEventListener('keydown',e=>{ keys[e.key]=true;
@@ -466,6 +492,20 @@ addEventListener('keydown',e=>{ keys[e.key]=true;
   else if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey) resetView();
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault(); });
 function resetView(){ for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].target.set(0,0,0); } }
+/* 📍 SIT AT — park the co-rotating view on a Lagrange point (or body). Targets are frame-local,
+   so the camera genuinely SITS there: the point stays centered and motionless while everything
+   else swings around it. Sets both co-rotating views (synodic + ECL-EMBR) so the 2×2 matches. */
+function sitAt(k){
+  const P={ L1:[L1F*D_EM,0], L2:[L2F*D_EM,0], L3:[L3F*D_EM,0],
+            L4:[D_EM*Math.cos(Math.PI/3),-D_EM*Math.sin(Math.PI/3)],
+            L5:[D_EM*Math.cos(Math.PI/3), D_EM*Math.sin(Math.PI/3)],
+            moon:[D_EM,0], earth:[0,0] }[k]; if(!P) return;
+  const R = k==='earth'? D_EM*1.9 : k==='moon'? D_EM*0.5 : D_EM*0.55;
+  if(!quad && !frameCorotates(frame)) setFrame('emrot');    // holding station needs a co-rotating frame
+  for(const f of ['emrot','embr']){ const v=views[f];
+    const bx=frameCentersBary(f)? BARY_MU*BARY_EXAG*D_EM : 0;   // embr recenters on the barycenter
+    v.target.set(P[0]-bx, 0, P[1]); v.R=R; }
+}
 
 /* ------------------------------ warp/pause ------------------------------- */
 const WARPS=[1,60,600,3600,21600,43200,86400,172800,432000];
@@ -478,7 +518,7 @@ function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶':'
 
 /* ------------------------------ scenarios -------------------------------- */
 const SCEN_NOTE={
-  lpts:'The five spots where Earth + Moon together give the <b>27.3-day lunar period</b>, so an object holds station on the rotating Earth–Moon line. Switch to the <b>synodic</b> frame and they stand still. <b>L4/L5</b> (60° ahead/behind the Moon) are stable; <b>L1/L2/L3</b> are not.',
+  lpts:'The five spots where Earth + Moon together give the <b>27.3-day lunar period</b>, so an object holds station on the rotating Earth–Moon line. Switch to the <b>synodic</b> frame and they stand still. <b>L4/L5</b> (60° ahead/behind the Moon) are stable; <b>L1/L2/L3</b> are not. Surprise: on the gravity landscape L4/L5 are <b>hilltops</b>, not bowls — they’re stable anyway: a nudged object is <i>moving</i>, and under the combined pulls of Earth and Moon its trajectory loops around the summit rather than sliding off. Check the <b>ECI frame</b>: it’s just an ordinary Moon-like orbit, 60° ahead (see the note below).',
   force:'A 1-D look along the Earth–Moon line. At <b>L1</b> the Moon pulls <i>outward</i> (it’s farther out), partially cancelling Earth → a gentler inward pull → matches a 27.3-day loop despite being closer in. At <b>L2</b> both pull <i>inward</i> and add → a stronger pull → also matches 27.3 days despite being farther out.',
   halo:'A <b>near-rectilinear halo orbit (NRHO)</b> — the real path CAPSTONE flew and the Gateway station will use. Because L2 is unstable, the spacecraft can’t sit there; instead it rides this dramatically elongated, near-vertical loop that <b>skims low over one lunar pole</b> (~3,000 km) and <b>swings far out over the other</b> (~70,000 km), nudging its thrusters occasionally. (This close to the Moon it also shows the <b>same illuminated phase as the Moon</b> — same Sun angle.)',
   tess:'<b>TESS</b> rides a highly elliptical orbit locked in a <b>2:1 resonance</b> with the Moon — it laps the Earth twice for every one lunar orbit, and the Moon’s pull shepherds it so it stays stable for years. Flip through the frames (or the 2×2) to see how differently the same path looks.',
@@ -521,16 +561,28 @@ let scen='lpts', lptsOverlay=true;
 let potShown=false;
 const potGroup=new THREE.Group(); scene.add(potGroup); potGroup.visible=false;
 (function buildPotential(){
-  const NG=110, EXT=1.35*D_EM, W2=(2*Math.PI/(T_MOON*86400))**2;   // (W_MOON is declared further down)
+  const NG=200, EXT=1.35*D_EM, W2=(2*Math.PI/(T_MOON*86400))**2;   // (W_MOON is declared further down)
   const bx=massFrac*D_EM;                                   // barycenter (rotating axes: Moon at (D,0))
   const UL4=-MU_E/D_EM - MU_M/D_EM - 0.5*W2*((0.5*D_EM-bx)**2+(Math.sqrt(3)/2*D_EM)**2);
-  const K=90000, YMIN=-95000;                               // km of height per (km/s)² above U(L4); clamp depth
+  /* ARSINH depth: y = −S·asinh((U(L4)−U)/u0) — no clamps, no flattening ANYWHERE. A linear map
+     must choose between the L-point relief (ΔU ~ 0.1 km²/s²) and the Earth funnel (ΔU ~ 60 —
+     600× deeper); a pure log map kept the funnels but CRUSHED the outer slope (≈0.06 km/km at
+     the boundary — the surface visibly went flat toward the edge, which is unphysical). asinh is
+     the best of both: exactly LINEAR for |ΔU| ≲ u0 (the whole rim region — saddles, hilltops,
+     and the outer centrifugal skirt keep their true shape and keep sloping right to the edge of
+     the rendered region) and logarithmic only deep in the funnels, which still run to the
+     surface. Landmarks (verified numerically): L4/L5 = 0, L3 ≈ −3,000 km, L2 ≈ −16,000,
+     L1 ≈ −17,000, board corners ≈ −79,000, Moon surface ≈ −124,000, Earth surface ≈ −248,000.
+     Note the DOWNHILL past the L4/L5 rim is real physics, not an artifact: beyond the rim the
+     co-rotating landscape tips outward — that outer skirt is why the rotating frame flings
+     things away, and it now has a clear ~17° slope at the boundary instead of a flat apron. */
+  const S=40000, u0=0.25;
   const g=new THREE.PlaneGeometry(2*EXT,2*EXT,NG,NG); g.rotateX(-Math.PI/2);
   const pos=g.attributes.position;
   for(let i=0;i<pos.count;i++){ const x=pos.getX(i), z=pos.getZ(i);
-    const rE=Math.max(Math.hypot(x,z), R_EARTH*2), rM=Math.max(Math.hypot(x-D_EM,z), R_MOON*2);
+    const rE=Math.max(Math.hypot(x,z), R_EARTH), rM=Math.max(Math.hypot(x-D_EM,z), R_MOON);
     const U=-MU_E/rE - MU_M/rM - 0.5*W2*((x-bx)*(x-bx)+z*z);
-    pos.setY(i, Math.max(YMIN, K*(U-UL4)) - 4000); }        // −4000: sit just under the orbital plane
+    pos.setY(i, -S*Math.asinh(Math.max(0,UL4-U)/u0) - 4000); }   // −4000: sit just under the orbital plane
   g.computeVertexNormals();
   const mesh=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x2e7d5b,wireframe:true,transparent:true,opacity:0.42}));
   mesh.frustumCulled=false; potGroup.add(mesh);
@@ -706,7 +758,7 @@ const FAN_WARP={scatter:86400, l1knife:172800, tadpole:432000, dro:172800, freer
 const FAN_MSG={
   scatter:'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b>: closest passes span ~1.2 to ~13 lunar radii. The <b>yellow</b> object skims ~300 km above the surface — Apollo-8 territory — and is flung onto a ~4-million-km orbit, far beyond Earth’s <b>Hill sphere</b> (~1.5 M km), where in reality the Sun’s gravity takes it away for good. The <b>red</b> object whips a tight <b>hairpin around the far side</b> (~1.4 lunar radii) — slow to <kbd>,</kbd> as it closes in and rotate with the <b>arrow keys</b>: the sharp turn is the Moon’s gravity <i>pulling</i> it around, never pushing.',
   l1knife:'7 objects released <b>exactly at L1</b> with kicks of at most 8 m/s — differences you couldn’t feel. For days they hover together: the balance is real. Then the saddle wins: nudged-toward-the-Moon falls to the <b>Moon</b> (~day 8–9), nudged-toward-Earth falls <b>home</b> (~day 11–14), the out-of-plane one holds to ~day 18 — and the un-kicked <b>yellow</b> one hovers ~3 weeks until even <i>numerical round-off</i> pries it loose. Nothing sits at L1 forever without station-keeping. Same place, same speed to within bicycle pace — completely different fates: that is <b>unstable equilibrium</b>.',
-  tadpole:'The same kicks that doomed the L1 set (and bigger — up to 30 m/s) just make these objects <b>librate</b>: lazy tadpole loops around L4, weeks per lap, going nowhere. L4 is a genuinely <b>stable</b> parking spot — it’s why Trojan asteroids camp at Jupiter’s L4/L5 for billions of years. Only <b>red</b>, kicked 50 m/s, breaks out of the tadpole and wanders off along the Moon’s orbit: the stable pocket has a finite rim.',
+  tadpole:'The same kicks that doomed the L1 set (and bigger — up to 30 m/s) just make these objects <b>librate</b>: lazy tadpole loops around L4, weeks per lap, going nowhere. And here’s the resolution of the hilltop puzzle: L4 is a <b>summit</b> of the gravity landscape, yet stable — the landscape only scores positions, while these objects are <i>moving</i>, and motion under the combined Earth + Moon pulls drives exactly these loops instead of a slide-off. Flip to the <b>ECI panel</b>: each “tadpole” is just an ordinary near-circular 27.3-day orbit riding ~60° ahead of the Moon. It’s why Trojan asteroids camp at Jupiter’s L4/L5 for billions of years. Only <b>red</b>, kicked 50 m/s, breaks out of the tadpole and wanders off along the Moon’s orbit: the stable pocket has a finite rim.',
   dro:'Seven satellites parked around the <b>Moon</b>. Prograde at 40k and 55k km are <b>stripped by Earth’s tide</b> within days (one flung 2.3 million km); prograde from 30k spirals in and <b>craters</b> (~day 39). Every <b>retrograde</b> twin — a <b>Distant Retrograde Orbit</b> — persists: DROs are famously stable, which is why <b>Artemis I parked Orion in one</b>. Close-in prograde (20k) also survives — tides only win far out. Backwards is better, out there.',
   freeret:'7 ships leave a 330-km parking orbit with departure speeds spanning just <b>~6 m/s</b>. <b>Green</b> and <b>cyan</b> thread the <b>free-return figure-8</b> — around the far side and home to re-entry (~day 8) with <i>no burn at the Moon</i>, the trajectory Apollo trusted (and that saved Apollo 13). <b>Pale</b> (~day 13) and <b>pink</b> (~day 18) straggle home on longer loops — <b>4 of 7 eventually make it back</b>, but only the true free-returns arrive on Apollo’s schedule; a crew on pink’s route would be out for <i>eighteen days</i>. <b>Red</b> cuts too close and <b>hits the Moon</b> (~day 5). <b>Yellow</b> and <b>purple</b> are slung wide and still haven’t come home after <i>four months</i>. A walking-pace speed difference at Earth decides all of it.',
   minimoon:'7 objects fall in from a <b>million km out</b>, every one slightly <b>hyperbolic</b> — not bound to Earth — with identical speed and aim. The only difference is <b>which day they arrive</b>, i.e. where the Moon happens to be. <b>Be patient: the infall takes ~3 weeks of sim time (about 25 s at the default 1 d/s)</b> — captures start when they reach the Moon’s neighborhood. A <b>green halo ring</b> lights up around any object the moment it becomes gravitationally <b>bound to Earth</b>, and the “captured right now” counter keeps the tally. <b>Yellow</b> and <b>pink</b> keep their halos for over a <i>year</i>; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks before the halo dies and they slip away; <b>pale</b> flickers for days; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and <b>hits the Moon</b> (~day 14). This is real: asteroid <b>2006 RH120</b> was Earth’s minimoon for ~11 months, <b>2020 CD3</b> for ~2 years — captured and released by exactly this mechanism.'};

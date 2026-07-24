@@ -2,6 +2,43 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## Unreleased — 2026-07-23 (Module 6 camera + gravity landscape)
+Client-only (`tut6.html`); fold into the next versioned release (doc reconciliation + security
+audit then, per the release workflow).
+
+- **Pan wobble in co-rotating frames fixed:** camera pan targets are now stored FRAME-LOCALLY and
+  rotated to world space each frame. (They were fixed inertial points while the camera azimuth
+  co-rotated, so a panned synodic/ECL-EMBR view made every frame-fixed object wobble in a circle
+  whose radius was the pan distance.)
+- **📍 "Sit at" presets** (L1 / L2 / L4 / L5 / Moon / Earth) in the frame panel: parks the
+  co-rotating view ON the point — it stays centered and motionless while everything swings around
+  it. Sets both co-rotating panels so the 2×2 compare matches; switches to the synodic frame if
+  needed.
+- **Gravity landscape: ARSINH height map — no clamps, no flat shelves anywhere:**
+  y = −S·asinh((U(L4)−U)/u₀). Two artifact generations fixed in one pass. The original linear map
+  clamped the Earth funnel at −95,000 km (a flat plateau ~160,000 km across) and never sampled
+  inside 2 R⊕. An interim log map let the funnels run to the surface but CRUSHED the outer slope
+  (≈0.06 km height per km at the board edge — the owner caught the surface "going flat at the
+  edge", which is unphysical). asinh is linear for |ΔU| ≲ u₀ — the whole rim region (saddles,
+  hilltops, and the outer centrifugal skirt) keeps its true shape and a clear ~14° slope right to
+  the edge of the rendered region — and logarithmic only deep in the funnels, which still run to
+  the surfaces. Landmarks (verified numerically from the shipped constants): L4/L5 rim = 0,
+  L3 ≈ −2,100, L1 ≈ −16,400, L2 ≈ −15,000, board corners ≈ −78,700, Moon surface ≈ −124,500,
+  Earth surface ≈ −247,600 km. The downhill PAST the L4/L5 rim is real physics (the outer skirt
+  is why the rotating frame flings things away) — it now reads as a slope, not a flat apron.
+  Grid refined 110² → 200².
+- **The L4/L5 hilltop paradox is now taught, not dodged** (owner flagged it: "L4/L5 sure don't
+  look like stable minima"). They aren't — L4/L5 are genuine MAXIMA of the effective potential.
+  Per the course's no-pseudo-forces rule, the resolution is told through trajectories and the
+  inertial frame: the landscape only scores POSITIONS, while an object near L4 is MOVING — in ECI
+  it simply flies an ordinary Moon-like 27.3-day orbit 60° ahead, which the combined Earth + Moon
+  pulls keep herded near the point; viewed co-rotating, that same orbit is the loop around the
+  summit (Part D's tadpoles). Sim sidebar + scenario note + tadpole message now say this and
+  point at the ECI panel; worksheet 6 (b3 teach/do/observe/think, Part B overview, quiz wording
+  "settles back" → "loops around") reconciled to match. The landscape checkbox and worksheet also
+  now disclose the model is **Earth + Moon only — no Sun** (solar differential pull ~1% of
+  Earth's at lunar distance; it matters only out near the ~1.5 M-km Hill sphere).
+
 ## v4.1 — 2026-07-23 (owner flight-test round on the v4.0 fan lab; star fields)
 All client-side; `server.js` changes only its version header.
 
