@@ -65,7 +65,9 @@ function simulate(plan, opts){ opts=opts||{};
   const path=[], moon=[], samples=[], burnMarks=[];   // samples: {t,x,y} inertial; burnMarks: co-rot burn spots
   let minMoon=Infinity, minMoonT=0, captured=false, outcome='coasting', impact=null;
   const mp0=moonPos(tShift); moon.push(mp0);
-  const corot=(x,y,tt)=>{ const a=-wMoon*(tt+tShift); return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; };
+  // burn marks are recorded in the MISSION's display frame: sidereal for GEO, Earth–Moon for lunar
+  const corot=(x,y,tt)=>{ if(target==='geo') return toCorotGeo(x,y,tt+tShift);
+    const a=-wMoon*(tt+tShift); return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; };
   for(let k=0; t<tMax; k++){
     // fire any burns whose time we've reached, recording where (co-rotating) each burn happens
     while(bi<burns.length && t>=burns[bi].t-1e-6){ burnMarks.push({t, xy:corot(s[0],s[1],t), b:burns[bi]});
@@ -97,9 +99,30 @@ function simulate(plan, opts){ opts=opts||{};
 }
 // co-rotating transform exposed for callers (planner + cockpit share it)
 function toCorot(x,y,t){ const a=-wMoon*t; return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; }
+/* ---- the GEO frame (sidereal rate) ----------------------------------------------------------
+   The GEO belt must rotate at the SIDEREAL-DAY rate (86,164 s) — that's what defines the 42,164 km
+   radius, it's the rate the cockpit already spins the Earth texture at, and it's the natural
+   orbital rate there, so a correctly-flown circular orbit holds station over the belt. (It was
+   drawn at wMoon — a 27.3-day belt, ~640× too slow — so even a perfect GEO orbit lapped the
+   "stationary" satellites once a day.) The frame is ANCHORED so the reference Hohmann arrival
+   (burn 1 at PRE_COAST from LEO phase 0 → apogee at inertial 180°, half a transfer later) lands
+   exactly on the target slot (+x). Callers pass SHIFTED time (t + tShift); with the geo mission's
+   fixed 124° lead, the arrival's shifted time is T_HOHMANN + lead/wMoon (PRE_COAST cancels). */
+const T_SIDEREAL=86164.0905, W_GEO=2*Math.PI/T_SIDEREAL;
+const T_HOHMANN=Math.PI*Math.sqrt(Math.pow((R_E+400+42164)/2,3)/MU_E);   // ≈ 19,050 s
+const GEO_ANCHOR=T_HOHMANN + (124*Math.PI/180)/wMoon;
+/* The target is parked GEO_OFFSET AHEAD (prograde) of the reference arrival point — injecting
+   dead-on would put the sat at your own position (invisible out the window, and rendezvous
+   already done). 8° ≈ 5,900 km along the belt: the red bead hangs in the front window after the
+   circularize burn, the 2°/4°/6° ILS gates form a real approach corridor, and the pilot flies
+   the last leg by PHASING — ease slightly below belt altitude to drift forward, then re-circularize
+   at the target. */
+const GEO_OFFSET=8*Math.PI/180;
+function geoFrameAngle(t){ return Math.PI + GEO_OFFSET + W_GEO*(t-GEO_ANCHOR); }   // target slot's inertial angle
+function toCorotGeo(x,y,t){ const a=-geoFrameAngle(t); return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; }
 // Convert a two-step plan {target,dv1,dv2,leadDeg} into a full sim plan (both planner & cockpit use this)
-const PLAN_TARGETS={ geo:{ra:42164, day1:0.0, day2:0.221, budget:4800},
-                     moon:{ra:D_EM, day1:0.0, day2:4.18, budget:7500} };
+const PLAN_TARGETS={ geo:{ra:42164, day1:0.0, day2:0.221, budget:6500},
+                     moon:{ra:D_EM, day1:0.0, day2:4.18, budget:9500} };
 /* PRE_COAST: every mission now starts with ONE full lap of the LEO parking orbit before burn 1,
    so the pilot gets a real run-up (countdown, orientation) instead of "BURN NOW" at T+0. The
    Moon's starting phase is compensated by −wMoon·PRE_COAST, so after exactly one period the craft
@@ -117,7 +140,7 @@ function planToSim(p){ const T=PLAN_TARGETS[p.target||'moon'];
    Matches the planner's "solve it for me" values. Total 3,987 m/s. Final circular trim is flown
    by hand in the cockpit. */
 const SOLUTION={   // the Moon mission (kept as SOLUTION for back-compat)
-  alt:400, leoPhase:0, moonLeadDeg:120, budget:7500,   // m/s
+  alt:400, leoPhase:0, moonLeadDeg:120, budget:9500,   // m/s
   burns:[
     { name:'Trans-Lunar Injection', dir:'FORE',  dvMS:3087, atDay:0.0  },   // prograde departure
     { name:'Lunar-Orbit Insertion', dir:'AFT',   dvMS:900,  atDay:4.18 },   // retrograde brake at closest approach
@@ -131,7 +154,7 @@ const MISSIONS={
     key:'geo', title:'Service a GEO satellite', icon:'🛰',
     objective:'A communications satellite in geostationary orbit needs servicing. You begin in a 400 km low-Earth parking orbit.',
     task:'Plan and fly a transfer up to a <b>circular GEO orbit</b> (42,164 km radius) and <b>rendezvous</b> with the target satellite — arrive at the right altitude, moving at the right speed, close to it.',
-    target:'geo', budget:4800, moonLeadDeg:124,   // ~940 m/s of margin over the 3,860 plan (a ~25% reserve) — room for trims + station-keeping
+    target:'geo', budget:6500, moonLeadDeg:124,   // ~2,640 m/s of margin over the 3,860 plan (~68% reserve) — the plan is only the first half: the PHASING leg to the target sat, gate-threading and station-keeping are all flown by hand afterwards
     targetSat:{ raDeg:0 },          // the sat sits at a fixed GEO longitude (co-rotating +x)
     burns:[ {name:'Raise apogee to GEO', dir:'FORE', dvMS:2399, atDay:0.00},
             {name:'Circularize at GEO',  dir:'FORE', dvMS:1457, atDay:0.221} ] },
@@ -139,7 +162,7 @@ const MISSIONS={
     key:'moon', title:'Fly me to the Moon', icon:'🌙',
     objective:'Deliver a spacecraft from Earth to a parking orbit around the Moon. You begin in a 400 km low-Earth parking orbit.',
     task:'Plan and fly a transfer that <b>leads the Moon</b>, then insert into a <b>circular orbit around the Moon</b> near your target altitude. Scored on how circular your final orbit is and how close to the target altitude.',
-    target:'moon', budget:7500, moonLeadDeg:124, targetLunarAltKm:3000,   // ~3,510 m/s of margin over the 3,987 plan (an ~88% reserve — hand-flying LOI + the lunar circularize is meant to be forgiving)
+    target:'moon', budget:9500, moonLeadDeg:124, targetLunarAltKm:3000,   // ~5,510 m/s of margin over the 3,987 plan (~138% reserve — three hand-flown burns, LOI + the vector circularize, is meant to be forgiving)
     burns:SOLUTION.burns.slice() },
 };
 
@@ -151,8 +174,8 @@ function scoreFlight(missionKey, st, t){
   if(missionKey==='geo'){
     const re=Math.hypot(st[0],st[1]), v=Math.hypot(st[2],st[3]), vc=Math.sqrt(MU_E/re);
     const altErr=Math.abs(re-42164), circErr=Math.abs(v-vc)/vc;
-    // angular separation from the target GEO longitude (co-rotating): sat is fixed at +x in co-rot frame
-    const cr=toCorot(st[0],st[1],t); const angSep=Math.abs(Math.atan2(cr[1],cr[0]))*180/Math.PI;
+    // angular separation from the target GEO longitude: the sat is fixed at +x of the SIDEREAL frame
+    const cr=toCorotGeo(st[0],st[1],t); const angSep=Math.abs(Math.atan2(cr[1],cr[0]))*180/Math.PI;
     const sAlt=Math.max(0,100-altErr/50), sCirc=Math.max(0,100-circErr*400), sAng=Math.max(0,100-angSep*2);
     pct=Math.round(0.4*sAlt+0.3*sCirc+0.3*sAng);
     lines.push('Altitude error: '+Math.round(altErr)+' km', 'Circular-ness: '+(circErr*100).toFixed(1)+'% off', 'Angular sep from target sat: '+angSep.toFixed(1)+'°');
@@ -168,5 +191,6 @@ function scoreFlight(missionKey, st, t){
   return { pct:Math.max(0,Math.min(100,pct)), grade, lines };
 }
 g.FLIGHT7={ MU_E,MU_M,D_EM,R_E,R_M,T_MOON,wMoon, moonPos,moonVel,accel,step,applyBurn,leoState,simulate,
-  sunAngleInertial,sunDirInertial,sunAngleCorot,toCorot, planToSim, PLAN_TARGETS, PRE_COAST, SOLUTION, MISSIONS, scoreFlight };
+  sunAngleInertial,sunDirInertial,sunAngleCorot,toCorot, W_GEO, geoFrameAngle, toCorotGeo,
+  planToSim, PLAN_TARGETS, PRE_COAST, SOLUTION, MISSIONS, scoreFlight };
 })(typeof window!=='undefined'?window:globalThis);

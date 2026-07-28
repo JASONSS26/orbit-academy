@@ -2,6 +2,76 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## Unreleased — 2026-07-23 (Module 8: target visibility, standoff, budgets)
+- **"I never saw the target satellite" — found two bugs; the offset sign was NOT one of them**
+  (verified by replicating the window's pinhole camera headlessly: +8° projects on-screen at
+  u=0.50/v=0.22, −8° falls behind the camera, so the sign was right).
+  1. *The camera was pointed 13.5° below the one thing you're chasing.* The nadir pitch that makes
+     the ground stream by puts a co-altitude belt target at the very top edge of the ±16.5° vertical
+     FOV — and any phasing dip below the belt pushed it clean off the top (measured off-screen for
+     every standoff under ~4° at a 150 km dip; the target was off-screen or behind for ~85% of the
+     approach). GEO final approach now eases the boresight off nadir and onto the TARGET (ramping
+     in from 20,000 km, full by 1,500 km, only while it's ahead, smoothed so the view never snaps).
+  2. *The autopilot parked ON the target.* Converging to zero separation put the sat at/behind the
+     camera, oscillating in and out of view. It now holds a **1.5° (~1,100 km) standoff BEHIND** the
+     target — framed dead ahead, and how you actually hold alongside a satellite you're servicing.
+  Also: a **TARGET reticle** (cyan corner brackets + live range) so the rendezvous is never again a
+  ~10 px red dot lost among identical belt beads; an explicit "TARGET IS BEHIND YOU — raise your
+  orbit to drift back" banner instead of silently hiding it; and `geoCloseness` (which sizes the
+  rendered bus) rebuilt on true RANGE — it was drawing the satellite at 70% of the window height
+  from 5,900 km away. Verified: target on-screen **100%** of the approach, rendezvous hold complete
+  T+1.71 d, gates threaded 902/928/395 km, score A (98).
+- **Endgame tightened:** the autopilot circularizes only within 60 km of belt radius (was 250 —
+  which left the sma up to 250 km off, a ~2.7°/day residual drift that slid the craft out of the
+  hold box every lap) and trims to a 8/3 m/s deadband at GEO; residual eccentricity fell 0.006 →
+  0.00036. Rendezvous gate widened 2.5° → 3.5° to leave room around the standoff for the ±2e
+  separation ripple.
+- **Fuel + endurance raised** (owner request): GEO budget **4,800 → 6,500 m/s**, lunar
+  **7,500 → 9,500** — the planned burns are only ~60% of the job now that phasing, gate-threading
+  and station-keeping are all hand-flown. Out-of-fuel doom waits **3 orbits (up to 3 days)** instead
+  of one (a dry tank near the belt can still drift onto the target) and holds its banner 9 s instead
+  of 4; missed-burn re-cues raised 6 → 12. All figures reconciled: `flight8.js` (MISSIONS +
+  PLAN_TARGETS), planner budget label, cockpit tour, worksheet 8 (logbook SVG, budget prose,
+  margin arithmetic, quizzes, summary), instructor guide.
+
+## Unreleased — 2026-07-23 (Module 8: GEO belt angular rate)
+Client-only (`tut8.html` + `flight8.js`).
+
+- **The GEO belt now rotates at the SIDEREAL rate — the belt is genuinely stationary for a
+  correct GEO orbit** (owner caught it: "even at the right apogee the belt satellites are never
+  stationary"). The belt/target were drawn at fixed longitudes of the Earth–Moon co-rotating
+  frame, i.e. a 27.3-day belt — ~640× too slow — so even a perfectly-flown 86,164 s orbit lapped
+  the "geostationary" satellites once a day. The GEO mission now has its own co-rotating frame at
+  the sidereal-day rate (matching the Earth-texture spin and the natural rate at 42,164 km, per
+  the Module-1 "GEO is genuinely geostationary" principle), anchored so the reference Hohmann
+  arrival lands on the target slot. Everything GEO rides that frame: window belt/target/gates,
+  NAV maps, planned ghost, actual trail, ILS localizer, collision + proximity checks, planner
+  prediction, and scoring. Verified: reference arrival −0.08° from target; a circular GEO orbit
+  drifts only 0.69°/2 d in-frame (real lunar perturbation); reference flight scores A (98),
+  angular sep 1.8°. Consequence made explicit in comments: there is no free "drift to the target"
+  anymore — off-radius errors drift you along the belt (the real GEO phasing effect), and the
+  confirmation-orbit CAPCOM line now points out the belt holding still with you.
+- **Target injection offset (owner follow-up: "we lost the target satellite"):** anchoring the
+  arrival dead-on the slot put the sat at the craft's own position — invisible out the window
+  (and rendezvous pre-solved). The target now parks **8° AHEAD** of the reference arrival
+  (~5,900 km): verified in-frame at injection the red bead sits 3.3° off the velocity vector —
+  centered in the front window — the 6°/4°/2° ILS gates form a real approach corridor, and the
+  final leg is flown by PHASING (dip below belt altitude to drift forward, re-circularize at the
+  target; CAPCOM coaches it once on arrival).
+- **The phasing leg is now the mission's final act — and the ILS gates finally earn their keep**
+  (owner: "those gates have never been visible or useful"). Success requires a real RENDEZVOUS:
+  circular at GEO AND within 2.5° of the target, held one full orbit (worksheet 8 reconciled).
+  Gate hoops grew 150 → 1,300 km — sized to the honest phasing corridor (a ~15 m/s along-track
+  burn rides an ellipse dipping 0–800 km below the belt) and actually visible from thousands of
+  km. AUTO FLY learned the maneuver: a mean-longitude controller (osculating angle minus the
+  2e·sin ν equation-of-centre wobble — a raw-angle deadband flip-flops and pumps eccentricity,
+  found in headless testing) retunes the sma ~400 km low, rides the ~5°/day drift with 3°/0.9°
+  hysteresis, re-tunes at hand-over, and circularizes only at the belt-radius crossing. Verified
+  end-to-end: rendezvous hold complete T+2.36 d, final sep 0.24°, gates threaded at 902/927/395 km,
+  phasing+trim 82 m/s, total 3,935/4,800, score A (98). The warp ladder plays the ~1.4-day drift
+  at 2600× (~45 s), and a dedicated CAPCOM call teaches the manual version (~15 m/s REVERSE →
+  drift → ~15 m/s FORWARD + trim).
+
 ## Unreleased — 2026-07-23 (Module 6 camera + gravity landscape)
 Client-only (`tut6.html`); fold into the next versioned release (doc reconciliation + security
 audit then, per the release workflow).

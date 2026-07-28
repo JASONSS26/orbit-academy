@@ -22,11 +22,11 @@ const WORKSHEET = {
     { analogy:'Think of it as two payments. Payment 1 buys the <b>climb</b> (raise apogee to GEO). Payment 2 buys the <b>circle</b> (match GEO’s speed once you arrive). Your logbook adds them up — and the total must fit your tank.' },
     'Here are the numbers you will confirm in the tool. In LEO you circle at <b>7.67 km/s</b>. To raise apogee to GEO you burn up to <b>10.07 km/s</b> — a Δv of about <b>2,400 m/s</b>. You then coast out to GEO, slowing to just <b>1.62 km/s</b> at apogee. GEO’s circular speed is <b>3.08 km/s</b>, so to circularize you must add about <b>1,460 m/s</b>. Total: roughly <b>3,860 m/s</b>.',
     { h:'Keep a Δv logbook (fill this in as you plan)' },
-    { figure:'<svg viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" style="max-width:520px"><style>text{font-family:monospace;font-size:13px;fill:#0a1a2e}</style><rect width="520" height="200" fill="#f4f7fb" stroke="#c6ccd4"/><line x1="0" y1="34" x2="520" y2="34" stroke="#1a4c8b" stroke-width="2"/><line x1="300" y1="0" x2="300" y2="200" stroke="#c6ccd4"/><line x1="410" y1="0" x2="410" y2="200" stroke="#c6ccd4"/><text x="12" y="23" font-weight="bold">Maneuver</text><text x="312" y="23" font-weight="bold">Δv (m/s)</text><text x="420" y="23" font-weight="bold">Running total</text><text x="12" y="60">1 · Raise apogee to GEO</text><text x="330" y="60">______</text><text x="440" y="60">______</text><text x="12" y="96">2 · Circularize at GEO</text><text x="330" y="96">______</text><text x="440" y="96">______</text><text x="12" y="140" font-weight="bold">MISSION TOTAL</text><text x="330" y="140">______</text><text x="12" y="176" fill="#5a6270">Budget: 4,800 m/s — did you stay under?</text></svg>', caption:'Your Δv logbook. Fill in each burn’s Δv from the planner, keep a running total, and check it against the 4,800 m/s budget. (Print this sheet, or jot it on paper.)'},
+    { figure:'<svg viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" style="max-width:520px"><style>text{font-family:monospace;font-size:13px;fill:#0a1a2e}</style><rect width="520" height="200" fill="#f4f7fb" stroke="#c6ccd4"/><line x1="0" y1="34" x2="520" y2="34" stroke="#1a4c8b" stroke-width="2"/><line x1="300" y1="0" x2="300" y2="200" stroke="#c6ccd4"/><line x1="410" y1="0" x2="410" y2="200" stroke="#c6ccd4"/><text x="12" y="23" font-weight="bold">Maneuver</text><text x="312" y="23" font-weight="bold">Δv (m/s)</text><text x="420" y="23" font-weight="bold">Running total</text><text x="12" y="60">1 · Raise apogee to GEO</text><text x="330" y="60">______</text><text x="440" y="60">______</text><text x="12" y="96">2 · Circularize at GEO</text><text x="330" y="96">______</text><text x="440" y="96">______</text><text x="12" y="140" font-weight="bold">MISSION TOTAL</text><text x="330" y="140">______</text><text x="12" y="176" fill="#5a6270">Budget: 6,500 m/s — did you stay under?</text></svg>', caption:'Your Δv logbook. Fill in each burn’s Δv from the planner, keep a running total, and check it against the 6,500 m/s budget. (Print this sheet, or jot it on paper.)'},
     'When your plan reaches GEO within budget, <b>load it into the cockpit and fly it</b>: at each burn the <b>🔴 BURN NOW</b> light flashes — hold the thruster until the "this burn Δv" readout hits your planned value, then release. The <b>ILS-style</b> panel shows if you are on-track (localizer) and on-speed (green dial) or need a forward/reverse trim.',
     { h:'Mission 2 — Fly me to the Moon (unlocks after your GEO run)' },
     'The graduation flight. Two things make it harder than GEO. First, <b>the target moves</b>: the Moon covers ~13° of its orbit per day, and your coast out takes ~4 days — so you launch when the Moon is about <b>120° of lead</b> ahead of where you’ll cross its path, like a duck hunter firing ahead of the duck. Second, you must aim your apogee just <b>past</b> the Moon (~395,000 km, beyond its 384,400 km distance) — a dead-center aim smacks straight into it.',
-    'The burns also change character. <b>Trans-Lunar Injection (TLI)</b> is a big prograde burn (~<b>3,090 m/s</b>) out of LEO — like burn 1 at GEO, just harder. But the arrival burn, <b>Lunar-Orbit Insertion (LOI)</b>, points <b>in REVERSE</b> (~<b>900 m/s</b>): you sweep past the Moon too fast to be held, so you <b>brake</b> at closest approach and let its gravity capture you. Brake too little and it slings you right past; too much and you drop onto the surface. Budget: <b>7,500 m/s</b>.',
+    'The burns also change character. <b>Trans-Lunar Injection (TLI)</b> is a big prograde burn (~<b>3,090 m/s</b>) out of LEO — like burn 1 at GEO, just harder. But the arrival burn, <b>Lunar-Orbit Insertion (LOI)</b>, points <b>in REVERSE</b> (~<b>900 m/s</b>): you sweep past the Moon too fast to be held, so you <b>brake</b> at closest approach and let its gravity capture you. Brake too little and it slings you right past; too much and you drop onto the surface. Budget: <b>9,500 m/s</b>.',
   ],
 
   parts: [
@@ -45,7 +45,7 @@ const WORKSHEET = {
       ],
       predict:'Before any numbers: do you think it costs MORE Δv to (a) raise your orbit’s far side up to GEO, or (b) circularize once you get there? Or about the same?',
       do:'Open the <b>🛠 Service a GEO satellite</b> mission in the planner (press 🗺 PLAN in the tool). Read the mission objective and your Δv budget.',
-      observe:'the mission has a fixed Δv budget (4,800 m/s), and the plan will be rejected if your two burns add up to more than that. Δv is a hard currency, not an afterthought.',
+      observe:'the mission has a fixed Δv budget (6,500 m/s), and the plan will be rejected if your two burns add up to more than that. Δv is a hard currency, not an afterthought.',
       think:[
         'Why does a finite Δv budget make planning a mission a real constraint, not a formality?',
         'What happens to a mission that runs out of Δv partway through?',
@@ -63,7 +63,7 @@ const WORKSHEET = {
         'You will fill in the actual numbers in Part B as you plan each burn. For now, set up the table (in the tutorial above, or on paper) and note the budget you must stay under.',
       ],
       predict:'How many burns do you expect a LEO→GEO transfer to take? Jot your guess and the reason.',
-      do:'Copy the Δv logbook table from the tutorial (or print this worksheet). Label two rows — "raise apogee to GEO" and "circularize at GEO" — plus a MISSION TOTAL row, and write the budget (4,800 m/s) at the bottom.',
+      do:'Copy the Δv logbook table from the tutorial (or print this worksheet). Label two rows — "raise apogee to GEO" and "circularize at GEO" — plus a MISSION TOTAL row, and write the budget (6,500 m/s) at the bottom.',
       observe:'a LEO→GEO transfer is a two-burn maneuver, so your logbook needs two entries and a total. Everything you plan next fills this in.',
       think:[
         'Why exactly two burns for this transfer (what does each one accomplish)?',
@@ -101,8 +101,8 @@ const WORKSHEET = {
         'The Δv is the difference: 3.08 − 1.62 ≈ <b>1.46 km/s = 1,460 m/s</b>. That is a big second payment — and it surprises people, because you are "already there." The reason: arriving slow means a large speed gap to close.',
       ],
       predict:'You arrive at GEO going 1.62 km/s but need 3.08 km/s to circularize. Predict the Δv — and whether burn 2 is bigger or smaller than you’d guess.',
-      do:'In the planner’s <b>STEP 2</b>, dial "Your Δv₂" with the ▲/▼ digit steppers until "your new speed" matches the circular speed shown (~3.08 km/s). Notice the <b>suggested Δv₂</b> line and the gold <b>apogee ◎</b> on the map recompute every time you change Δv₁ — your arrival speed depends on the transfer you actually built. Record the Δv in logbook row 2, then write the MISSION TOTAL and compare to the 4,800 m/s budget.',
-      observe:'circularizing costs ~1,460 m/s — nearly as much as the raise burn — because you arrive at apogee moving slowly and must close a big speed gap. Total ≈ 3,860 m/s, just under the 4,800 m/s budget.',
+      do:'In the planner’s <b>STEP 2</b>, dial "Your Δv₂" with the ▲/▼ digit steppers until "your new speed" matches the circular speed shown (~3.08 km/s). Notice the <b>suggested Δv₂</b> line and the gold <b>apogee ◎</b> on the map recompute every time you change Δv₁ — your arrival speed depends on the transfer you actually built. Record the Δv in logbook row 2, then write the MISSION TOTAL and compare to the 6,500 m/s budget.',
+      observe:'circularizing costs ~1,460 m/s — nearly as much as the raise burn — because you arrive at apogee moving slowly and must close a big speed gap. Total ≈ 3,860 m/s — comfortably under the 6,500 m/s budget, which it must be: the planned burns only get you to the belt, and the phasing leg to the target is still to come.',
       think:[
         'Why is the circularize burn so large, even though you’re "already at GEO"?',
         'What is your two-burn total, and how much margin does it leave against the budget?',
@@ -115,18 +115,18 @@ const WORKSHEET = {
 
     { id:'b3', title:'Total the logbook & check the budget',
       teach:[
-        'Now add your two entries. Burn 1 (~2,400 m/s) + burn 2 (~1,460 m/s) ≈ <b>3,860 m/s</b>. Your budget is <b>4,800 m/s</b>, so you have ~940 m/s of margin (a ~25% reserve) — enough to fly the plan and still have propellant for trim burns, threading the approach gates, and station-keeping at the end.',
-        'This is the payoff of the logbook: <b>before</b> lighting the engine you know the mission is affordable. If your total had come out over 4,800, you’d need a cheaper plan (or accept the mission is impossible with this tank).',
+        'Now add your two entries. Burn 1 (~2,400 m/s) + burn 2 (~1,460 m/s) ≈ <b>3,860 m/s</b>. Your budget is <b>6,500 m/s</b>, so you have ~2,640 m/s of margin (a ~68% reserve) — and you will use a good slice of it: after circularizing you still have to <b>phase</b> ~8° along the belt to the target satellite, thread the approach gates, and hold station.',
+        'This is the payoff of the logbook: <b>before</b> lighting the engine you know the mission is affordable. If your total had come out over 6,500, you’d need a cheaper plan (or accept the mission is impossible with this tank).',
       ],
-      predict:'Add your two logged burns. Do you come in under the 4,800 m/s budget? By how much?',
-      do:'Sum your logbook. In the planner, confirm "total Δv" reads about 3,860 / 4,800 m/s and the verdict says the plan is on target. Use <b>✨ solve it for me</b> to check your numbers if needed.',
-      observe:'the two burns total ~3,860 m/s, just inside the 4,800 m/s budget — so the plan is flyable. The logbook told you this before you ever fired the engine.',
+      predict:'Add your two logged burns. Do you come in under the 6,500 m/s budget? By how much?',
+      do:'Sum your logbook. In the planner, confirm "total Δv" reads about 3,860 / 6,500 m/s and the verdict says the plan is on target. Use <b>✨ solve it for me</b> to check your numbers if needed.',
+      observe:'the two burns total ~3,860 m/s, well inside the 6,500 m/s budget — so the plan is flyable with reserve for the phasing leg. The logbook told you this before you ever fired the engine.',
       think:[
         'How much Δv margin do you have, and why is having some slack a good idea?',
         'What could you do if your plan came out OVER budget?',
         'Why is it striking that reaching GEO costs nearly 3,900 m/s — more than the speed of a rifle bullet, spent as orbit changes?',
       ],
-      quiz:{ q:'Your logbook totals ~3,860 m/s against a 4,800 m/s budget. What does that tell you?',
+      quiz:{ q:'Your logbook totals ~3,860 m/s against a 6,500 m/s budget. What does that tell you?',
         opts:['The mission is impossible','The mission is affordable, with ~940 m/s of margin to spare',
               'You need a third burn','You have twice the Δv you need'],
         a:1, why:'Correct — under budget with ~940 m/s to spare, so the plan is flyable with a real reserve for trims and the final approach.',
@@ -142,8 +142,8 @@ const WORKSHEET = {
         'The burn order itself is <b>live guidance</b>: inside each burn window the cue and the meter’s target show what <b>your current orbit</b> needs — pulse and release, and the target re-computes to the <b>remaining residual</b>; deviate en route and it adjusts; arrive already on the numbers and CAPCOM <b>skips the burn entirely</b>. A burn counts as complete when the residual is near zero — not when some fraction of the original plan has been flown. The throttle is <b>closed-loop</b> during an ordered burn: it runs fast while thousands of m/s remain and automatically tapers as you approach the target, so even the big TLI is quick to fly and easy to end on the number.',
       ],
       predict:'When BURN NOW flashes for burn 1, which thruster do you hold, and to what Δv value?',
-      do:'Fly the mission. At the first BURN NOW, hold <b>FORWARD</b> until the this-burn Δv reaches ~2,400 m/s; release. Coast to apogee; at the second BURN NOW, hold <b>FORWARD</b> to ~1,460 m/s. Compare what you actually spent to your logbook.',
-      observe:'holding FORWARD to the logged Δv at each cue executes the plan; the total you actually spend should match your logbook (± a little). Over- or under-burning shows up immediately on the nav track. Success = holding the target box for a full orbit, close to the red target sat — not just touching GEO.',
+      do:'Fly the mission. At the first BURN NOW, hold <b>FORWARD</b> until the this-burn Δv reaches ~2,400 m/s; release. Coast to apogee; at the second BURN NOW, hold <b>FORWARD</b> to ~1,460 m/s. You inject ~8° BEHIND the target (the red bead ahead out the window) — now <b>phase in</b>: ~15 m/s REVERSE drops you a few hundred km below the belt, you drift forward ~5°/day (the belt slides past because your period is now shorter), thread the ILS gates, then ~15 m/s FORWARD + trim to park AT the target. Compare what you actually spent to your logbook.',
+      observe:'holding FORWARD to the logged Δv at each cue executes the plan; the total you actually spend should match your logbook (± a little). Over- or under-burning shows up immediately on the nav track. Success = a real RENDEZVOUS: circular at GEO within ~2.5° of the red target sat, held for a full orbit — the phasing leg is part of the mission, exactly how real GEO operators reposition satellites.',
       think:[
         'Why is precise release timing important — what does over-burning burn 1 do to your apogee?',
         'How closely did your actual Δv match your planned logbook values?',
@@ -200,12 +200,12 @@ const WORKSHEET = {
         'The planner grades this plan with the full three-body simulation (no simple formula exists once the Moon’s gravity dominates): the verdict turns green only when the predicted path is <b>captured</b>. Too little brake and you slingshot past; too much and you drop onto the surface.',
       ],
       predict:'At GEO, burn 2 was FORWARD (speed up to stay). At the Moon it’s REVERSE. What’s different about arriving at a massive moving body that makes the burn flip direction?',
-      do:'Dial <b>Δv₂</b> to ~900 m/s (the planner flies it REVERSE automatically), then press <b>▶ GO — run sim</b> and watch the prediction. Nudge Δv₁ (±1–2 m/s), the lead angle, and Δv₂ until the verdict reads <b>✔ LUNAR CAPTURE predicted</b>. Log Δv₂ and your total against the 7,500 m/s budget. Stuck? <b>✨ solve it for me</b> works on this mission too — it loads the verified reference plan (3,087 / 900 / 120° lead); study <i>why</i> those numbers work before you fly them.',
+      do:'Dial <b>Δv₂</b> to ~900 m/s (the planner flies it REVERSE automatically), then press <b>▶ GO — run sim</b> and watch the prediction. Nudge Δv₁ (±1–2 m/s), the lead angle, and Δv₂ until the verdict reads <b>✔ LUNAR CAPTURE predicted</b>. Log Δv₂ and your total against the 9,500 m/s budget. Stuck? <b>✨ solve it for me</b> works on this mission too — it loads the verified reference plan (3,087 / 900 / 120° lead); study <i>why</i> those numbers work before you fly them.',
       observe:'capture is a knife-edge three-body outcome: small changes in Δv₁ or lead angle move your closest approach by thousands of km, and the brake has a working band — roughly 700–1,000 m/s — between slingshot and surface impact.',
       think:[
         'Why is there no clean vis-viva formula for LOI the way there was for circularizing at GEO?',
         'What does the "closest Moon" number in the prediction tell you about your aim?',
-        'Where did your total land against 7,500 m/s, and how much margin is left for trims?',
+        'Where did your total land against 9,500 m/s, and how much margin is left for trims?',
       ],
       quiz:{ q:'Why does Lunar-Orbit Insertion (LOI) point in REVERSE, when circularizing at GEO pointed FORWARD?',
         opts:['At GEO you arrive too slow for a circle and must speed up; at the Moon you arrive too fast relative to it to be captured and must brake',
@@ -238,10 +238,10 @@ const WORKSHEET = {
   summary: [
     'Your mission was to <b>service a GEO satellite</b>, starting from LEO — planned, then flown from the cockpit.',
     '<b>Delta-v (Δv)</b> is the finite currency of spaceflight. A <b>Δv logbook</b> — each burn’s cost and a running total — tells you before you fly whether a mission fits the tank.',
-    'A LEO→GEO transfer is a <b>two-burn</b> maneuver: burn 1 raises apogee to GEO (~<b>2,400 m/s</b>); burn 2 circularizes at GEO (~<b>1,460 m/s</b>). The in-between ellipse is the <b>GTO</b> — the standard transfer orbit real launches release GEO satellites into. Total ≈ <b>3,860 m/s</b>, inside a 4,800 m/s budget.',
+    'A LEO→GEO transfer is a <b>two-burn</b> maneuver: burn 1 raises apogee to GEO (~<b>2,400 m/s</b>); burn 2 circularizes at GEO (~<b>1,460 m/s</b>). The in-between ellipse is the <b>GTO</b> — the standard transfer orbit real launches release GEO satellites into. Total ≈ <b>3,860 m/s</b>, inside a 6,500 m/s budget (the balance pays for the phasing leg to the target sat).',
     'Circularizing costs a lot because you arrive at apogee moving slowly (1.6 km/s) and must speed up to GEO’s 3.1 km/s.',
     'You <b>fly the plan</b> by holding the right thruster to each logged Δv at the <b>BURN NOW</b> cue, using the <b>ILS-style</b> localizer (on-track?) and speed dial (on-speed?) to stay on the planned trajectory. Winning means <b>holding the target box for a full orbit</b>, near the target satellite — not just touching it. On final approach, thread the <b>ILS gates</b>, watch the live "orbit now" peri/apo readout to time trims — and never close within <b>100 m</b> of the target with relative motion: that’s a collision.',
-    'The lunar graduation flight re-aims the same skills at a <b>moving</b> target: <b>lead the Moon</b> (~120°), aim your apogee just <b>past</b> it (~395,000 km — dead-center is a collision), burn <b>TLI</b> (~3,090 m/s prograde), coast ~4 days, then <b>LOI</b> — a ~900 m/s <b>REVERSE brake</b> at closest approach so the Moon’s gravity can capture you. Budget 7,500 m/s.',
+    'The lunar graduation flight re-aims the same skills at a <b>moving</b> target: <b>lead the Moon</b> (~120°), aim your apogee just <b>past</b> it (~395,000 km — dead-center is a collision), burn <b>TLI</b> (~3,090 m/s prograde), coast ~4 days, then <b>LOI</b> — a ~900 m/s <b>REVERSE brake</b> at closest approach so the Moon’s gravity can capture you. Budget 9,500 m/s.',
   ],
 
   resources: [

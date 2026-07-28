@@ -551,11 +551,11 @@ Everything from Modules 1–6 gets used in anger.
 - Students can build a Δv logbook — each burn's cost and a running total — and judge before flying
   whether a mission fits the tank.
 - Students can plan the LEO→GEO transfer: raise apogee (~2,400 m/s), then circularize
-  (~1,460 m/s), ≈ 3,860 m/s total against the 4,800 m/s budget — and explain why circularizing
+  (~1,460 m/s), ≈ 3,860 m/s total against the 6,500 m/s budget — and explain why circularizing
   costs so much (you arrive at apogee moving slowly and must speed up to GEO's 3.1 km/s).
 - Students can plan the lunar leg: lead the Moon ~120°, aim apogee just *past* it, TLI ~3,090 m/s,
   a ~4-day coast, then LOI — a ~900 m/s retrograde brake at closest approach — inside a
-  7,500 m/s budget.
+  9,500 m/s budget.
 - Students can fly the plan on cue: hold thrust to the logged Δv at BURN NOW, stay on the
   ILS-style track and speed indicators, and hold the target orbit for a full revolution.
 
@@ -564,7 +564,8 @@ Everything from Modules 1–6 gets used in anger.
 - *Hook* — today you stop studying orbits and fly one. Your fuel gauge is the exam.
 - *Beats* — (1) Plan before you fly: vis-viva gives each burn's Δv; the logbook's running total
   decides go/no-go. (2) The warm-up mission: service a GEO satellite — 2,400 + 1,460 ≈ 3,860 m/s
-  against a 4,800 m/s tank, so sloppy hand-flying eats the whole margin. (3) The graduation flight
+  against a 6,500 m/s tank — and the plan is only half the job: the balance pays for *phasing*
+  ~8° along the belt to the target satellite, so sloppy hand-flying eats the margin. (3) The graduation flight
   (unlocked only by a successful GEO run): the Moon *moves* while you coast ~4 days, so you lead
   it ~120° and aim just past it — TLI ~3,090 m/s. (4) The counter-intuitive finale: at closest
   approach you turn around and brake (~900 m/s LOI) so the Moon's gravity can keep you — and the

@@ -320,7 +320,7 @@
         <button onclick="solvePlan()" class="solve">✨ solve it for me</button>
         <button onclick="runSim()" id="runSimBtn" class="runsim">▶ GO — run sim</button>
       </div>
-      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">4800</span> m/s</span></div>
+      <div class="kv"><span>total Δv</span><span><b id="planTotal">0</b> / <span id="planBudget">6500</span> m/s</span></div>
       <div class="kv" id="leadRow"><span>Moon lead angle at start</span><span><input id="leadDeg" type="range" min="90" max="150" value="124"> <b id="leadDegV">124</b>°</span></div>
       <div id="planVerdict" class="verdict"></div>
       <button id="loadBtn" onclick="loadIntoCockpit()" class="load">✈ load into cockpit &amp; fly →</button>
@@ -386,6 +386,12 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
          receding to vanishing points, edge-on, exactly as it must from within the ring.
      One camera, one projection — physical in LEO, on transfer, and at GEO circularization alike. */
   const HFOV=1.45, PITCH=0.235;                    // 83° horizontal FOV; boresight pitched ~13.5° below velocity
+  /* RENDEZVOUS AIM. The 13.5° nadir pitch is right for watching the ground stream by, but it puts a
+     co-altitude GEO target 13.5° ABOVE the boresight — at the very top edge of a ±16.5° vertical
+     FOV — and any phasing dip below the belt pushed it clean off the top (measured: off-screen for
+     every standoff under ~4° at a 150 km dip). So on GEO final approach the camera eases from the
+     nadir pitch onto the TARGET, the way a pilot looks where they're going. Weight ramps in from
+     20,000 km, is fully on by 1,500 km, and only engages while the target is actually ahead. */
   // fs and all body positions are INERTIAL, so the sun direction that lights Earth must be inertial too.
   // The SAME direction lights the GEO satellite → its glint and Earth's terminator always agree.
   const sunA=(flying? F7.sunAngleInertial(fsT+tShiftSec()) : 0);   // one sun dir → Earth terminator AND sat glint
@@ -399,6 +405,18 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
   // Boresight F = velocity tilted toward nadir by PITCH (kept in the orbital plane, z=0).
   let F=[Math.cos(PITCH)*vhat[0]+Math.sin(PITCH)*nad[0], Math.cos(PITCH)*vhat[1]+Math.sin(PITCH)*nad[1], 0];
   { const m=Math.hypot(F[0],F[1])||1; F=[F[0]/m,F[1]/m,0]; }
+  // ...then blend toward the target on GEO final approach (see RENDEZVOUS AIM above)
+  if(planTarget==='geo' && flying && fs){
+    const thT=F7.geoFrameAngle(fsT+tShiftSec());
+    const tv=[42164*Math.cos(thT)-P[0], 42164*Math.sin(thT)-P[1]];
+    const trng=Math.hypot(tv[0],tv[1])||1, td=[tv[0]/trng, tv[1]/trng];
+    const ahead=td[0]*vhat[0]+td[1]*vhat[1];
+    const want=(ahead>0.1 && !training)? Math.max(0,Math.min(1,(20000-trng)/18500)) : 0;
+    winAimW += (want-winAimW)*0.06;                       // smooth, so the view never snaps
+    if(winAimW>0.002){ const k=winAimW;
+      F=[F[0]*(1-k)+td[0]*k, F[1]*(1-k)+td[1]*k, 0];
+      const m=Math.hypot(F[0],F[1])||1; F=[F[0]/m,F[1]/m,0]; }
+  } else winAimW=0;
   // Up = "away from Earth" (rhat) with the along-boresight part removed; Right = F × Up = the plane normal (±z).
   const rdF=rhat[0]*F[0]+rhat[1]*F[1];
   let Uc=[rhat[0]-rdF*F[0], rhat[1]-rdF*F[1], 0]; { const m=Math.hypot(Uc[0],Uc[1])||1; Uc=[Uc[0]/m,Uc[1]/m,0]; }
@@ -476,18 +494,37 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
       // Belt satellites sit at their TRUE fixed longitudes (co-rot frame): the target slot is +x (angle 0,
       // matching scoreFlight); neighbours are spaced ~6° around it. They stream past as you orbit, so you can
       // genuinely close on the red target (no more fixed "floor" ahead of you) and clip a neighbour if you
-      // wander into the string. Inertial angle of a slot = its co-rot longitude + wMoon·t.
-      const beltRot=F7.wMoon*(fsT+tShiftSec());
+      // wander into the string. Inertial angle of a slot = its frame longitude + the SIDEREAL frame
+      // angle (86,164 s) — the rate that DEFINES the belt, matches the Earth-texture spin, and is the
+      // natural orbital rate at 42,164 km, so a correct GEO orbit holds station over these satellites.
+      const beltRot=F7.geoFrameAngle(fsT+tShiftSec());
       for(let k=-20;k<=20;k++){ if(!k) continue; const a=k*(Math.PI/180)*6+beltRot, pt=proj([R_GEO*Math.cos(a),R_GEO*Math.sin(a),0]);
         if(!pt) continue; const s=Math.max(1.2, fMain*120/pt.z);        // 120-km apparent bus, shrinks with range
         g.fillStyle='#cdd6e6'; g.beginPath(); g.arc(pt.x,pt.y,s,0,7); g.fill();
         g.fillStyle='rgba(255,220,150,.85)'; g.fillRect(pt.x-s*1.8,pt.y-s*0.35,s*3.6,s*0.7); }
       // the TARGET bead — RED, at its true slot, so you can pick your rendezvous out of the string at any range
       { const tp=proj([R_GEO*Math.cos(beltRot),R_GEO*Math.sin(beltRot),0]);
+        const rng=geoTargetRange;
         if(tp){ const s=Math.max(1.8, fMain*120/tp.z), gl=0.55+0.3*Math.sin(t*0.006);   // gentle beacon pulse
           g.fillStyle='rgba(255,70,60,'+gl.toFixed(3)+')'; g.beginPath(); g.arc(tp.x,tp.y,s*2.2,0,7); g.fill();   // halo
           g.fillStyle='#ff4438'; g.beginPath(); g.arc(tp.x,tp.y,s,0,7); g.fill();
-          g.fillStyle='rgba(255,150,120,.9)'; g.fillRect(tp.x-s*1.8,tp.y-s*0.35,s*3.6,s*0.7); } }
+          g.fillStyle='rgba(255,150,120,.9)'; g.fillRect(tp.x-s*1.8,tp.y-s*0.35,s*3.6,s*0.7);
+          /* TARGET RETICLE — corner brackets + range. Without it the rendezvous was a ~10 px red
+             dot lost in a string of identical white beads; the pilot could not tell which was
+             which, or how far out it was. */
+          const RR=Math.max(s*3.2, Math.min(w*0.10, fMain*500/tp.z));
+          g.strokeStyle='rgba(95,208,255,.92)'; g.lineWidth=Math.max(1.5,h*0.007);
+          for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){
+            g.beginPath(); g.moveTo(tp.x+sx*RR, tp.y+sy*RR*0.55); g.lineTo(tp.x+sx*RR, tp.y+sy*RR);
+            g.lineTo(tp.x+sx*RR*0.55, tp.y+sy*RR); g.stroke(); }
+          g.fillStyle='#9fd0ff'; g.font='bold '+(h*0.055)+'px monospace'; g.textAlign='center';
+          g.fillText('◎ TARGET · '+(rng>1000? (rng/1000).toFixed(1)+'k km' : Math.round(rng)+' km'), tp.x, tp.y-RR-h*0.03);
+          g.textAlign='left'; }
+        else if(!training){   // target behind the camera = you are AHEAD of it: say so, don't just hide it
+          g.fillStyle='rgba(255,207,77,.9)'; g.font='bold '+(h*0.055)+'px monospace'; g.textAlign='center';
+          g.fillText('◎ TARGET IS BEHIND YOU — '+(rng>1000?(rng/1000).toFixed(1)+'k km':Math.round(rng)+' km')+
+            ' · you are ahead of it: raise your orbit to drift back', w*0.5, h*0.14);
+          g.textAlign='left'; } }
       g.globalAlpha=1;
       // ---- ILS approach gates: wireframe hoops to thread on final approach (toggle ▦ GATES) ----
       if(GATES_ON && approachGates && approachGates.length){
@@ -532,7 +569,7 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
     g.font='bold '+(h*0.055)+'px monospace'; g.fillStyle='rgba(190,210,245,.9)';
     g.fillText('destined to coast eternally. Bye.', w*0.5, h*0.6); g.textAlign='left'; }
 }
-let geoCloseness=0, geoEclipsed=false;
+let geoCloseness=0, geoEclipsed=false, geoTargetRange=0, winAimW=0;
 
 /* ===================== ILS APPROACH GATES + TARGET COLLISION =====================
    Gates: once the planned burns are done and we're near belt altitude, a string of wireframe
@@ -542,8 +579,13 @@ let geoCloseness=0, geoEclipsed=false;
    Collision: the target satellite is a real object. Passing within COLLIDE_KM (100 m) of it is
    a collision, checked per RK4 substep with a segment test so time-warp can't tunnel through. */
 let GATES_ON=true, approachGates=null, gatePrevAng=null, collPrev=null;
-const GATE_R=150, GATE_OFFS=[10,8,6,4,2];      // hoop radius (km); gate longitudes (° short of target)
+/* GATE_R 1,300 km (was 150): the gates are threaded during the PHASING leg — a ~20 m/s
+   along-track burn puts you on an ellipse that dips 0–1,200 km below the belt and drifts you
+   ~8°/day onto the target — so the hoops must honestly accept that whole corridor. (150 km hoops
+   were also near-invisible specks from thousands of km out; these read as real approach rings.) */
+const GATE_R=1300, GATE_OFFS=[10,8,6,4,2];     // hoop radius (km); gate longitudes (° short of target)
 const COLLIDE_KM=0.1;                          // 100 m — closer than this to the target sat = collision
+const GEO_STANDOFF=-1.5;                       // hold 1.5° (~1,100 km) BEHIND the target: it stays in the window
 let crashText='🔥 RE-ENTRY';                   // what the red flash banner says (varies by crash type)
 function toggleGates(){ GATES_ON=!GATES_ON; $('gatesBtn').textContent='▦ GATES '+(GATES_ON?'ON':'OFF'); }
 window.toggleGates=toggleGates;
@@ -652,7 +694,8 @@ function computeLivePred(){
 function buildPlannedGhost(){ const src=F7.planToSim(flightPlan||{target:'geo',dv1:2399,dv2:1457,leadDeg:124});
   const tMax=(src.target==='geo'?0.6:9)*86400;
   const r=F7.simulate(src,{dt:40,tMax}); const ts=r.tShift; const dtPer=40*3;
-  plannedCorot=r.path.map((p,i)=>F7.toCorot(p[0],p[1],(i*dtPer)+ts)); plannedBurnMarks=r.burnMarks; }
+  const cf=(x,y,tt)=> src.target==='geo'? F7.toCorotGeo(x,y,tt) : F7.toCorot(x,y,tt);
+  plannedCorot=r.path.map((p,i)=>cf(p[0],p[1],(i*dtPer)+ts)); plannedBurnMarks=r.burnMarks; }
 let plannedBurnMarks=[];
 function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.clearRect(0,0,w,h);
   // TEXT/MARKER unit: capped, so labels stay instrument-sized on the BIG side panel (these fonts
@@ -720,14 +763,14 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
       for(let k=0;k<=90;k++){ const th=2*Math.PI*k/90; // ellipse param, focus (Earth) at origin
         const r=a*(1-e*e)/(1+e*Math.cos(th)); const ang=argP+th;
         let xx=r*Math.cos(ang), yy=r*Math.sin(ang);
-        const cr=F7.toCorot(xx,yy,fsT+tShiftSec());   // show in the same co-rotating frame as everything else
+        const cr=toCorotF(xx,yy,fsT+tShiftSec());   // show in the same mission frame as everything else
         k?g.lineTo(X(cr[0]),Y(cr[1])):g.moveTo(X(cr[0]),Y(cr[1])); }
       g.stroke(); g.setLineDash([]);
       // live APOGEE (gold ◎) and perigee (green ·) of the CURRENT orbit — recomputed every frame
       // from the same osculating ellipse, so they JUMP with every trim burn ("orbit adjust").
       { const ts2=fsT+tShiftSec(), raP=a*(1+e), rpP=a*(1-e);
-        const A=F7.toCorot(raP*Math.cos(argP+Math.PI), raP*Math.sin(argP+Math.PI), ts2);
-        const Pp=F7.toCorot(rpP*Math.cos(argP), rpP*Math.sin(argP), ts2);
+        const A=toCorotF(raP*Math.cos(argP+Math.PI), raP*Math.sin(argP+Math.PI), ts2);
+        const Pp=toCorotF(rpP*Math.cos(argP), rpP*Math.sin(argP), ts2);
         g.strokeStyle='#ffcf4d'; g.lineWidth=2; g.beginPath(); g.arc(X(A[0]),Y(A[1]),Math.max(3,hT*0.02),0,7); g.stroke();
         g.fillStyle='#ffcf4d'; g.font='bold '+(hT*0.05)+'px monospace'; g.fillText('apo',X(A[0])+hT*0.025,Y(A[1])-hT*0.012);
         g.fillStyle='#39d353'; g.beginPath(); g.arc(X(Pp[0]),Y(Pp[1]),Math.max(2,hT*0.013),0,7); g.fill(); } }
@@ -748,7 +791,7 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
   g.strokeStyle='#ff5a52'; g.lineWidth=1.5;
   (plannedBurnMarks||[]).forEach(m=>{ const px=X(m.xy[0]),py=Y(m.xy[1]); g.beginPath(); g.arc(px,py,Math.max(3,hT*0.02),0,7); g.stroke(); });
   // YOU ARE HERE
-  if(flying&&fs){ const cp=F7.toCorot(fs[0],fs[1],fsT+tShiftSec()); const px=X(cp[0]),py=Y(cp[1]);
+  if(flying&&fs){ const cp=toCorotF(fs[0],fs[1],fsT+tShiftSec()); const px=X(cp[0]),py=Y(cp[1]);
     g.fillStyle='#fff'; g.beginPath(); g.arc(px,py,Math.max(3,hT*0.022),0,7); g.fill();
     g.strokeStyle='#5fd0ff'; g.lineWidth=2; g.beginPath(); g.arc(px,py,Math.max(5,hT*0.04),0,7); g.stroke(); }
   g.fillStyle='#9fe0af'; g.font=(hT*(mode==='zoom'?0.09:0.05))+'px monospace'; g.fillText(title,w*0.04,hT*0.12);
@@ -854,7 +897,7 @@ function startFlight(){ loadPlanFromStore();
   userWarp=1;                                             // fresh time-warp trim per flight
   livePred=null; livePredAt=0; livePredMin=null;          // fresh live-prediction cache per flight
   $('debrief').classList.remove('show');
-  autoDir=null; autoTrimRem=null;                         // autopilot releases the stick between flights
+  autoDir=null; autoTrimRem=null; autoPhasing=null;       // autopilot releases the stick between flights
   // the cockpit's Moon phase must match the SIM's compensated phase (lead − wMoon·PRE_COAST),
   // not the raw dialed lead — otherwise every co-rotating view/score desyncs by the pre-coast lap
   moonLead=(src.moonPhase0!=null? src.moonPhase0*180/Math.PI : (p.leadDeg||124));
@@ -880,7 +923,7 @@ function startTraining(){ if(planMode) toggleMode();      // make sure we're in 
   fs=F7.leoState(400,0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1; training=true;
   dvTotal=99999;                                           // effectively unlimited fuel
   planBurns=[]; nextBurn=0; burnWindow=false; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; missionMsg='🎮 TRAINING — free flight, unlimited fuel';
-  approachGates=null; gatePrevAng=null; collPrev=null; autoDir=null; autoTrimRem=null;
+  approachGates=null; gatePrevAng=null; collPrev=null; autoDir=null; autoTrimRem=null; autoPhasing=null;
   moonLead=0; plannedCorot=null; planProfile=null;
   $('debrief').classList.remove('show');
   resetBurnMeter();
@@ -909,7 +952,7 @@ let tourOn=false, tourI=0;
 const TOUR=[
   {sel:'#zWindow', t:'Out the window', b:'Your real view of space — Earth shrinks as you climb, and the target satellite grows as you close in near GEO.'},
   {sel:'#zSideNav', t:'Mission NAV', b:'The big map of your flight in the co-rotating frame: the <b>planned path</b> (ghost) vs. where you <b>actually</b> are. On the lunar flight it auto-zooms through departure → cruise → arrival, with a cyan dashed line showing where your current orbit is headed. Status readout top-right; CAPCOM calls appear on the small MFD below the window.'},
-  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 4,800 m/s; the lunar flight a forgiving 7,500.'},
+  {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 6,500 m/s; the lunar flight a forgiving 9,500. The planned burns are only about 60% of that — the rest is yours for phasing to the target, trims and station-keeping.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'A running total for the burn you’re making. You can <b>pulse</b> the thruster to sneak up on a target value; ⟲ resets it.'},
   {sel:'#ils',     t:'Track & speed', b:'Top needle: are you left/right of the planned track? Dial: your speed vs. the target circular speed — green = on speed.'},
   {sel:'#burnNow', t:'Burn countdown & cue', b:'An amber <b>⏳ BURN IN m:ss</b> countdown arms as you approach a planned burn point, then flips to the flashing red <b>🔴 BURN NOW</b> order — with exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARD</b>. Miss it and it re-alerts one orbit later.', force:true},
@@ -973,6 +1016,9 @@ function plannedSpeedAt(tt){ if(!planProfile||!planProfile.length) return null;
 }
 let moonLead=124, planTarget='moon';
 function tShiftSec(){ return moonLead*Math.PI/180/F7.wMoon; }
+// mission display frame: the GEO mission lives in the SIDEREAL frame (belt + target fixed, a good
+// GEO orbit holds station); the lunar mission in the Earth–Moon frame (Moon fixed).
+function toCorotF(x,y,t){ return planTarget==='geo'? F7.toCorotGeo(x,y,t) : F7.toCorot(x,y,t); }
 
 /* advance the flight: fast-forward the coast so motion is VISIBLE, ease to real-time near a burn.
    Warp is picked per-mission so a ~5-hour GEO transfer or a ~4-day lunar coast each play out in a
@@ -1001,6 +1047,23 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
         (autoOn?' Autopilot has the burn.':' (Or press 🤖 AUTO FLY and the computer takes it.)'));
     }
   }
+  /* RETIRE A BURN THAT IS ALREADY FLOWN. Completion used to be judged only on thruster RELEASE
+     inside the window — so a burn finished by pulsing, finished a little late, or ended by an
+     autopilot segment after the window closed was never struck off the card, and the missed-burn
+     logic re-cued it every orbit: a 🔴 BURN NOW light that never goes out after circularization.
+     Re-check the live residual every step instead. Only inside/after the window (the guard matters:
+     mid-transfer at r = a the speed genuinely equals the local circular speed). */
+  if(b && !firing && fsT>b.t-BURN_LEAD){
+    let satisfied=false, why='';
+    if(planTarget==='geo'){ const L=liveNeedMS(nextBurn);
+      if(L!==null && Math.abs(L)<25){ satisfied=true; why='residual '+Math.round(Math.abs(L))+' m/s'; } }
+    else if(nextBurn>=2){ const c3=circTrimSeq();       // lunar circularize
+      if(!c3 || c3.tot<40){ satisfied=true; why='orbit is round'; } }
+    if(satisfied){ b.done=true; b.err=0; nextBurn++; burnWindow=false;
+      capcom('CAPCOM: '+b.name+' — you’re already on the numbers ('+why+'). Scratching it off the card.');
+      $('burnNow').classList.remove('on'); $('burnNow').classList.remove('standby');
+      return; }
+  }
   /* warp ladder. Inside the burn window it's staged around the SCHEDULED burn point:
        stand-by (T-30 min → T-90 s)  60×   — the amber countdown plays out in ~30 s of wall clock
        cue      (T-90 s  → T+150 s)  4×    — 🔴 BURN NOW, near-real-time so the pilot can act
@@ -1011,6 +1074,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
        : training ? 1200                            // sandbox: an LEO lap in ~5 s (the old effective pace)
        : victoryUntil ? 2800                        // victory lap: one lunar orbit in ~10 s, scenic
        : holdStartT ? 2600                          // confirmation orbit: ~one GEO orbit in ~30 s, watchable
+       : (planTarget==='geo' && nextBurn>=planBurns.length && planBurns.length) ? 2600   // phasing leg: the ~1-day drift to the target plays in ~30 s
        : burnWindow ? (autoOn ? 300                 // autopilot: no need to crawl — the integrator lands
                                                     // EXACTLY on the burn time (clamp below), ~6 s to cue
                      : tToBurn>90 ? 60 : tToBurn>-150 ? 4 : 60)
@@ -1024,14 +1088,14 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
     // burn 3 (lunar circularize) is Moon-framed: an Earth-period reschedule would push it out ~a
     // month — just re-cue it a few minutes ahead instead
     if(planTarget==='moon' && nextBurn>=2){
-      if((b.retries||0)<6){ b.t=fsT+300; b.retries=(b.retries||0)+1; burnWindow=false;
+      if((b.retries||0)<12){ b.t=fsT+300; b.retries=(b.retries||0)+1; burnWindow=false;
         capcom('CAPCOM: the circularize cue lapsed — re-cueing in 5 minutes. Fly the components when it comes up.'); }
       else { b.done=true; b.missed=true; nextBurn++; burnWindow=false; }
       return;
     }
     const re=Math.hypot(fs[0],fs[1]), v2=fs[2]*fs[2]+fs[3]*fs[3];
     const invA=2/re - v2/F7.MU_E;                       // 1/a from vis-viva
-    if(invA>0 && (b.retries||0)<6){ const a=1/invA, period=2*Math.PI*Math.sqrt(a*a*a/F7.MU_E);
+    if(invA>0 && (b.retries||0)<12){ const a=1/invA, period=2*Math.PI*Math.sqrt(a*a*a/F7.MU_E);
       b.t += period; b.retries=(b.retries||0)+1; b.missedOnce=true; burnWindow=false;
       capcom('CAPCOM: you missed the burn point. No problem — the same spot comes back in '+(period/60).toFixed(0)+' min. Stand by; we’ll re-cue you.'); }
     else { b.done=true; b.missed=(b.got < b.dvTarget*0.6); nextBurn++; burnWindow=false; }  // unbounded/hopeless → give up
@@ -1058,7 +1122,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
     // target-satellite collision: per-SUBSTEP segment check near belt altitude, so a high-warp
     // frame spanning hours can never tunnel through the 100 m collision sphere unnoticed.
     if(planTarget==='geo' && !hitSat){ const reI=Math.hypot(fs[0],fs[1]);
-      if(Math.abs(reI-42164)<1500){ const c=F7.toCorot(fs[0],fs[1],fsT+ts);
+      if(Math.abs(reI-42164)<1500){ const c=toCorotF(fs[0],fs[1],fsT+ts);
         if(collPrev && segDist(collPrev,c,[42164,0])<COLLIDE_KM) hitSat=true;
         collPrev=c; } else collPrev=null; }
   }
@@ -1069,7 +1133,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
     else { endFlight('💥 COLLIDED with the target satellite — you closed inside 100 m with relative motion. Servicing means station-keeping alongside the target, not contact.', false); return; }
   }
   // record co-rotating actual position
-  const cp=F7.toCorot(fs[0],fs[1], fsT+ts); if(actualPath.length===0||Math.hypot(cp[0]-actualPath[actualPath.length-1][0],cp[1]-actualPath[actualPath.length-1][1])>2000) actualPath.push(cp);
+  const cp=toCorotF(fs[0],fs[1], fsT+ts); if(actualPath.length===0||Math.hypot(cp[0]-actualPath[actualPath.length-1][0],cp[1]-actualPath[actualPath.length-1][1])>2000) actualPath.push(cp);
   if(actualPath.length>4000) actualPath.shift();
   // outcome checks
   const re=Math.hypot(fs[0],fs[1]); const mp=F7.moonPos(fsT+ts); const rm=Math.hypot(fs[0]-mp[0],fs[1]-mp[1]);
@@ -1096,7 +1160,12 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
         const v=Math.hypot(fs[2],fs[3]), vc=Math.sqrt(F7.MU_E/re);
         if(nextBurn>=planBurns.length || (Math.abs(re-42164)<3000 && Math.abs(v-vc)/vc<0.06)) buildGates(cp);
       }
-      else if(approachGates) updateGates(cp,re); } }
+      else if(approachGates) updateGates(cp,re);
+      // arrival coaching: the plan injects ~8° BEHIND the target (so it's visible ahead) — teach the
+      // phasing move that closes the gap
+      if(nextBurn>=planBurns.length && Math.abs(re-42164)<3000)
+        capcomOnce('geoPhase','CAPCOM: clean injection — the target is parked ~8° AHEAD; find the red bead out the front window. Now PHASE in: ~15 m/s REVERSE drops you a few hundred km below the belt and you drift forward ~5°/day. Thread the gates, then ~15 m/s FORWARD + trim to circularize AT the target and hold within 2.5°. (🤖 AUTO FLY knows this maneuver.)');
+    } }
   if(training){   // sandbox: no scored endings. Crashing just respawns you in LEO; nothing else terminates.
     if(re<F7.R_E){ crashFlash=performance.now(); crashText='🔥 RE-ENTRY'; fs=F7.leoState(400,0); fsT=0; actualPath=[]; missionMsg='🎮 TRAINING — reset to LEO (you hit the atmosphere)'; capcomSaid={}; capcom('CAPCOM: whoa — you dipped into the atmosphere and burned up. Respawned in LEO. Easy on the retrograde.'); }
     trainCoach(re);
@@ -1107,14 +1176,16 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   if(dvSpent>=dvTotal-0.5 && !holdStartT){
     if(!fuelDoomT){ fuelDoomT=fsT;
       capcom('CAPCOM: …that was the last of the propellant. We’re dead-stick now. Let’s see where this orbit takes you.'); }
-    // let one orbit (of the current osculating orbit) elapse before pronouncing doom
+    /* Let THREE orbits (up to 3 days) elapse before pronouncing doom — a dry tank near the belt can
+       still drift onto the target and satisfy the hold, and cutting the run off after a single
+       orbit ended flights that were still developing. */
     const invA=2/re - (fs[2]*fs[2]+fs[3]*fs[3])/F7.MU_E;   // 1/a from vis-viva
-    const doomWait=invA>0 ? Math.min(6*3600, 2*Math.PI*Math.sqrt((1/invA)**3/F7.MU_E)) : 3600;
+    const doomWait=invA>0 ? Math.min(3*86400, 3*2*Math.PI*Math.sqrt((1/invA)**3/F7.MU_E)) : 3*3600;
     if(fsT-fuelDoomT > doomWait){
       if(!fuelDoomFlash){ fuelDoomFlash=performance.now();
         missionMsg='🛰 OUT OF FUEL — destined to coast eternally. Bye.';
         capcom('CAPCOM: no fuel, no rendezvous. You’re a permanent piece of debris now. Ending the run.'); }
-      else if(performance.now()-fuelDoomFlash > 4000){   // hold the banner a few seconds, then fail out
+      else if(performance.now()-fuelDoomFlash > 9000){   // hold the banner ~9 s, then fail out
         endFlight('🛰 OUT OF FUEL — destined to coast eternally. Bye.', false); }
       return;
     }
@@ -1125,11 +1196,16 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   else if(nextBurn>=planBurns.length){ // all burns done — did we reach the target?
     if(coastEndT===0) coastEndT=fsT;                 // mark when the last burn finished
     if(planTarget==='geo'){ const v=Math.hypot(fs[2],fs[3]), vc=Math.sqrt(F7.MU_E/re);
-      // TIGHTER success gate: within 5% of GEO radius AND 4% of circular speed (was 12% / 10%).
-      const inBox = Math.abs(re-42164)/42164<0.05 && Math.abs(v-vc)/vc<0.04;
+      // Success = RENDEZVOUS, not just altitude: within 5% of GEO radius, 4% of circular speed,
+      // AND within 3.5° of the target along the belt (the plan injects ~8° behind it — the final
+      // phasing leg is part of the mission, which is what makes the ILS gates meaningful).
+      // 3.5° (~2,600 km) leaves room around the ~1.5° standoff for the ±2e separation ripple any
+      // slightly-eccentric station-keeping orbit has — a tighter gate reset the hold every lap.
+      const sepDeg=Math.abs(Math.atan2(cp[1],cp[0]))*180/Math.PI;
+      const inBox = Math.abs(re-42164)/42164<0.05 && Math.abs(v-vc)/vc<0.04 && sepDeg<3.5;
       // Hold the box for one full orbital period before declaring victory — pilot can trim meanwhile.
       const period=2*Math.PI*Math.sqrt(re*re*re/F7.MU_E);
-      checkHold(inBox, period, '✅ CIRCULARIZED at GEO and held station for a full orbit — mission accomplished!');
+      checkHold(inBox, period, '✅ ON STATION — circular at GEO beside the target and held for a full orbit. Rendezvous accomplished!');
     }
     else { const mv=F7.moonVel(fsT+ts), rv2=(fs[2]-mv[0])**2+(fs[3]-mv[1])**2, relv=Math.sqrt(rv2), vcm=Math.sqrt(F7.MU_M/Math.max(F7.R_M,rm)), epsM=rv2/2-F7.MU_M/Math.max(F7.R_M,rm);
       // TIGHTER lunar gate: bound AND reasonably circular (within 8% of local circular speed) AND inside SOI.
@@ -1147,7 +1223,7 @@ function checkHold(inBox, period, winMsg){
     if(!holdStartT){ holdStartT=fsT;
       capcom('CAPCOM: parameters look good — now HOLD it. We want to see you stay locked in for one full orbit before we call it. Trim as needed.'); }
     else if(!holdAnnounced && fsT-holdStartT>period*0.5){ holdAnnounced=true;
-      capcom('CAPCOM: halfway through the confirmation orbit — steady as she goes. Watch the neighbors slide by.'); }
+      capcom('CAPCOM: halfway through the confirmation orbit — steady as she goes. Notice the belt holds still with you: you\u2019re genuinely geostationary.'); }
     else if(fsT-holdStartT>=period){
       if(planTarget==='moon'){
         // capture confirmed → VICTORY LAP: one more lunar orbit before the debrief, NAV zoomed in
@@ -1210,10 +1286,13 @@ function debriefToPlanner(){ $('debrief').classList.remove('show'); if(!planMode
 function updateWindowPhase(re,rm){
   if(planTarget==='geo'){
     // window is continuous (Earth shrinks by true angular size); still compute target closeness + eclipse
-    const dR=Math.abs(re-42164);
-    const cr=F7.toCorot(fs[0],fs[1],fsT+tShiftSec());
-    const angSep=Math.abs(Math.atan2(cr[1],cr[0]));    // rad from the target GEO longitude (+x)
-    geoCloseness = Math.max(0, 1 - dR/16000) * Math.max(0, 1 - angSep/1.4);
+    /* geoCloseness drives how big the rendered target BUS is drawn, so it must track true RANGE.
+       (It used to be built from |Δradius| and angular separation — with the target now parked 8°
+       away that returned ~0.9 at 5,900 km, drawing the satellite at 70% of the window height:
+       a giant blur instead of a distant spacecraft.) Ramps in from 2,000 km, full by ~40 km. */
+    const thT=F7.geoFrameAngle(fsT+tShiftSec());
+    geoTargetRange=Math.hypot(fs[0]-42164*Math.cos(thT), fs[1]-42164*Math.sin(thT));
+    geoCloseness = Math.max(0, Math.min(1, (2000-geoTargetRange)/1960));
     const sun=F7.sunDirInertial(fsT+tShiftSec());
     const along=(fs[0]*sun[0]+fs[1]*sun[1]);
     const perp=Math.abs(fs[0]*(-sun[1])+fs[1]*sun[0]);
@@ -1241,7 +1320,7 @@ function drawIls(){ if(!flying||!fs){ $('ils').classList.remove('on'); return; }
   for(let k=-2;k<=2;k++){ const x=cx+k*w*0.18; g.beginPath(); g.moveTo(x,locY-h*0.02); g.lineTo(x,locY+h*0.02); g.stroke(); }
   // cross-track error: signed distance from actual co-rot pos to nearest planned-ghost point
   let ctErr=0;
-  if(plannedCorot&&plannedCorot.length){ const cr=F7.toCorot(fs[0],fs[1],fsT+tShiftSec());
+  if(plannedCorot&&plannedCorot.length){ const cr=toCorotF(fs[0],fs[1],fsT+tShiftSec());
     let best=1e12,bx=0,by=0,bi=0; for(let i=0;i<plannedCorot.length;i++){ const p=plannedCorot[i],d=(p[0]-cr[0])**2+(p[1]-cr[1])**2; if(d<best){best=d;bx=p[0];by=p[1];bi=i;} }
     // sign via cross product of path tangent × (actual-planned)
     const q=plannedCorot[Math.min(plannedCorot.length-1,bi+1)]; const tx=q[0]-bx,ty=q[1]-by;
@@ -1491,14 +1570,25 @@ addEventListener('keyup',e=>{ const dir=KEYDIR[e.key.toLowerCase()]; if(dir){ e.
    live guidance), the lunar brake all the way to a near-circular capture, and — after the planned
    burns — the final circular trim at the current radius (the "third burn" that makes the lunar
    mission so hard by hand). The pilot can toggle it any time; hand-flying overrides it. */
-let autoOn=false, autoDir=null, autoTrimRem=null;
+let autoOn=false, autoDir=null, autoTrimRem=null, autoPhasing=null;
 function toggleAuto(){ autoOn=!autoOn;
   const b=$('autoBtn'); if(b){ b.textContent='🤖 AUTO FLY '+(autoOn?'ON':'OFF'); b.classList.toggle('on',autoOn); }
   if(!autoOn && autoDir){ autoDir=null; autoTrimRem=null; stopBurn(); }
+  autoPhasing=null;                                        // re-assess the phasing plan on re-engage
   if(flying && !training) capcom(autoOn
     ? 'CAPCOM: autopilot ENGAGED — the flight computer will time and fly the burns. Watch the cues and the meter; take the stick back anytime.'
     : 'CAPCOM: autopilot off — your spacecraft.'); }
 window.toggleAuto=toggleAuto;
+// MEAN longitude offset from the GEO target (deg): the co-rotating angle minus the 2e·sin ν
+// equation-of-centre wobble — what a station-keeping controller must steer on, since the raw
+// angle breathes by ±2e once per orbit on any eccentric (phasing) orbit.
+function meanSepDeg(){ const cr=toCorotF(fs[0],fs[1],fsT+tShiftSec());
+  const sep=Math.atan2(cr[1],cr[0]);
+  const rm=Math.hypot(fs[0],fs[1]), v2=fs[2]*fs[2]+fs[3]*fs[3], rv=fs[0]*fs[2]+fs[1]*fs[3];
+  const ex=((v2-F7.MU_E/rm)*fs[0]-rv*fs[2])/F7.MU_E, ey=((v2-F7.MU_E/rm)*fs[1]-rv*fs[3])/F7.MU_E;
+  const e=Math.hypot(ex,ey); let corr=0;
+  if(e>1e-5){ const nu=Math.atan2(fs[1],fs[0])-Math.atan2(ey,ex); corr=2*e*Math.sin(nu); }
+  return (sep-corr)*180/Math.PI; }
 // craft state relative to the MOON: range, relative speed, and local circular speed
 function relMoonState(){ const ts=tShiftSec(), mp=F7.moonPos(fsT+ts), mv=F7.moonVel(fsT+ts);
   const rm=Math.hypot(fs[0]-mp[0],fs[1]-mp[1]), relv=Math.hypot(fs[2]-mv[0],fs[3]-mv[1]);
@@ -1570,9 +1660,46 @@ function autopilotTick(){
   // planned burns done → circularize at the current radius (the hand-flown "third burn"), then
   // keep station: recompute the exact vector each segment, stop inside a 8 m/s deadband
   if(nextBurn>=planBurns.length && !victoryUntil){
+    /* GEO: PHASE to the target first — the plan injects ~8° behind it (so it's visible ahead).
+       Maneuver: retune the semi-major axis ~400 km below (or above) the belt with a small
+       along-track burn (δa = 2a²·v·δv/μ → ~15 m/s), ride the ~5°/day drift, retune the sma back
+       to 42,164 at hand-over, then circularize AT the belt-radius crossing.
+       The controller works on the MEAN longitude — the osculating angle minus the 2e·sin ν
+       equation-of-centre wobble — because the phasing ellipse makes the raw angle breathe by
+       ±2e (~±1°), and a deadband controller on that oscillation flip-flops, pumping eccentricity
+       with every blind retune (found the hard way in the headless run). Hysteresis: engage >3°,
+       hand over at 0.9°. */
+    if(planTarget==='geo' && fs && planBurns.length){
+      const oe=orbElems(), v=Math.hypot(fs[2],fs[3]);
+      if(oe.bound && Math.abs(oe.a-42164)<4000){
+        /* Park at a STANDOFF BEHIND the target, never on top of it: co-orbiting at zero separation
+           puts the target at (or behind) the camera — invisible, and not how you hold alongside a
+           satellite you're servicing. GEO_STANDOFF keeps it framed dead ahead out the window. */
+        const mSep=meanSepDeg(), err=mSep-GEO_STANDOFF;
+        if(autoPhasing===null) autoPhasing=Math.abs(err)>3;
+        else if(autoPhasing && Math.abs(err)<=0.9) autoPhasing=false;
+        else if(!autoPhasing && Math.abs(err)>3) autoPhasing=true;
+        const aWant=autoPhasing? 42164+(err>0?400:-400) : 42164;
+        const dvA=(aWant-oe.a)*F7.MU_E/(2*oe.a*oe.a*v)*1000;   // along-track m/s to retune the sma
+        if(Math.abs(dvA)>4){
+          if(autoPhasing) capcomOnce('autophase','AUTOPILOT: phasing — retuning the orbit ~400 km '+(mSep>0?'above':'below')+' the belt to drift onto the target, then re-circularizing there.');
+          autoSegTgt=Math.abs(dvA); autoTrimRem=autoSegTgt; autoFire(dvA>=0?'fore':'aft'); return; }
+        /* riding the drift, OR waiting (after the sma retune) for the ellipse to coast up to belt
+           radius — circularizing anywhere else would re-detune the sma the retune just fixed and
+           the two burns would fight forever. Only fall through to the vector trim AT the belt, and
+           within a TIGHT 60 km (a loose 250 km gate left the circularized sma up to 250 km off →
+           a ~2.7°/day residual drift, so the separation kept sliding out of the hold box). An
+           eccentric orbit crosses belt radius twice per lap, so the window always comes around. */
+        if(autoPhasing || Math.abs(Math.hypot(fs[0],fs[1])-42164)>60){ autoTrimRem=null; return; }
+      }
+    }
     const c=circTrimSeq();
     const active=autoTrimRem!=null;
-    if(!c || c.tot<(active?8:25)){ autoTrimRem=null; return; }     // hysteresis: engage >25, settle <8
+    // GEO station-keeping wants a genuinely round orbit (residual e shows up as a separation
+    // oscillation of ±2e that can slide you out of the rendezvous box), so engage at a tighter
+    // threshold there; the lunar arrival keeps the forgiving one.
+    const engage=(planTarget==='geo')?8:25, settle=(planTarget==='geo')?3:8;
+    if(!c || c.tot<(active?settle:engage)){ autoTrimRem=null; return; }
     capcomOnce('autotrim','AUTOPILOT: circularizing — a computed vector burn (along-track + radial), in short segments.');
     autoSegTgt=c.seq[0].dv; autoTrimRem=autoSegTgt;
     autoFire(c.seq[0].dir);
@@ -1610,8 +1737,8 @@ let planMode=false;
    the resulting apogee, arrival speed, and final speed, and checks them against the mission target.
    MU/R from the shared flight model. Targets: GEO r=42164 km; Moon distance 384,400 km. */
 const MU=F.MU_E, R_E=F.R_E, rLEO=R_E+400, vLEO=Math.sqrt(MU/rLEO);
-const TARGETS={ geo:{ra:42164, name:'GEO', budget:4800, day1:0.0, day2:0.221, lead:124},
-                moon:{ra:F.D_EM, name:'lunar distance', budget:7500, day1:0.0, day2:4.18, lead:120} };
+const TARGETS={ geo:{ra:42164, name:'GEO', budget:6500, day1:0.0, day2:0.221, lead:124},
+                moon:{ra:F.D_EM, name:'lunar distance', budget:9500, day1:0.0, day2:4.18, lead:120} };
 let plan={ target:'geo', dv1:0, dv2:0, leadDeg:124 };
 function setMission(key){ plan.target=key; const T=TARGETS[key]; plan.dv1=0; plan.dv2=0; plan.leadDeg=T.lead;
   document.querySelectorAll('#missionSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.m===key));
@@ -1706,12 +1833,13 @@ function runPrediction(solved){ if(!predCtx) sizePred();
   // a still-running ▶ GO playback would keep overwriting this fresh prediction with its captured
   // (stale) path — so any Δv/lead adjustment cancels the playback first
   if(simAnim){ cancelAnimationFrame(simAnim); simAnim=null; const rb=$('runSimBtn'); if(rb) rb.textContent='▶ GO — run sim'; }
-  // GEO runs 2.0 days (was 0.6): after circularizing at ~0.22 d the craft still has to DRIFT
-  // around the belt to the target (one relative lap ≈ 1.1 d in this frame) — the sim now stays on
-  // long enough for the path to actually reach the target satellite.
+  // GEO runs 2.0 days: in the sidereal frame a circular GEO orbit HOLDS STATION (no free drift),
+  // so the extra time verifies the arrival offset stays put — and shows any off-radius error as a
+  // slow drift along the belt (the real GEO phasing effect).
   const sp=planToSim(); const res=F.simulate(sp,{dt:30,tMax:(plan.target==='geo'?2.0:9)*86400});
   const ts=res.tShift, dtPer=30*3;
-  const cor=res.path.map((p,i)=>F.toCorot(p[0],p[1],(i*dtPer)+ts));
+  const corPl=(x,y,tt)=> plan.target==='geo'? F.toCorotGeo(x,y,tt) : F.toCorot(x,y,tt);
+  const cor=res.path.map((p,i)=>corPl(p[0],p[1],(i*dtPer)+ts));
   lastRes=res; lastCor=cor;
   drawPred(cor,res);
   // The Moon's go/no-go comes straight from the simulation: capture is a genuine 3-body outcome
@@ -1731,7 +1859,7 @@ function runPrediction(solved){ if(!predCtx) sizePred();
   // for GEO also report how close the drift leg gets to the target sat (phasing feedback)
   let tgtLine='';
   if(plan.target==='geo' && res.samples){ const day2=TARGETS.geo.day2*86400+F.PRE_COAST; let best=1e9;
-    for(const s of res.samples){ if(s.t<day2) continue; const c=F.toCorot(s.x,s.y,s.t+res.tShift);
+    for(const s of res.samples){ if(s.t<day2) continue; const c=F.toCorotGeo(s.x,s.y,s.t+res.tShift);
       const sep=Math.abs(Math.atan2(c[1],c[0]))*180/Math.PI; if(sep<best) best=sep; }
     if(best<1e9) tgtLine='  ·  closest to target: '+(best<0.5?best.toFixed(2):best.toFixed(1))+'°'; }
   $('predStat').textContent='predicted outcome: '+res.outcome+(plan.target==='moon'?('  ·  closest Moon: '+Math.round(res.minMoon)+' km'):tgtLine)+'  ·  Δv: '+Math.round(Math.abs(plan.dv1)+Math.abs(plan.dv2))+' m/s';
@@ -1753,7 +1881,8 @@ refreshMoonButton();                      // lock/unlock the lunar mission per s
 let simAnim=null;
 function runSim(){ if(simAnim){ cancelAnimationFrame(simAnim); simAnim=null; }
   const sp=planToSim(); const res=F.simulate(sp,{dt:30,tMax:(plan.target==='geo'?2.0:9)*86400}); const ts=res.tShift, dtPer=30*3;   // GEO: long enough to drift to the target
-  const cor=res.path.map((p,i)=>F.toCorot(p[0],p[1],(i*dtPer)+ts));
+  const corPl=(x,y,tt)=> plan.target==='geo'? F.toCorotGeo(x,y,tt) : F.toCorot(x,y,tt);
+  const cor=res.path.map((p,i)=>corPl(p[0],p[1],(i*dtPer)+ts));
   const tot=Math.abs(plan.dv1)+Math.abs(plan.dv2), budget=+$('planBudget').textContent;
   const win = res.captured && tot<=budget;
   // burn indices along the path (nearest sample to each burn time)
@@ -1808,7 +1937,7 @@ function drawPred(cor,res,upto,burnIdx){ const cv=$('cPred'),g=predCtx,w=cv.widt
     const cut=TARGETS[plan.target].day2*86400+F.PRE_COAST-60;   // apogee of the TRANSFER leg (before burn 2)
     let best=null, bestR=0;
     for(const s of res.samples){ if(s.t>cut) break; const r=Math.hypot(s.x,s.y); if(r>bestR){ bestR=r; best=s; } }
-    if(best){ const cp=F.toCorot(best.x,best.y,best.t+res.tShift), px=X(cp[0]), py=Y(cp[1]);
+    if(best){ const cp=(plan.target==='geo'? F.toCorotGeo(best.x,best.y,best.t+res.tShift) : F.toCorot(best.x,best.y,best.t+res.tShift)), px=X(cp[0]), py=Y(cp[1]);
       g.strokeStyle='#ffcf4d'; g.lineWidth=2; g.beginPath(); g.arc(px,py,Math.max(4,h*0.014),0,7); g.stroke();
       g.fillStyle='#ffcf4d'; g.beginPath(); g.arc(px,py,Math.max(1.5,h*0.005),0,7); g.fill();
       g.font=(h*0.028)+'px monospace';
