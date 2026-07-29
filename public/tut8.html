@@ -333,6 +333,7 @@
 
 <script src="vendor/three.min.js"></script>
 <script src="textures.js"></script>
+<script src="winpix.js"></script>
 <script src="flight8.js"></script>
 <script src="sat8.js"></script>
 <script>
@@ -358,7 +359,16 @@ function fit(cv){ const r=cv.getBoundingClientRect(), d=Math.min(2,devicePixelRa
    the CDN is unreachable (offline). */
 // Resolved through OA_TEX: local photo (vendored) → pinned CDN → the schematic map that ships
 // with the repo, so this works with no network at all.
-const earthTex=OA_TEX.image('earth'), moonTex=OA_TEX.image('moon');
+/* The window raytracer reads planet pixels back through a canvas, which a file:// page is not
+   allowed to do (tainted canvas). So prefer the baked data: URLs from winpix.js — same-origin by
+   definition, hence readable from a file, from server.js, or from any static host — and fall back to
+   the full-resolution vendored maps only if winpix.js is absent. */
+function winImage(which){
+  const baked = (window.OA_WINPIX||{})[which];
+  if(baked){ const im=new Image(); im.src=baked; return im; }   // no crossOrigin: data: needs none
+  return OA_TEX.image(which);
+}
+const earthTex=winImage('earth'), moonTex=winImage('moon');
 
 /* =====================  WINDOW SCENE  ===================== */
 const winCv=$('cWin'); let winCtx=fit(winCv);
@@ -991,7 +1001,7 @@ function drawSide(){
    actual path are drawn against the planned ghost in both co-rotating nav views. ------------------- */
 const F7=window.FLIGHT7;
 let dvTotal=F7.MISSIONS.geo.budget, dvSpent=0;  // m/s — set per-mission in startFlight()
-let flying=false, fs=null, fsT=0, warp=1;       // fs = inertial state [x,y,vx,vy]; fsT = mission seconds
+let flying=false, fs=null, fsT=0, warp=1, flightStartWall=0;       // fs = inertial state [x,y,vx,vy]; fsT = mission seconds
 let flightPlan=null, planBurns=[], nextBurn=0, burnWindow=false, missionMsg='', coastEndT=0;
 // Success is not declared the instant you touch the target box — you must HOLD it for a full orbit,
 // leaving room to trim. holdStartT = mission-time the box was first satisfied (0 = not currently in it).
@@ -1017,6 +1027,11 @@ const BURN_LEAD=1800;                           // s of burn WINDOW either side 
 const CUE_LEAD=900;                             /* s before the burn that the pilot is actually cued and
    the clock eases off. Kept shorter than the window so the amber countdown is a brisk run-up rather
    than half an hour of sim-time creeping by; the window itself stays wide for burn bookkeeping. */
+/* How long AFTER a scheduled burn time the burn order stays up. Without a bound the cue never
+   cleared: tTo<=CUE_LEAD is satisfied by any negative tTo, so a burn whose time had slipped into the
+   past kept the red order lit for the rest of the flight. 150 s matches the warp ladder's overdue
+   rung, so the annunciator and the clock agree about when a window is gone. */
+const CUE_LATE=150;
 function loadPlanFromStore(){ try{ const p=JSON.parse(localStorage.getItem('m7plan')); if(p) flightPlan=p; }catch(e){} }
 let planProfile=null;   // precomputed reference flight: [{t, speed, r}] sampled — for the planned-speed dial
 function startFlight(){ loadPlanFromStore();
@@ -1024,7 +1039,7 @@ function startFlight(){ loadPlanFromStore();
   // PROGRADE Δv₂ that could never capture — see the release QA log.
   const p=flightPlan||{target:'geo',dv1:2399,dv2:1457,leadDeg:124};
   const src=F7.planToSim(p);                              // shared plan → burn schedule
-  fs=F7.leoState(src.alt, 0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1;
+  fs=F7.leoState(src.alt, 0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1; flightStartWall=performance.now();
   planTarget=src.target;
   dvTotal=(F7.MISSIONS[planTarget]||F7.MISSIONS.geo).budget;   // fuel gauge matches the loaded mission's budget
   /* Drop any zero-Δv burn from the card. A burn whose target is 0 is not a burn — and it used to
@@ -1061,7 +1076,7 @@ function startTraining(){ if(planMode) toggleMode();      // make sure we're in 
   if(tourOn) tourEnd();                                     // dismiss any open tour so its overlay can't block clicks
   $('burnNow').classList.remove('on');                     // no scheduled burns in the sandbox
   planTarget='geo';                                        // Earth-only sandbox (GEO window styling)
-  fs=F7.leoState(400,0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1; training=true;
+  fs=F7.leoState(400,0); fsT=0; dvSpent=0; actualPath=[]; flying=true; warp=1; training=true; flightStartWall=performance.now();
   dvTotal=99999;                                           // effectively unlimited fuel
   planBurns=[]; nextBurn=0; burnWindow=false; coastEndT=0; holdStartT=0; holdAnnounced=false; fuelDoomT=0; fuelDoomFlash=0; missionMsg='🎮 TRAINING — free flight, unlimited fuel';
   approachGates=null; gatePrevAng=null; collPrev=null; autoDir=null; autoTrimRem=null; autoPhasing=null;
@@ -1341,6 +1356,18 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   if(planTarget==='moon' && !firing && !holdStartT && !victoryUntil && !loiter){
     const cap = rmNow<6000? 120 : rmNow<10000? 300 : rmNow<20000? 600 : rmNow<45000? 2000 : Infinity;
     if(warp>cap) warp=cap;
+  }
+  /* EASE IN. The ladder above jumps straight to its cruise rung, so a mission opened at 600× (GEO)
+     or 1,500× (lunar) — the first seconds blurred past before the pilot could work out where they
+     were or which way they were facing. Cap the opening at a watchable 60× and double roughly every
+     1.2 s, reaching full rate after ~8 s. The pilot's ',' / '.' trim still applies on top, so anyone
+     impatient can skip it immediately. */
+  if(!firing && flightStartWall){
+    const el=(performance.now()-flightStartWall)/1000;
+    /* Doubling every second for 9 s: 60× → 30,720×. It has to finish ABOVE the highest cruise rung
+       (12,000× lunar) or the ramp would end with a visible jump instead of blending into the ladder. */
+    if(el<9){ const cap=60*Math.pow(2, el); if(warp>cap) warp=cap; }
+    else flightStartWall=0;                            // done easing; stop paying for the check
   }
   if(!firing) warp=Math.max(0.0625, warp*userWarp);   // ',' / '.' pilot trim on top of the auto warp (×1/16..×16)
   // MISSED a burn window? The correct orbital phase (perigee for a raise, apogee for a circularize)
@@ -2510,9 +2537,17 @@ function loop(ts){ requestAnimationFrame(loop);
   // always gets a run-up, and the cue tells them WHAT to fly: "BURN NOW · 2,400 m/s FORWARD".
   { const bn=$('burnNow'), nb=planBurns[nextBurn];
     const tTo = nb? nb.t-fsT : 0;
-    // cue the pilot inside CUE_LEAD, not for the whole (much wider) burn window
-    const inWin = flying && !training && burnWindow && !!nb && tTo<=CUE_LEAD;
+    /* Cue the pilot inside CUE_LEAD — and NOT INDEFINITELY AFTER. `tTo<=CUE_LEAD` alone has no
+       lower bound, so once a burn time slipped into the past tTo went hugely negative and still
+       satisfied the test: the red order latched on and never went out. That is the "stale burn
+       request" — it outlived its own window, and if the missed-burn retries were exhausted (so the
+       burn was never rescheduled) it stayed lit for the rest of the flight.
+       CUE_LATE matches the warp ladder's overdue rung, so the cue and the clock agree. */
+    const inWin = flying && !training && burnWindow && !!nb && tTo<=CUE_LEAD && tTo>=-CUE_LATE;
     const cue = inWin && (tTo<=45 || firing);          // firing mid-order stays on the red cue
+    // Past the window with the burn still pending: say so plainly instead of shouting an order the
+    // pilot can no longer fly. The reschedule logic re-cues it at the next correct orbital phase.
+    const missed = flying && !training && !!nb && tTo < -CUE_LATE && !firing;
     bn.classList.toggle('on', cue);
     bn.classList.toggle('standby', inWin && !cue);
     if(cue){ // the order shows the LIVE guidance (frozen while firing): what THIS orbit needs now
@@ -2527,6 +2562,10 @@ function loop(ts){ requestAnimationFrame(loop);
         '<small>'+nb.name+(planTarget==='moon'&&nextBurn===1?' at CLOSEST APPROACH':'')+
         ' — stand by to burn '+T2.dir+' ~'+Math.round(T2.tgt).toLocaleString()+' m/s'+
         (autoOn?' · 🤖 AUTO will fly it':'')+' · “.” fast-forwards</small>';
+      if(bn._msg!==html){ bn._msg=html; bn.innerHTML=html; } }
+    else if(missed){ const html='⚪ BURN WINDOW PASSED'+
+        '<small>'+nb.name+' — waiting for the right orbital phase to come round again. Nothing to fly'+
+        ' right now.</small>';
       if(bn._msg!==html){ bn._msg=html; bn.innerHTML=html; } }
     else if(bn._msg!==''){ bn._msg=''; bn.innerHTML=''; }   // clear it, don't just hide it
   }
