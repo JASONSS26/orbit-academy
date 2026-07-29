@@ -159,7 +159,28 @@ Expected: `PASS — every vendored asset matches public/vendor/NOTICE.md.`
 </details>
 
 <details>
-<summary><b>Building the distributable zips</b></summary>
+<summary><b>Releasing a new version (maintainers)</b></summary>
+
+One command does the whole thing — test, build, commit, push, publish:
+
+```bash
+bash tools/release.sh "what changed in this version"
+```
+
+In order, it: clears a stale `.git/index.lock`; refuses to proceed if `academy_data.json` is tracked
+or un-ignored; runs **every** suite plus the Module 8 cockpit flights and **stops before touching git
+if anything fails**; checks README/CHANGELOG/SECURITY actually mention this version; builds both zips;
+verifies each one unpacks and that the full one *boots and serves the course*; then commits, pushes,
+and (with the [GitHub CLI](https://cli.github.com)) creates the release with both zips attached so the
+download links above resolve.
+
+```bash
+bash tools/release.sh --dry-run                 # everything except commit/push/publish
+bash tools/release.sh --no-release "msg"        # commit and push, skip the GitHub release
+BUNDLE_DIR=/tmp bash tools/release.sh --dry-run # write the zips somewhere else
+```
+
+Just the zips, without releasing:
 
 ```bash
 bash tools/make-bundle.sh              # full edition        (~11 MB)

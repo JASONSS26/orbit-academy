@@ -244,6 +244,25 @@ this sync.
 
 ## 7. Release checklist (the QA-walkthrough distillation)
 
+### Use `tools/release.sh` — it enforces every step below
+
+```bash
+bash tools/release.sh "what changed"      # or --dry-run first
+```
+
+It exists because the manual sequence was skipped or mis-ordered repeatedly. It clears a stale
+`.git/index.lock` (which blocks `add`/`commit` while `push` still *appears* to work — the most
+confusing failure in this repo's history), runs all suites **before** touching git, fails the release
+if README/CHANGELOG/SECURITY do not mention the current version, builds both distributables and proves
+the full one boots from a clean unpack, then commits, pushes and publishes the GitHub release with the
+zips attached.
+
+The zips are gitignored deliberately: they are build outputs, and ~20 MB of binaries per release would
+live in git history forever. They belong to the Release.
+
+Doing it by hand is still fine, but the script is the source of truth for the order.
+
+
 1. Bump the version: `server.js` header, `README.md` (title + "What's here" + security line),
    `docs/CHANGELOG.md` (dated entry).
 2. **Worksheet↔simulator drift check** — the single highest-yield step. For each module, grep
