@@ -30,8 +30,10 @@ printable **completion certificate**.
 ## 2. Download & install
 
 Everything is plain HTML/JavaScript plus one small Node.js server file. There is **nothing to
-compile and no packages to install** (the only external dependency, the Three.js 3-D library, is
-loaded from a pinned public CDN).
+compile and no packages to install** — ever. The one third-party component (the Three.js 3-D library)
+is held **inside the course folder**, so a running install makes no internet requests at all. Fetch it
+once with `bash tools/fetch-vendor.sh` (see §2.3); after that the course is fully self-contained and
+suitable for air-gapped machines.
 
 ### 2.1 Get the files
 
@@ -50,12 +52,30 @@ git clone https://github.com/JASONSS26/orbit-academy.git
 cd orbit-academy/academy
 ```
 
-### 2.2 Install Node.js (only needed to run the tracked/server mode)
+### 2.2 Fetch the 3-D library (one time, needs internet)
+
+The simulators need Three.js, which is not stored in the repository. Run this **once**, on a machine
+with internet access:
+
+```bash
+cd path/to/academy
+bash tools/fetch-vendor.sh
+```
+
+It downloads the library into `public/vendor/`, checks it against its published checksum, and (if it
+can) also grabs the photographic Earth/Moon maps. On Windows use Git Bash or WSL; alternatively
+download `three.min.js` (r128) by hand and drop it in `academy/public/vendor/`. See
+`docs/MAINTENANCE.md` §2.5 for the full asset architecture.
+
+After this step the course needs no internet again — copy the folder anywhere, including onto a closed
+network. If you skip it, the simulators show a banner explaining exactly what is missing.
+
+### 2.3 Install Node.js (only needed to run the tracked/server mode)
 
 **What is Node.js and why do I need it?** The course's account/roster server (`server.js`) is a
 JavaScript program, and Node.js is the (free, ~50 MB) program that runs it — the same way you'd
 need Python installed to run a `.py` file. Installing it changes nothing else on the computer.
-You do **not** need it at all for the standalone (no-login) mode — see §3, Option 1.
+You do **not** need it at all for the standalone (no-login) mode — see §3, Options 0 and 1.
 
 **Windows:**
 1. Go to <https://nodejs.org> and download the green **LTS** installer (a `.msi` file).
@@ -80,9 +100,55 @@ Any recent version works — the server uses only Node's built-ins, nothing to `
 
 ---
 
-## 3. Three ways to run it
+## 3. Ways to run it
 
-Choose based on whether you need **central accounts and a roster**.
+Choose based on whether you need **central accounts and a roster** — and note **Option 0** if the
+machines have no internet (the course is designed for that case and is verified against it).
+
+### Option 0 — Standalone / air-gapped (no internet, ever)
+
+**This is the default posture, and the one to use on a closed network.** Orbit Academy makes **zero
+outbound network calls** when it runs: the 3-D library is loaded from inside the course folder, the
+planet maps resolve locally, and nothing phones home. There is no npm install, no build step, and no
+telemetry of any kind.
+
+One file cannot be shipped in the repository (three.js, ~600 KB of third-party code), so there is a
+single one-time preparation step that needs a networked machine:
+
+```bash
+cd path/to/academy
+bash tools/fetch-vendor.sh        # downloads three.js into public/vendor/ and verifies its checksum
+```
+
+Then move the whole `academy` folder to the target machine — copy it, zip it, or put it on a USB
+stick. Everything the course needs travels with it. On the target:
+
+- **No-login use:** open `academy/public/index.html` in a browser. Done.
+- **Tracked cohort:** `node server.js`, then browse to `http://localhost:8080` (see Option 2).
+
+Verify the posture at any time — both commands are safe to run on the closed network:
+
+```bash
+bash tools/fetch-vendor.sh --check      # what is present; whether anything could call out
+node test/no-external-calls.test.js     # PROVES no outbound calls (static scan + live monitor)
+```
+
+The second one is the important one for an accreditation conversation: it scans every shipped file for
+anything a browser would fetch, *and* separately executes all eight simulators against instrumented
+network primitives (`fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource`, `sendBeacon`, image and
+script `src`) and fails if a single absolute URL is attempted. It should print
+`PASSED — the course makes no outbound network calls. Air-gap clean.`
+
+Two honest caveats, neither of which sends anything anywhere:
+
+- The worksheets carry ~99 **further-reading links** (Wikipedia, NASA, CelesTrak). They are ordinary
+  links: nothing is fetched unless a student clicks one, and on a closed network they simply fail to
+  open. They are listed in each worksheet's *Further reading* panel if you would rather point students
+  at an internal mirror.
+- The Earth and Moon maps fall back to **schematic** versions that ship in the repo (ocean blue with a
+  15-degree graticule, marked equator and tropics). If `fetch-vendor.sh` also managed to pull the
+  photographic maps, those are used instead. Both are local; the difference is cosmetic, and the
+  schematic grid is arguably better for teaching rotation and inclination.
 
 ### Option 1 — Standalone (zero install, no accounts)
 

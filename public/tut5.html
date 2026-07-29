@@ -152,9 +152,8 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
-  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
-  crossorigin="anonymous"></script>
+<script src="vendor/three.min.js"></script>
+<script src="textures.js"></script>
 <script>
 "use strict";
 /* ============================================================================
@@ -212,16 +211,16 @@ const starField=new THREE.Group(); scene.add(starField);
 function placeStars(v){ const R=Math.max(2e6, v.R*20); starField.position.copy(v.cam.position); starField.scale.setScalar(R); }
 
 const tl=new THREE.TextureLoader();
-function tex(u,mat,fallback){ tl.load(u,t=>{mat.map=t;mat.color.set(0xffffff);mat.needsUpdate=true;},undefined,()=>{if(fallback)mat.color.set(fallback);}); }
+function tex(which,mat,fallback){ OA_TEX.onto(which,mat,fallback); }   // resolves local → CDN → schematic
 
 // Earth
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
 const earth=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH,48,32),earthMat); scene.add(earth);
-tex('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',earthMat,0x2b6fb5);
+tex('earth',earthMat,0x2b6fb5);
 // Moon (real lunar surface image)
 const moonMat=new THREE.MeshStandardMaterial({color:0xd8d2c4,roughness:1});
 const moon=new THREE.Mesh(new THREE.SphereGeometry(R_MOON,48,32),moonMat); scene.add(moon);
-tex('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg',moonMat,0xd8d2c4);
+tex('moon',moonMat,0xd8d2c4);
 // Sun (billboarded glow, far away)
 const sun=new THREE.Mesh(new THREE.SphereGeometry(R_SUN*0.5,24,16),new THREE.MeshBasicMaterial({color:0xffe07a}));
 scene.add(sun);

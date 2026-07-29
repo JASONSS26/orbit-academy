@@ -187,9 +187,8 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
-  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
-  crossorigin="anonymous"></script>
+<script src="vendor/three.min.js"></script>
+<script src="textures.js"></script>
 <script src="tut2.data.js"></script>
 <script>
 "use strict";
@@ -230,8 +229,7 @@ const sunSprite=(function(){const cv=document.createElement('canvas');cv.width=c
 const SUN_DIST=40;
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
 const earth=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),earthMat); sc3.add(earth);
-new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg',
-  t=>{earthMat.map=t;earthMat.color.set(0xffffff);earthMat.needsUpdate=true;},undefined,()=>{});
+OA_TEX.onto('earth', earthMat, 0x2b6fb5);   // local photo → pinned CDN → schematic
 
 // GEO belt ring + 1-degree slot ticks
 const beltGrp=new THREE.Group(); sc3.add(beltGrp); let beltSlots;

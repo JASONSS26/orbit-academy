@@ -331,9 +331,8 @@
 <div id="calHud"></div>
 <div id="hint">Start in <b>🗺 PLAN</b> — program your burns, then load into the cockpit to fly. · <kbd>F</kbd> NAV frame · <kbd>,</kbd><kbd>.</kbd> time warp</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
-  integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"
-  crossorigin="anonymous"></script>
+<script src="vendor/three.min.js"></script>
+<script src="textures.js"></script>
 <script src="flight8.js"></script>
 <script src="sat8.js"></script>
 <script>
@@ -357,9 +356,9 @@ function fit(cv){ const r=cv.getBoundingClientRect(), d=Math.min(2,devicePixelRa
    Loaded as equirectangular maps, then pre-rendered onto a shaded sphere once per size into an
    offscreen "disc" canvas we can stamp into the window at any scale. Falls back to gradients if
    the CDN is unreachable (offline). */
-const TEX_BASE='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/';
-function loadTex(file){ const im=new Image(); im.crossOrigin='anonymous'; im.src=TEX_BASE+file; return im; }
-const earthTex=loadTex('earth_atmos_2048.jpg'), moonTex=loadTex('moon_1024.jpg');
+// Resolved through OA_TEX: local photo (vendored) → pinned CDN → the schematic map that ships
+// with the repo, so this works with no network at all.
+const earthTex=OA_TEX.image('earth'), moonTex=OA_TEX.image('moon');
 
 /* =====================  WINDOW SCENE  ===================== */
 const winCv=$('cWin'); let winCtx=fit(winCv);

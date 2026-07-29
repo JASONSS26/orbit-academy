@@ -26,17 +26,88 @@ progress in `localStorage`), so the static files run anywhere.
 | `public/worksheet-engine.js` | Shared worksheet renderer: objectives → tutorial → exercises → final check. Saves via `/api/task`, falls back to localStorage. Quiz options shuffle at render. |
 | `public/worksheetN.html` | Thin shell per module: sets `MODULE={id,title,tool,toolWindow}` then loads the data + engine. |
 | `public/worksheetN.data.js` | The module's *content* (`const WORKSHEET={…}`). Served copy for **standalone mode only** — see §5. |
-| `public/tutN.html` | The module's simulator. Self-contained; Three.js from an **SRI-pinned** CDN tag. |
+| `public/tutN.html` | The module's simulator. Self-contained; loads `vendor/three.min.js` (LOCAL — see §2.5) then `textures.js`. |
 | `public/flight8.js`, `sat8.js` | Module 8's shared 2-D three-body flight model (planner and cockpit both use it) and the 3-D target satellite. |
 | `public/worksheet-final.data.js`, `final.html` | Course-wide final quiz (different schema: `const EXAM=[…]`). |
 | `public/gallery.html`, `guide.html`, `glossary.*`, `cheatsheet.html`, `controls.html`, `resources.html`, `editor.html` | Support pages. `guide.html` is the HTML rendering of `docs/INSTRUCTOR_GUIDE.md` — keep them in step. |
 | `workbooks/active/*.data.js` | The **published** worksheet set the server actually serves (see §5). |
 | `academy_data.json` | User store (password hashes + progress). **Gitignored — never commit.** |
 | `slides/moduleN.pptx` | 8-slide intro lecture deck per module (see Instructor Guide §6). |
-| `test/` | `run.sh` spins up a fresh server and runs functional + security + DoS suites. Bash (use Git Bash/WSL on Windows). |
+| `public/textures.js` | Planet-texture resolution for every sim + a loud banner if three.js is missing. See §2.5. |
+| `public/vendor/` | Third-party + generated assets: `three.min.js` (fetched once), `textures/*_schematic.jpg` (committed). |
+| `tools/fetch-vendor.sh` | Populates `public/vendor/` once, with a SHA-384 check. Also `--check` / `--cdn`. See §2.5. |
+| `tools/make-textures.py` | Regenerates the committed schematic Earth/Moon maps (numpy + PIL, fixed seed). |
+| `test/` | `run.sh` spins up a fresh server and runs functional + security + DoS + **air-gap** suites. Bash (Git Bash/WSL on Windows). |
+| `test/no-external-calls.test.js` | Proves the client makes zero outbound calls (static + runtime). See §2.5. |
+| `test/tut8-cockpit.verify.js` | Headless cockpit harness: flies both Module 8 missions to completion against DOM stubs. |
 | `start-academy.bat` / `.command` | Double-click launchers with a Node-missing check. |
 
+## 2.5 Third-party assets and the air-gap posture
+
+**The course must install and run on a standalone, air-gapped machine.** That is a hard requirement
+(US Space Force training use), not a nice-to-have, and it shapes the asset architecture.
+
+**Default posture: local-first.** A running install makes **zero outbound network calls**. Two things
+make that true:
+
+1. **three.js loads from `public/vendor/three.min.js`** — a local path in all eight sims. It is the one
+   file not committed (~600 KB of third-party minified JS), so `tools/fetch-vendor.sh` fetches it once
+   and verifies it against the **published SHA-384** (the same hash the old CDN tags pinned); a
+   mismatch aborts rather than installing an unverified library. If it is missing, `textures.js` paints
+   an explanatory banner instead of leaving a blank canvas — the failure mode that used to look like
+   broken physics.
+2. **Planet textures resolve through `public/textures.js`**, first hit wins:
+
+   | # | Source | Notes |
+   |---|---|---|
+   | 1 | `vendor/textures/earth_atmos_2048.jpg` | photographic, local. Placed by `fetch-vendor.sh`. |
+   | 2 | the pinned CDN copy | **only if `ALLOW_CDN` is true — it defaults to `false`.** |
+   | 3 | `vendor/textures/earth_schematic.jpg` | **committed to the repo.** Always available. |
+
+   Step 3 is why the tree is self-contained out of the box. It is deliberately **schematic** — ocean
+   blue, a 15 degree graticule, gold equator, dashed tropics/polar circles, green prime meridian — and
+   *not* a fabricated photo: we have no coastline data offline, and inventing continents would put
+   wrong geography in front of students. It is also pedagogically better for Modules 1-3: you can count
+   meridians to see Earth rotate and read inclination off the grid. Regenerate with
+   `python3 tools/make-textures.py` (numpy + PIL, fixed seed, so the output is reproducible).
+
+**API for sim code** — never load a planet texture directly:
+
+```js
+OA_TEX.onto('earth', earthMat, 0x2b6fb5);   // usual case: put the map on a material
+OA_TEX.load('moon', t => {…}, () => {…});   // when you need the THREE.Texture yourself
+OA_TEX.image('earth');                      // an HTMLImageElement, for canvas pixel sampling (tut8)
+OA_TEX.chain('earth');                      // the resolved URL list, honouring ALLOW_CDN
+```
+
+**`tools/fetch-vendor.sh`**
+
+| Command | Effect |
+|---|---|
+| *(no args)* | Download into `public/vendor/`; verify the library hash. Run once, with network. |
+| `--check` | Report what is present, the `ALLOW_CDN` value, and any outbound reference left in `public/`. |
+| `--cdn` | Opt back in to the pinned CDNs. **Not for air-gapped use.** `--restore` is a synonym. |
+
+**Air-gapped install:** run `fetch-vendor.sh` once on a networked machine, then copy or zip the whole
+`academy` folder (with `public/vendor/`) to the target. No npm, no build step, no internet. Open
+`public/index.html` directly, or run `node server.js` for the tracked/roster mode.
+
+**Enforcement.** `node test/no-external-calls.test.js` (also part of `test/run.sh`) proves the property
+in two independent passes: a **static** scan for fetchable constructs (`src=`, `<link href>`, `url()`,
+`fetch()`, `XHR.open`, `WebSocket`, `EventSource`, `sendBeacon`, `importScripts`, `.src=`), and a
+**runtime** pass that executes every sim's JavaScript against a DOM stub whose network primitives are
+instrumented, failing on any absolute URL that reaches them. It deliberately does not flag URLs merely
+*mentioned* in prose or in `<a href>` further-reading links (99 of those exist; inert until a human
+clicks). The test was verified by injecting a CDN script tag, a `fetch()` and an `Image().src` and
+confirming both passes caught all three.
+
 ## 3. Invariants — do not break these
+
+- **The client makes no outbound network calls.** No CDN tags, no web fonts, no analytics, no `fetch()`
+  to anything. Load assets from `public/vendor/` and textures via `OA_TEX` (2.5).
+  `test/no-external-calls.test.js` fails the build if this slips. Module 1 once had an optional "paste
+  your Anthropic API key" tutor that POSTed to `api.anthropic.com`; it was removed precisely because an
+  air-gapped deployment should not even *contain* a field that could carry a credential off-box.
 
 **Physics (see also CLAUDE.md):**
 - Module 1 orbits are **analytic conics** from the injection state — no numerical propagation, so
@@ -121,6 +192,16 @@ this sync.
 7. Run §7.
 
 ## 6.5 Verification rules (learned the hard way)
+
+> **Running the Module 6 fan suite:** it takes ~40 s **per mode** and is *not* part of `run.sh`. The
+> first argument is the HTML file, the second the mode — getting that wrong makes it exit instantly
+> with a file-read error that is easy to mistake for a pass:
+> ```bash
+> node test/tut6-physics.verify.js public/tut6.html scatter    # then l1knife, tadpole, dro, freeret
+> ```
+> Each mode prints its seven objects and ends with `PASS (mode)`. Expected figures are in
+> `docs/SECURITY.md` under the v5.0 audit.
+
 
 - **Verify by EXECUTING the shipped code, never by re-implementing it.** Extract the actual
   functions from the page (regex-slice the `<script>` and `eval` with stubs) and drive those.

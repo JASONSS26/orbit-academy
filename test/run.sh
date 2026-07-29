@@ -28,4 +28,9 @@ HEALTH=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/")
 if [ "$HEALTH" = "200" ]; then echo "  ✓ server alive after oversized body"; D=0; else echo "  ✗ FAIL server unhealthy ($HEALTH)"; D=1; fi
 
 echo
-if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0; else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D)"; exit 1; fi
+echo "### air-gap suite (no server needed)"
+node test/no-external-calls.test.js; N=$?
+
+echo
+if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
+else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N)"; exit 1; fi

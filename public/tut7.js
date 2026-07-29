@@ -435,7 +435,10 @@ iodEarthImg.onload=()=>{ iodEarthReady=true;
     iodTexData=tg.getImageData(0,0,tw,th).data; iodTexW=tw; iodTexH=th; }catch(e){ iodTexData=null; }
   if(scene==='iod') iodDrawOrbit(); if(scene==='radec') drawRadec(); };
 iodEarthImg.onerror=()=>{ iodEarthReady=false; };
-iodEarthImg.src='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/earth_atmos_2048.jpg';
+// resolved through OA_TEX (local photo → pinned CDN → schematic); falls back to a flat globe
+{ const _c=(window.OA_TEX?OA_TEX.chain('earth'):['vendor/textures/earth_schematic.jpg']); let _i=0;
+  iodEarthImg.onerror=()=>{ if(++_i<_c.length) iodEarthImg.src=_c[_i]; else iodEarthReady=false; };
+  iodEarthImg.src=_c[0]; }
 // ---- star field ----
 function iodBuildStars(){ iodStars=[]; let s=20260714;
   const rnd=()=>{ s=(s*1103515245+12345)&0x7fffffff; return s/0x7fffffff; };

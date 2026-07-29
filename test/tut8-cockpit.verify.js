@@ -78,7 +78,10 @@ global.localStorage = { getItem: (k) => (k === 'm7_tour' ? '1' : k === 'm7_geo_d
 global.Image = function () { return el('img'); };
 global.getComputedStyle = () => ({ display: 'block' });
 global.location = { search: '' }; global.alert = noop;
-global.THREE = {}; global.Sat7 = undefined;
+/* textures.js runs as part of the page now, so the THREE stub needs a TextureLoader; every load
+   "fails" here, which is exactly what we want — the chain falls through and OA_TEX still initialises. */
+global.THREE = { TextureLoader: function () { return { load: (u, ok, p, err) => { if (err) err(new Error('stub')); } }; } };
+global.Sat7 = undefined;
 let rafCb = null;
 global.requestAnimationFrame = (cb) => { rafCb = cb; return 1; };
 global.cancelAnimationFrame = noop;
@@ -87,7 +90,17 @@ require(path.join(ROOT, 'public', 'flight8.js'));   // real physics
 
 // ------------------------------------------------------- boot the real script
 const html = fs.readFileSync(path.join(ROOT, 'public', 'tut8.html'), 'utf8');
-const src = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).join('\n');
+/* Collect every script the page runs, in document order: inline blocks AND local <script src> files
+   (textures.js defines OA_TEX, which tut8 now uses for its window textures). Absolute URLs are
+   skipped — there should not be any, and test/no-external-calls.test.js enforces that separately. */
+const src = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].map((m) => {
+  const attrs = m[1], body = m[2];
+  const srcM = /src="([^"]+)"/.exec(attrs);
+  if (!srcM) return body;
+  if (/^https?:/i.test(srcM[1])) return '';
+  const p = path.join(ROOT, 'public', srcM[1]);
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '';
+}).join('\n;\n');
 const EXPORTS = ';Object.assign(globalThis,{setMission,solvePlan,toggleMode,loadIntoCockpit,toggleAuto,'
   + 'getState:()=>({flying,fsT,warp,nextBurn,nBurns:planBurns.length,dvSpent,dvTotal,autoOn,'
   + 'mode:geoDispMode(),hold:holdStartT,msg:missionMsg,loiter:loiter})});';

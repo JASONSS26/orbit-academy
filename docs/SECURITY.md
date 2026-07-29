@@ -4,6 +4,65 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v5.0 — audit result: **PASS**
+
+The v5.0 change set is large but almost entirely **client-side content and assets**; `server.js`
+changes only its version-header comment — zero changes to auth, sessions, roles, routing, parsing,
+body-size limits, path handling, or the workbook editor. Audit performed 2026-07-28.
+
+**Scripted suites** (`bash test/run.sh`, fresh isolated servers): functional **34 ✓**, security
+**30 ✓** (path traversal ×4, unauth access ×4, first-user-instructor, role self-assignment, priv-esc,
+session forgery, prereq bypass ×2, score clamping, password/email validation, malformed JSON,
+workbook-editor authz ×4 + id validation ×2, unknown-worksheet route, post-logout invalidation),
+DoS 300 KB body ✓ — **ALL SUITES PASSED**, plus the new air-gap suite (below).
+
+**New in this release — the client is verified to make NO outbound network calls.** This matters
+because the course is deployed on standalone / air-gapped systems.
+- three.js now loads from `public/vendor/three.min.js` in all eight simulators (was a pinned CDN
+  tag). `tools/fetch-vendor.sh` fetches it once and **verifies the published SHA-384**, refusing to
+  install a library whose hash does not match — the same integrity guarantee the SRI tag gave, now
+  enforced at install time instead of per page load.
+- Planet textures resolve through `public/textures.js` with `ALLOW_CDN = false` by default; the final
+  fallback is a **schematic map committed to the repo**, so no asset is ever fetched.
+- **Removed the optional Anthropic tutor** from Module 1 (a user-supplied API key POSTed the orbit to
+  `api.anthropic.com`). No key ever shipped and it was inert by default, but an air-gapped deployment
+  should not contain a field capable of carrying a credential off-box. The built-in local explainer
+  covers the same ground.
+- Enforcement: `test/no-external-calls.test.js`, now part of `test/run.sh`. Two independent passes —
+  a static scan for fetchable constructs (`src=`, `<link href>`, `url()`, `fetch()`, `XHR.open`,
+  `WebSocket`, `EventSource`, `sendBeacon`, `importScripts`, `.src=`) and a runtime pass that executes
+  all eight simulators against instrumented network primitives. Result: **0 outbound calls from every
+  module**; 99 `<a href>` further-reading links remain and are inert. The test itself was validated by
+  injecting a CDN script tag, a `fetch()` and an `Image().src` and confirming both passes caught all
+  three.
+
+**New client code reviewed.** `textures.js` builds its DOM banner with `createElement`/`textContent`
+(the one `innerHTML` use is a static template string, no user data); `tools/make-textures.py` is a
+build-time generator that touches no user data; the new Module 1 controls card is static markup with
+a `localStorage` seen-flag; `test/*` are developer tools, never served. No `eval`, no
+`document.write`, no new storage or network access anywhere.
+
+**Physics / functionality re-verified on the release candidate.** Module 8 headless cockpit harness
+(`test/tut8-cockpit.verify.js`): both reference missions fly to completion — GEO rendezvous on station
+T+1.71 d on 3,896/6,500 m/s, lunar capture held with three burns T+5.44 d on 3,728/9,500 m/s, **17/17
+checks**. That harness was itself extended this release to execute the page's local `<script src>` files,
+which immediately caught a real breakage (tut8 using `OA_TEX` before `textures.js` was loaded).
+
+**Module 6 fan suite — re-run in full, all five scenarios PASS.** `test/tut6-physics.verify.js` is
+documented as taking ~40 s *per mode* and is meant to be run per mode
+(`node test/tut6-physics.verify.js public/tut6.html scatter|l1knife|tadpole|dro|freeret`). Each was
+executed against the shipped `tut6.html` functions and arrays extracted verbatim:
+
+| mode | result | key figures |
+|---|---|---|
+| `scatter` | PASS | yellow flung to 1.54 M-km; the other six bound at 1.2–12.8 R_M |
+| `l1knife` | PASS | 3 moonward, 2 earthward, 2 hovering — the knife edge intact |
+| `tadpole` | PASS | red breaks out at 180°; the rest bounded 1.1–22.4° |
+| `dro` | PASS | every DRO bound 90 d; far prograde stripped; 30k prograde impacts d38.6 |
+| `freeret` | PASS | pink returns d18.0, green d7.8, cyan d8.3, pale d13.3 — 4 of 7 home |
+
+`academy_data.json` confirmed gitignored. Cleared to ship v5.0.
+
 ## v4.1 — audit result: **PASS**
 The v4.1 change set is the owner flight-test round on the v4.0 fan lab plus the star-field
 upgrade — **entirely client-side** (tut1–8 star fields, tut6 warp/halos/Hill-ring/banner/zoom,

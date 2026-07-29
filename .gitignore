@@ -23,3 +23,12 @@ workbooks/**/*.tmp
 
 # distributable bundles (built on demand — not repo content)
 orbit-academy-*.zip
+
+# ---- vendored third-party assets --------------------------------------------
+# DELIBERATE: the repo ships our own schematic maps (always present, so the course
+# is self-contained with zero network) but NOT redistributed third-party binaries.
+# Each install runs `bash tools/fetch-vendor.sh` once on a networked machine, then
+# copies the folder to the air-gapped target. See README "Requirements".
+public/vendor/three.min.js
+public/vendor/textures/earth_atmos_2048.jpg
+public/vendor/textures/moon_1024.jpg
