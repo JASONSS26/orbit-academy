@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* ORBIT ACADEMY v5.0 — course-management backend. Zero external dependencies.
+/* ORBIT ACADEMY v5.2 — course-management backend. Zero external dependencies.
    - Accounts (scrypt-hashed passwords), session cookies (random tokens).
    - Per-user progress, prerequisite gating, instructor dashboard.
    - JSON file store (academy_data.json). Suitable for a training cohort, not web-scale.
@@ -41,6 +41,17 @@ function saveNow(){
 }
 let saveTimer=null;
 function saveDB(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,100); }
+/* Writes are debounced 100 ms so a burst of task completions costs one write, not twenty. The cost is
+   a window in which a pending save is still only in memory — and the normal way to stop this server is
+   closing the launcher window, which is exactly a kill. Flush on the way out so a student who just
+   answered a question does not lose it. */
+function flushAndExit(sig){ return function(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; saveNow(); }
+  process.exit(sig==='SIGINT'?130:143);
+}; }
+process.on('SIGINT', flushAndExit('SIGINT'));
+process.on('SIGTERM', flushAndExit('SIGTERM'));
+process.on('exit', ()=>{ if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; saveNow(); } });
 loadDB();
 
 /* ---------------- course definition (prerequisites) ---------------- */
@@ -188,7 +199,17 @@ async function api(req,res,url){
     const c=COURSE.find(x=>x.id===tid); if(!c) return send(res,400,{error:'unknown tutorial'});
     if(!unlocked(u.progress)[tid]) return send(res,403,{error:'prerequisites not met'});
     const rec=u.progress[tid]||{tasks:{}}; rec.tasks=rec.tasks||{};
-    rec.tasks[task]={done:!!b.done, attempts:(rec.tasks[task]?rec.tasks[task].attempts||0:0)+(b.attempt?1:0), when:Date.now()};
+    /* Wrong answers are reported too (b.wrong), so instructors can see WHERE a cohort struggled and
+       not merely who finished. Two invariants matter here:
+         - `done` must never regress. A miss arriving after completion (or any replayed request) must
+           not un-complete a task, or a student could lose a module they had already passed.
+         - `misses` counts incorrect submissions; `attempts` counts all of them. done && misses===0
+           therefore means "got it first try", which is the signal worth teaching from. */
+    const prev=rec.tasks[task]||{};
+    rec.tasks[task]={ done: !!prev.done || !!b.done,
+      attempts:(prev.attempts||0)+(b.attempt?1:0),
+      misses:(prev.misses||0)+(b.wrong?1:0),
+      when:Date.now() };
     // module is complete when all required tasks are done
     const total=(b.totalTasks|0)||0; const doneCount=Object.values(rec.tasks).filter(t=>t.done).length;
     if(total>0 && doneCount>=total){ rec.passed=true; rec.score=Math.max(rec.score||0,100); rec.when=Date.now(); }
@@ -216,6 +237,78 @@ async function api(req,res,url){
     try{ saveWorksheet(b.id,b.data); return send(res,200,{ok:true,id:b.id}); }
     catch(e){ return send(res,400,{error:'rejected — worksheet would not validate: '+e.message}); }
   }
+  if(p==='/api/setup'){
+    /* Unauthenticated, and deliberately minimal: it reports ONLY whether any account exists yet.
+       Purpose: a fresh install must say plainly that the next account created becomes the instructor.
+       Without it, the standard accident is a test account claiming the role, after which the real
+       instructor is stuck as a student with no in-app way back.
+       This is the safe alternative to shipping a default instructor password — a fixed credential in
+       the repo would be the same on every installation worldwide, would live in git history forever,
+       and is the classic hard-coded-credentials weakness. Here nothing is shipped and no secret
+       exists; the first person to reach a new server simply gets told what is about to happen.
+       Disclosure is limited to "is this instance configured yet", which on a closed training LAN is
+       not sensitive — and it is only true once. */
+    return send(res,200,{fresh:Object.keys(DB.users).length===0});
+  }
+
+  if(p==='/api/user/delete' && req.method==='POST'){   // instructor only: remove an account
+    const me=requireInstructor(req,res); if(!me) return;
+    const b=await readBody(req); if(!b) return send(res,400,{error:'bad request'});
+    const email=String(b.email||'').toLowerCase();
+    const target=Object.values(DB.users).find(x=>String(x.email||'').toLowerCase()===email);
+    if(!target) return send(res,404,{error:'no such account'});
+    /* Two refusals that prevent an instructor locking everyone out of the course, including
+       themselves. Neither is recoverable from the UI, so they are enforced here, server-side. */
+    if(target.id===me.id) return send(res,400,{error:'you cannot delete your own account'});
+    if(target.role==='instructor'){
+      const others=Object.values(DB.users).filter(x=>x.role==='instructor'&&x.id!==target.id).length;
+      if(!others) return send(res,400,{error:'that is the only instructor'});
+    }
+    delete DB.users[target.id];
+    // drop their sessions too, or a deleted user keeps a working cookie until it expires
+    for(const sid of Object.keys(DB.sessions)){ if(DB.sessions[sid] && DB.sessions[sid].uid===target.id) delete DB.sessions[sid]; }
+    saveDB();
+    return send(res,200,{ok:true,deleted:{name:target.name,email:target.email}});
+  }
+
+  if(p==='/api/user/reset' && req.method==='POST'){    // instructor only: wipe progress, keep account
+    const me=requireInstructor(req,res); if(!me) return;
+    const b=await readBody(req); if(!b) return send(res,400,{error:'bad request'});
+    const email=String(b.email||'').toLowerCase();
+    const target=Object.values(DB.users).find(x=>String(x.email||'').toLowerCase()===email);
+    if(!target) return send(res,404,{error:'no such account'});
+    target.progress={}; saveDB();
+    return send(res,200,{ok:true,reset:{name:target.name,email:target.email}});
+  }
+
+  if(p==='/api/analytics'){                            // instructor only: where did the cohort struggle?
+    const me=requireInstructor(req,res); if(!me) return;
+    const students=Object.values(DB.users).filter(x=>x.role!=='instructor');
+    /* Aggregate per task across students. A task with many misses spread over many students is a
+       teaching problem; one student missing everything is a different problem. Both are visible
+       because we report per-task totals AND per-student rows. */
+    const tasks={};                                    // "t3/c2" -> {done, misses, attempts, firstTry, students}
+    for(const u of students){
+      for(const c of COURSE){
+        const rec=u.progress[c.id]; if(!rec||!rec.tasks) continue;
+        for(const [tid,t] of Object.entries(rec.tasks)){
+          const k=c.id+'/'+tid;
+          const a=tasks[k]||(tasks[k]={module:c.id,task:tid,done:0,misses:0,attempts:0,firstTry:0,students:0});
+          a.students++; a.attempts+=t.attempts||0; a.misses+=t.misses||0;
+          if(t.done){ a.done++; if(!(t.misses||0)) a.firstTry++; }
+        }
+      }
+    }
+    const perStudent=students.map(u=>({name:u.name,email:u.email,
+      modules:Object.fromEntries(COURSE.map(c=>{ const r=u.progress[c.id];
+        if(!r) return [c.id,null];
+        const ts=Object.values(r.tasks||{});
+        return [c.id,{passed:!!r.passed,done:ts.filter(t=>t.done).length,
+          misses:ts.reduce((n,t)=>n+(t.misses||0),0)}]; }))}));
+    return send(res,200,{course:COURSE,students:perStudent,
+      tasks:Object.values(tasks).sort((a,b)=>(b.misses-a.misses)||a.module.localeCompare(b.module))});
+  }
+
   if(p==='/api/roster'){ // instructor only
     const u=userFromReq(req); if(!u||u.role!=='instructor') return send(res,403,{error:'instructor only'});
     const rows=Object.values(DB.users).map(x=>({name:x.name,email:x.email,role:x.role,

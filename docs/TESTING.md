@@ -68,3 +68,52 @@ It exists because the render loop wraps everything in `try/catch`, so a thrown e
 the instruments — the harness surfaces those, plus autopilot pathologies that only appear over a whole
 flight. Two fidelity rules: one shared clock (rAF timestamps and `performance.now()`), and open the
 planner *before* solving.
+
+## file:// robustness — `test/file-protocol.test.js`
+
+The primary install path for a non-technical user is "download the ZIP, double-click a page", so the
+course runs from `file://` with no origin and no server. Two browser behaviours make that path
+different, and both shipped as silent hangs in v5.0:
+
+| Behaviour | Naive code | Symptom |
+|---|---|---|
+| `fetch()` **rejects** on `file://` (it does not resolve with `ok:false`) | `const r=await fetch(u); if(!r.ok){…}` | handler never runs; page hangs blank with no error |
+| `getImageData()` **throws** `SecurityError` on a canvas holding a `file://` image (tainted) | unguarded pixel sampling | render loop dies; frozen cockpit that looks like broken physics |
+
+The suite asserts the guards structurally *and* by simulation: it drives the real `refresh()` body
+with a rejecting `fetch` and confirms the no-server handler is reached, and drives the real `getPix()`
+with a `getImageData` that throws and confirms it degrades to `null` instead of escaping. 15 checks.
+Gated in `test/run.sh`.
+
+Rule of thumb when adding client code: **if it calls `fetch` or reads canvas pixels, it must work
+from a file.** Prefer `try/catch` around the await, never `if(!r.ok)` alone.
+
+## Vendored asset integrity — `tools/fetch-vendor.sh --check`
+
+Recomputes the SHA-384 of all five committed assets in `public/vendor/` against the manifest in
+`public/vendor/NOTICE.md`, distinguishing required from optional files. Fails the suite on mismatch
+or on a missing required file. Verified by appending one byte to a texture (detected) and deleting
+`three.min.js` (detected, exit 1). Gated in `test/run.sh`.
+
+## Both run modes — `test/two-run-modes.test.js`
+
+The course promises two supported ways to run, so both are tested rather than assumed:
+
+| | Server mode | Bare mode |
+|---|---|---|
+| launch | `node server.js` | open `public/gallery.html` off disk |
+| progress | POST `/api/task`, per account | `localStorage` |
+
+For **each** mode the suite boots the **real** `worksheet-engine.js` against the **real**
+`worksheet1` content with DOM stubs, then *clicks* a correct quiz option through the real handler
+chain (`opt.onclick` → `answer()` → `save()`) and asserts the completion reached the right store —
+the server via a live HTTP session on a scratch data file, or `localStorage`. It then re-boots a
+fresh "browser" and asserts the progress comes back, which is the property a student actually
+depends on.
+
+Server mode additionally asserts the server serves every asset both entry points need, including
+`vendor/three.min.js` and a vendored texture. Bare mode drives a **rejecting** `fetch` (real
+`file://` behaviour) and asserts the engine falls into its standalone branch and badges itself.
+
+A third section pins worksheet page layout for all 8 modules: `#exam` → `#endmatter` → `#done`, so
+the completion banner stays *below* the key-points summary and the "Learn more" resources.

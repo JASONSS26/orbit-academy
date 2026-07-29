@@ -52,6 +52,43 @@ let pass=0,fail=0; const P=(n,ok,x)=>{console.log((ok?'  ✓ ':'  ✗ FAIL ')+n+
   P('workbook/save rejects malformed payload',(await req('POST','/api/workbook/save',{id:'worksheet1',data:{nope:1}},inst.cookie)).status===400);
   P('served worksheet data route rejects unknown id',[404].includes((await req('GET','/worksheet42.data.js')).status));
 
+  // ---- course management (v5.2): delete / reset / analytics are instructor-only ----
+  P('user/delete denies student',(await req('POST','/api/user/delete',{email:'x@y.z'},stu.cookie)).status===403);
+  P('user/reset denies student',(await req('POST','/api/user/reset',{email:'x@y.z'},stu.cookie)).status===403);
+  P('analytics denies student',(await req('GET','/api/analytics',null,stu.cookie)).status===403);
+  P('user/delete denies anonymous',(await req('POST','/api/user/delete',{email:'x@y.z'})).status===401);
+  P('user/reset denies anonymous',(await req('POST','/api/user/reset',{email:'x@y.z'})).status===401);
+  P('analytics denies anonymous',(await req('GET','/api/analytics')).status===401);
+  P('analytics works for instructor',(await req('GET','/api/analytics',null,inst.cookie)).status===200);
+  // an instructor must not be able to lock the course out of existence
+  P('instructor cannot delete self',(await req('POST','/api/user/delete',{email:'i@j.org'},inst.cookie)).status===400);
+  P('instructor cannot delete the only instructor',(await req('POST','/api/user/delete',{email:'i@j.org'},inst.cookie)).status===400);
+  P('delete rejects unknown account',(await req('POST','/api/user/delete',{email:'nobody@nowhere.invalid'},inst.cookie)).status===404);
+  P('reset rejects unknown account',(await req('POST','/api/user/reset',{email:'nobody@nowhere.invalid'},inst.cookie)).status===404);
+  // a wrong answer must never un-complete a finished task (done must not regress)
+  {
+    await req('POST','/api/task',{tutorial:'t1',task:'regress1',done:true,attempt:true,totalTasks:99},stu.cookie);
+    await req('POST','/api/task',{tutorial:'t1',task:'regress1',done:false,attempt:true,wrong:true,totalTasks:99},stu.cookie);
+    const me=await req('GET','/api/me',null,stu.cookie);
+    const prog=(JSON.parse(me.body||'{}').user||{}).progress||{};
+    const t=((prog.t1||{}).tasks||{}).regress1||{};
+    P('a wrong answer does not un-complete a task',t.done===true,JSON.stringify(t));
+    P('the miss was counted',(t.misses||0)>=1,JSON.stringify(t));
+  }
+  // reset really clears, and the account survives
+  {
+    await req('POST','/api/user/reset',{email:'s@j.org'},inst.cookie);
+    const me=await req('GET','/api/me',null,stu.cookie);
+    const prog=(JSON.parse(me.body||'{}').user||{}).progress||{};
+    P('reset cleared the student progress',Object.keys(prog).length===0,JSON.stringify(prog).slice(0,60));
+    P('reset kept the account usable',me.status===200);
+  }
+
+  // ---- /api/setup: safe alternative to a shipped default password ----
+  P('setup is readable without auth',(await req('GET','/api/setup')).status===200);
+  P('setup reports NOT fresh once accounts exist',JSON.parse((await req('GET','/api/setup')).body).fresh===false);
+  P('setup leaks only the fresh flag',Object.keys(JSON.parse((await req('GET','/api/setup')).body)).join()==='fresh');
+
   // logout invalidates
   await req('POST','/api/logout',null,inst.cookie);
   P('session invalid after logout',(await req('GET','/api/me',null,inst.cookie)).status===401);

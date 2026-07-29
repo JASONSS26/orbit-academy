@@ -52,23 +52,27 @@ git clone https://github.com/JASONSS26/orbit-academy.git
 cd orbit-academy/academy
 ```
 
-### 2.2 Fetch the 3-D library (one time, needs internet)
+### 2.2 Confirm the assets are intact (optional, no internet)
 
-The simulators need Three.js, which is not stored in the repository. Run this **once**, on a machine
-with internet access:
+**There is nothing to download.** Three.js and all four planet maps are committed to the repository,
+so the clone you just made is already a complete, runnable, offline course. This is deliberate: it
+removes the install step, and it removes version drift — every classroom runs identical bytes.
+
+After a ZIP round-trip or a USB copy it is still worth confirming nothing was lost:
 
 ```bash
 cd path/to/academy
-bash tools/fetch-vendor.sh
+bash tools/fetch-vendor.sh --check
 ```
 
-It downloads the library into `public/vendor/`, checks it against its published checksum, and (if it
-can) also grabs the photographic Earth/Moon maps. On Windows use Git Bash or WSL; alternatively
-download `three.min.js` (r128) by hand and drop it in `academy/public/vendor/`. See
-`docs/MAINTENANCE.md` §2.5 for the full asset architecture.
+It recomputes the SHA-384 of every vendored file and compares it with the table in
+`public/vendor/NOTICE.md`, which also records where each file came from and under what license.
+Expected tail: `PASS — every vendored asset matches public/vendor/NOTICE.md.` On Windows use Git Bash
+or WSL (`README.md` has a pure-PowerShell equivalent). See `docs/MAINTENANCE.md` §2.5 for the full
+asset architecture.
 
-After this step the course needs no internet again — copy the folder anywhere, including onto a closed
-network. If you skip it, the simulators show a banner explaining exactly what is missing.
+If it reports `MISSING` or `MISMATCH`, restore with `git checkout -- public/vendor` or re-copy the
+folder. A missing library also produces an explicit on-screen banner rather than a blank canvas.
 
 ### 2.3 Install Node.js (only needed to run the tracked/server mode)
 
@@ -105,6 +109,34 @@ Any recent version works — the server uses only Node's built-ins, nothing to `
 Choose based on whether you need **central accounts and a roster** — and note **Option 0** if the
 machines have no internet (the course is designed for that case and is verified against it).
 
+### How the pieces fit together
+
+```mermaid
+flowchart TB
+  subgraph entry["Two ways in — worksheets fully interactive in BOTH"]
+    direction LR
+    B["<b>Bare mode</b><br/>open gallery.html<br/>no install · no accounts<br/>progress → this browser"]
+    S["<b>Server mode</b><br/>node server.js → :8080<br/>accounts · roster · gating<br/>progress → academy_data.json"]
+  end
+  entry --> C
+  subgraph C["The course — each module unlocks the next (server mode)"]
+    direction LR
+    M1["1 · Orbits"] --> M2["2 · Rates"] --> M3["3 · Taxonomy"] --> M4["4 · Maneuvers"]
+    M4 --> M5["5 · xGEO"] --> M6["6 · Lagrange"] --> M7["7 · Observability"] --> M8["8 · Lunar"]
+  end
+  C --> CERT["Certificate"]
+  subgraph T["Instructor tools (role-gated server-side)"]
+    direction LR
+    R["Roster + reset/delete"]
+    A["Class analytics"]
+    E["Worksheet editor"]
+  end
+  S --> T
+```
+
+Use this to decide what you need before installing anything: the left-hand path needs nothing at all,
+the right-hand path needs Node.js and gives you the tools row.
+
 ### Option 0 — Standalone / air-gapped (no internet, ever)
 
 **This is the default posture, and the one to use on a closed network.** Orbit Academy makes **zero
@@ -112,18 +144,15 @@ outbound network calls** when it runs: the 3-D library is loaded from inside the
 planet maps resolve locally, and nothing phones home. There is no npm install, no build step, and no
 telemetry of any kind.
 
-One file cannot be shipped in the repository (three.js, ~600 KB of third-party code), so there is a
-single one-time preparation step that needs a networked machine:
+**There is no preparation step.** Every byte the course needs — the 3-D library included — is
+committed to the repository. Move the whole `academy` folder to the target machine: copy it, zip it,
+clone it, or put it on a USB stick. Nothing has to be fetched first, on either end, and the target
+machine can be one that has never touched a network. On the target:
 
-```bash
-cd path/to/academy
-bash tools/fetch-vendor.sh        # downloads three.js into public/vendor/ and verifies its checksum
-```
-
-Then move the whole `academy` folder to the target machine — copy it, zip it, or put it on a USB
-stick. Everything the course needs travels with it. On the target:
-
-- **No-login use:** open `academy/public/index.html` in a browser. Done.
+- **No-login use:** open `academy/public/gallery.html` in a browser. Done. (Start at *gallery*, not
+  `index.html` — the hub is the server-mode page and needs `server.js`; it will say so and redirect
+  you. Note also that from a `file://` URL Module 8's forward window shows flat-shaded planets, since
+  browsers block pixel reads on local images; it states this on screen and nothing else changes.)
 - **Tracked cohort:** `node server.js`, then browse to `http://localhost:8080` (see Option 2).
 
 Verify the posture at any time — both commands are safe to run on the closed network:
@@ -157,7 +186,7 @@ automatically runs in **standalone mode**: it renders normally and saves the stu
 that browser's own storage (`localStorage`). No logins, no central roster — the course just works
 from a local file or any static host.
 
-- **Run it with no server at all:** open `academy/public/gallery.html` (or `index.html`) directly
+- **Run it with no server at all:** open `academy/public/gallery.html` directly
   in a browser, or serve the folder with any static server (e.g. `python3 -m http.server` from
   inside `academy/public/`).
 - **Trade-off:** progress lives in each browser, so it doesn't follow a student between devices,
@@ -724,9 +753,12 @@ swap the folder names back.
   hub. (If you *want* no-login use, host the static files without the server — §3 Option 1.)
 - **The worksheet window didn't open.** — The browser blocked the pop-up. Allow pop-ups for the
   site, then click "Re-open the worksheet."
-- **3-D view is blank.** — The Three.js library or a texture failed to load; it's fetched from a
-  public CDN, so the machine needs internet access. Simulators degrade gracefully (a plain-colored
-  Earth) if a texture is blocked, but the CDN script itself is required.
+- **3-D view is blank, or a banner says "3-D library not loaded".** — `public/vendor/three.min.js`
+  is missing from the course folder; it ships in the repository, so this means an incomplete copy or
+  extraction, **not** a missing internet connection (the course never needs one). Run
+  `bash tools/fetch-vendor.sh --check`, or restore with `git checkout -- public/vendor`. A missing
+  *texture* is harmless by comparison — the sim falls back to the schematic map that also ships in
+  the repo.
 - **Progress didn't save across devices.** — That's standalone mode (per-browser storage). Use the
   server (Option 2) for progress that follows the student.
 - **Lost accounts.** — Restore `academy_data.json` from its `.bak` (same folder) or your backup.
@@ -795,4 +827,4 @@ required because L1/L2/L3 are unstable (the halo is a controlled dance around an
 ## 12. Credits & license
 
 MIT licensed. Built for JASON / US Space Force training; companion to the CISLUNAR PATROL game and
-the xGEO simulator. Three.js is © its authors, loaded from a pinned CDN (SRI-checked).
+the xGEO simulator. Three.js is © its authors (MIT), vendored into `public/vendor/` and hash-verified — nothing is loaded from a CDN.

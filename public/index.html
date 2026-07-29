@@ -109,7 +109,12 @@
     <div id="instrPanel" class="hide card">
       <h2>Instructor dashboard</h2>
       <div class="sub">Who has completed what.</div>
+      <div class="row" style="gap:8px;margin:6px 0 10px">
+        <button class="ghost" id="tabRoster" onclick="showRoster()">👥 Roster</button>
+        <button class="ghost" id="tabStats" onclick="showStats()">📊 Where the class struggled</button>
+      </div>
       <div id="roster"></div>
+      <div id="stats" class="hide"></div>
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line,#2b3d5a)">
         <a href="editor.html" style="text-decoration:none">
           <button style="background:#12203a;border:1px solid #2b3d5a;color:#e8eef7;font:inherit;
@@ -165,11 +170,56 @@ $('authGo').onclick=async()=>{
   await refresh();
 };
 async function refresh(){
-  const r=await fetch('/api/me'); if(!r.ok){ showAuth(); return; }
+  /* This hub is the SERVER mode: accounts, prerequisite gating, instructor roster. Opened straight
+     off the filesystem (file://) there is no server to talk to and fetch REJECTS rather than
+     returning !ok — so without this catch the page hung blank forever, with no hint why. That is
+     the first thing a new user does, so say exactly what happened and point at the door that works:
+     gallery.html needs no server at all. */
+  let r;
+  try { r = await fetch('/api/me'); }
+  catch(e){ showNoServer(); return; }
+  if(!r.ok){ showAuth(); return; }
   const d=await r.json(); ME=d.user; COURSE=d.course; UNLOCKED=d.unlocked;
   showHub();
 }
-function showAuth(){ $('auth').classList.remove('hide'); $('hub').classList.add('hide');
+function showNoServer(){
+  const local = location.protocol === 'file:';
+  document.body.innerHTML =
+    '<div style="max-width:640px;margin:12vh auto;padding:24px 28px;border:1px solid #2b4a70;'
+    + 'border-radius:12px;background:#0a1626;color:#cfe3ff;font:16px/1.6 system-ui,sans-serif">'
+    + '<h2 style="margin:0 0 12px;color:#ffcf4d;font-size:21px">No course server is running</h2>'
+    + '<p>This page is the <b>tracked hub</b> — accounts, progress and the instructor roster. It needs '
+    + '<code>server.js</code> running behind it.</p>'
+    + (local
+        ? '<p>You opened it as a file on disk, so there is nothing for it to talk to. Two ways forward:</p>'
+        : '<p>The server did not answer. Two ways forward:</p>')
+    + '<p><b>1. Just start learning, no setup:</b> open <a href="gallery.html" style="color:#8fd0ff">'
+    + '<b>gallery.html</b></a> instead. Every worksheet and simulator works, and progress saves in '
+    + 'this browser. No server, no accounts, no install.</p>'
+    + '<p><b>2. Full mode with accounts:</b> install Node.js, then double-click '
+    + '<code>start-academy.command</code> (macOS) or <code>start-academy.bat</code> (Windows) in the '
+    + 'course folder, and browse to <a href="http://localhost:8080" style="color:#8fd0ff">'
+    + 'http://localhost:8080</a>. See the README.</p>'
+    + '</div>';
+}
+/* On a brand-new server, make it unmistakable that this account becomes the instructor — and switch
+   the form straight to Create-account, because on a fresh install there is nothing to sign in to. */
+async function flagFreshInstall(){
+  let fresh=false;
+  try{ const r=await fetch('/api/setup'); if(r.ok) fresh=(await r.json()).fresh; }catch(e){ return; }
+  if(!fresh) return;
+  /* Put the form genuinely into register mode — authMode drives which endpoint the button calls, so
+     changing only the labels would show "create an account" and then try to log in. */
+  authMode='register';
+  $('authTitle').textContent='Set up this installation';
+  $('authSub').innerHTML='<b style="color:var(--accent)">No accounts exist yet on this server.</b><br>'+
+    'The account you create now becomes the <b>INSTRUCTOR</b> — it gets the roster, the class '+
+    'analytics and the worksheet editor. Create yours first, then have students register.';
+  $('nameRow').classList.remove('hide');
+  $('authGo').textContent='Create the instructor account';
+  $('toggleAuth').innerHTML='';                      // nothing to sign in to yet
+}
+function showAuth(){ flagFreshInstall(); $('auth').classList.remove('hide'); $('hub').classList.add('hide');
   $('tutView').classList.add('hide'); $('certView').classList.add('hide'); $('who').textContent=''; }
 
 function passedCount(){ return COURSE.filter(c=>ME.progress[c.id]&&ME.progress[c.id].passed).length; }
@@ -221,11 +271,80 @@ function openTut(id){
 
 function showCert(){ $('hub').classList.add('hide'); $('certView').classList.remove('hide');
   $('certName').textContent=ME.name; $('certDate').textContent='Completed '+new Date().toLocaleDateString(); }
+function showRoster(){ $('roster').classList.remove('hide'); $('stats').classList.add('hide'); loadRoster(); }
+function showStats(){ $('stats').classList.remove('hide'); $('roster').classList.add('hide'); loadStats(); }
+
 async function loadRoster(){ const r=await fetch('/api/roster'); if(!r.ok)return; const d=await r.json();
-  let h='<table><tr><th class="n">Name</th><th>Email</th>'+d.course.map(c=>'<th>'+esc(c.title.split(' ')[0])+'</th>').join('')+'</tr>';
-  d.roster.forEach(u=>{ h+='<tr><td class="n">'+esc(u.name)+'</td><td>'+esc(u.email)+'</td>'+
-    d.course.map(c=>{ const s=u.progress[c.id]; return '<td>'+(s==='pass'?'✅':s==='fail'?'❌':'·')+'</td>'; }).join('')+'</tr>'; });
-  h+='</table>'; $('roster').innerHTML=h;
+  let h='<table><tr><th class="n">Name</th><th>Email</th>'+d.course.map(c=>'<th>'+esc(c.title.split(' ')[0])+'</th>').join('')+'<th>Manage</th></tr>';
+  d.roster.forEach(u=>{ const self=(ME&&u.email===ME.email);
+    h+='<tr><td class="n">'+esc(u.name)+(u.role==='instructor'?' <span title="instructor">★</span>':'')+'</td><td>'+esc(u.email)+'</td>'+
+    d.course.map(c=>{ const s=u.progress[c.id]; return '<td>'+(s==='pass'?'✅':s==='fail'?'❌':'·')+'</td>'; }).join('')+
+    '<td style="white-space:nowrap">'+
+      (self ? '<span style="color:var(--dim);font-size:12px">you</span>'
+            : '<button class="ghost" style="font-size:12px;padding:3px 8px" onclick="resetUser(\''+esc(u.email)+'\')">reset</button> '+
+              '<button class="ghost" style="font-size:12px;padding:3px 8px;color:#b3261e" onclick="deleteUser(\''+esc(u.email)+'\',\''+esc(u.name)+'\')">delete</button>')+
+    '</td></tr>'; });
+  h+='</table><div style="color:var(--dim);font-size:12.5px;margin-top:8px">'+
+     '<b>reset</b> clears that student\'s progress but keeps their login. <b>delete</b> removes the account and its progress permanently. '+
+     'Neither can be undone from here — your backup of <code>academy_data.json</code> is the only way back.</div>';
+  $('roster').innerHTML=h;
+}
+
+/* Destructive actions get a typed confirmation, not a one-click OK: an instructor clicking down a
+   roster of similar-looking rows is exactly the situation where a misclick costs a student's work. */
+async function deleteUser(email,name){
+  if(prompt('Permanently delete '+name+' <'+email+'> and all their progress?\n\nType DELETE to confirm:')!=='DELETE') return;
+  const r=await fetch('/api/user/delete',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({email})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){ alert('Could not delete: '+(d.error||r.status)); return; }
+  loadRoster();
+}
+async function resetUser(email){
+  if(!confirm('Clear all progress for '+email+'?\n\nThe account stays; every module goes back to not-started.')) return;
+  const r=await fetch('/api/user/reset',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({email})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok){ alert('Could not reset: '+(d.error||r.status)); return; }
+  loadRoster();
+}
+
+async function loadStats(){
+  const r=await fetch('/api/analytics'); if(!r.ok){ $('stats').innerHTML='<p>Could not load analytics.</p>'; return; }
+  const d=await r.json();
+  if(!d.students.length){ $('stats').innerHTML='<p style="color:var(--dim)">No students enrolled yet.</p>'; return; }
+  const title=id=>{ const c=d.course.find(x=>x.id===id); return c?c.title:id; };
+
+  /* 1. The teaching signal: tasks the cohort missed most. "first try" is the useful denominator —
+     everyone eventually gets every answer right, because a wrong answer just asks again. */
+  const hard=d.tasks.filter(t=>t.misses>0).slice(0,12);
+  let h='<h3 style="margin:14px 0 6px">Questions the class got wrong most often</h3>';
+  if(!hard.length){ h+='<p style="color:var(--dim)">No wrong answers recorded yet. This fills in as students work — every incorrect attempt is counted, not just the final correct one.</p>'; }
+  else{
+    const worst=hard[0].misses||1;
+    h+='<table><tr><th class="n">Module</th><th>Task</th><th>Wrong answers</th><th>Got it first try</th></tr>';
+    hard.forEach(t=>{ const pct=Math.round(100*(t.misses/worst));
+      h+='<tr><td class="n">'+esc(title(t.module))+'</td><td><code>'+esc(t.task)+'</code></td>'+
+        '<td><span style="display:inline-block;height:10px;width:'+Math.max(6,pct)+'px;background:#b3261e;border-radius:3px;vertical-align:middle"></span> '+t.misses+'</td>'+
+        '<td>'+t.firstTry+' of '+t.students+'</td></tr>'; });
+    h+='</table>';
+  }
+
+  /* 2. Per-student heat: where each individual is, and whether they are struggling or just behind. */
+  h+='<h3 style="margin:22px 0 6px">Per student — modules passed, and wrong answers along the way</h3>';
+  h+='<table><tr><th class="n">Name</th>'+d.course.map(c=>'<th title="'+esc(c.title)+'">'+esc(c.title.split(' ')[0])+'</th>').join('')+'<th>Wrong total</th></tr>';
+  d.students.forEach(u=>{ let tot=0;
+    const cells=d.course.map(c=>{ const m=u.modules[c.id];
+      if(!m) return '<td style="color:var(--dim)">·</td>';
+      tot+=m.misses;
+      const bg = m.passed ? (m.misses===0?'#eaf6ec':'#fdf6e3') : '#f4f6f8';
+      const mark = m.passed ? (m.misses===0?'✅':'✅') : '⏳';
+      return '<td style="background:'+bg+'" title="'+(m.passed?'passed':'in progress')+', '+m.misses+' wrong answer(s)">'+mark+(m.misses?' <sub>'+m.misses+'</sub>':'')+'</td>'; }).join('');
+    h+='<tr><td class="n">'+esc(u.name)+'</td>'+cells+'<td>'+tot+'</td></tr>'; });
+  h+='</table><div style="color:var(--dim);font-size:12.5px;margin-top:8px">'+
+     '✅ passed · ⏳ started · · not started. Green = passed with no wrong answers; amber = passed but struggled. '+
+     'Subscript is the number of incorrect attempts in that module.</div>';
+  $('stats').innerHTML=h;
 }
 function flashPopupHint(){ alert('Your browser blocked the worksheet pop-up. Please allow pop-ups for this site, then click “Re-open the worksheet.”'); }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }

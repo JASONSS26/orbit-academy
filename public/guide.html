@@ -39,6 +39,7 @@
 <body>
 <div id="top"><span class="logo">◈ ORBIT ACADEMY</span><span>Instructor's Guide</span><span class="sp"></span>
   <button onclick="window.print()">🖨 Print / Save PDF</button>
+  <button onclick="location.href='faq.html'">❓ FAQ</button>
   <button onclick="location.href='gallery.html'">← Gallery</button></div>
 <div class="layout">
 <nav id="toc"><div class="h">Contents</div>
@@ -379,7 +380,7 @@ $env:PORT=9000; node server.js
 <p><b>6. Honesty about the tool.</b> The zoo uses the <b>linearized</b> (Richardson) equations plus a lookup-table nudge for how the loop's center migrates toward the Moon at high amplitude. The shapes and rhythms are faithful; it is <b>not</b> a full nonlinear integration, and it is labeled as such in the UI. If a student asks whether they could fly one, the answer is yes — but station-keeping is required because L1/L2/L3 are unstable (the halo is a controlled dance around an unstable point).</p>
 <hr/>
 <h2 id="12-credits-amp-license">12. Credits &amp; license</h2>
-<p>MIT licensed. Built for JASON / US Space Force training; companion to the CISLUNAR PATROL game and the xGEO simulator. Three.js is © its authors, loaded from a pinned CDN (SRI-checked).</p>
+<p>MIT licensed. Built for JASON / US Space Force training; companion to the CISLUNAR PATROL game and the xGEO simulator. Three.js is © its authors (MIT), vendored into <code>public/vendor/</code> and hash-verified — nothing is loaded from a CDN.</p>
 </main>
 </div>
 </body>

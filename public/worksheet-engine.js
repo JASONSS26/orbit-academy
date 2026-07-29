@@ -60,6 +60,16 @@ async function save(tid){
   }catch(e){ // server vanished mid-session → fall back to localStorage
     OFFLINE=true; $('offlineBadge').style.display='inline-block'; const o=lsLoad(); o[tid]=true; lsSave(o); flashSaved(); }
 }
+/* Report an INCORRECT answer so instructors can see where the cohort struggled. Deliberately
+   fire-and-forget: the student's experience must not depend on it, and in standalone mode there is
+   nowhere to send it, so it simply does nothing. Never sends done:true — the server refuses to let a
+   miss un-complete a task, but we should not be asking it to either. */
+function reportMiss(tid){
+  if(OFFLINE) return;
+  try{ fetch('/api/task',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({tutorial:TUT,task:tid,done:false,attempt:true,wrong:true,totalTasks:totalCount()})})
+    .catch(()=>{}); }catch(e){}
+}
 function flashSaved(){ $('status').innerHTML='<b>saved ✓</b> '+doneCount()+'/'+totalCount()+' complete'; }
 
 /* ---- render ---- */
@@ -161,6 +171,7 @@ function answerMulti(key,q){
     card.classList.add('done'); const nl=card.querySelector('.n'); if(nl&&!/✓/.test(nl.textContent)) nl.textContent+=' ✓';
     save(key); updateRail(); maybeFinish();
   } else { fb.className='fb no'; fb.innerHTML='✗ '+esc(q.whyWrong||'Not quite — reconsider which factors matter, and check all that apply.');
+    reportMiss(key);
     opts.forEach(el=>{ const i=+el.dataset.o, chosen=el.querySelector('input').checked, shouldBe=q.a.includes(i);
       if(chosen!==shouldBe){ el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),1400); } }); }
 }
@@ -173,6 +184,7 @@ function answer(key,oi,q){
     card.classList.add('done'); const nl=card.querySelector('.n'); if(nl&&!/✓/.test(nl.textContent)) nl.textContent+=' ✓';
     save(key); updateRail(); maybeFinish();
   } else { fb.className='fb no'; fb.innerHTML='✗ '+esc((q.feedback&&q.feedback[oi])||'Not quite — review and try again.');
+    reportMiss(key);
     setTimeout(()=>opts.forEach(el=>el.classList.remove('wrong')),1200); }
 }
 function markDone(tid){ const card=$('card_'+tid); card.classList.add('done');

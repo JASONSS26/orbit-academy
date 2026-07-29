@@ -453,10 +453,18 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
   window._winPix=window._winPix||{};
   function getPix(tex){ if(!tex||!tex.complete||!tex.naturalWidth) return null;
     let p=window._winPix[tex.src];
+    if(p===null) return null;                    // known-unreadable: don't retry every frame
     if(!p){ const cw=Math.min(1024,tex.naturalWidth), ch=Math.min(512,tex.naturalHeight);
       const cc=document.createElement('canvas'); cc.width=cw; cc.height=ch;
       const cg=cc.getContext('2d'); cg.drawImage(tex,0,0,cw,ch);
-      p={w:cw,h:ch,data:cg.getImageData(0,0,cw,ch).data}; window._winPix[tex.src]=p; }
+      /* getImageData throws SecurityError on a TAINTED canvas. That happens when the page is opened
+         straight off the filesystem (file://) in Chrome: a file:// image is treated as cross-origin,
+         so the pixels cannot be read back. Without this guard the whole render loop throws — and
+         because the loop catches and logs once, the symptom is a silently frozen cockpit, which
+         looks like broken physics. Degrade to a flat shaded sphere instead, and cache the failure. */
+      try { p={w:cw,h:ch,data:cg.getImageData(0,0,cw,ch).data}; }
+      catch(e){ window._winPix[tex.src]=null; window._winPixBlocked=true; return null; }
+      window._winPix[tex.src]=p; }
     return p; }
   const re=rmag, rm=(flying&&fs)? Math.hypot(P[0]-mp[0],P[1]-mp[1]) : 9e9;
   const orbAng=Math.atan2(P[1],P[0]);
@@ -587,6 +595,11 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
     g.fillText('🛰 OUT OF FUEL', w*0.5, h*0.46);
     g.font='bold '+(h*0.055)+'px monospace'; g.fillStyle='rgba(190,210,245,.9)';
     g.fillText('destined to coast eternally. Bye.', w*0.5, h*0.6); g.textAlign='left'; }
+  /* Opened via file:// in Chrome the planet pixels are unreadable (tainted canvas), so the window
+     shows flat shaded spheres. Say so plainly — otherwise it reads as a rendering bug. */
+  if(window._winPixBlocked){ g.fillStyle='rgba(255,207,77,.75)'; g.font=(h*0.042)+'px monospace';
+    g.textAlign='center'; g.fillText('flat shading — open via the server for mapped planets', w*0.5, h*0.97);
+    g.textAlign='left'; }
 }
 let geoCloseness=0, geoEclipsed=false, geoTargetRange=0, winAimW=0;
 

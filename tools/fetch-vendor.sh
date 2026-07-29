@@ -1,25 +1,27 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------------------------
-# fetch-vendor.sh — populate public/vendor/ with the one third-party library the course needs.
+# fetch-vendor.sh — verify (and, if ever needed, re-download) the vendored assets in public/vendor/.
 #
-# ORBIT ACADEMY IS LOCAL-FIRST BY DEFAULT. The simulators load three.js from public/vendor/ and
-# resolve planet textures locally (public/textures.js, ALLOW_CDN=false), so a running install makes
-# ZERO outbound network calls. That is what makes it deployable on standalone / air-gapped systems.
+# YOU ALMOST CERTAINLY DO NOT NEED TO RUN THIS.
 #
-# Exactly one file cannot be committed to the repo for licensing/size hygiene, and this script
-# fetches it:
-#     three.js r128           REQUIRED — every simulator needs it (~600 KB)
-# and two optional nice-to-haves:
-#     earth_atmos_2048.jpg    photographic Earth map \ purely cosmetic: schematic maps ship IN the
-#     moon_1024.jpg           photographic Moon map  / repo and are used if these are absent.
+# Every byte the course needs is COMMITTED to the repository. `git clone` gives you a complete,
+# runnable, fully offline course: three.js and all four planet maps are already in public/vendor/.
+# There is no download step, no npm, no build, and therefore no version drift between one
+# installation and the next — every classroom runs identical bytes. Provenance, licenses and
+# hashes for all of it: public/vendor/NOTICE.md.
 #
-#   bash tools/fetch-vendor.sh          # download into public/vendor/ (run ONCE, with network)
-#   bash tools/fetch-vendor.sh --check  # report what is present and whether anything can call out
-#   bash tools/fetch-vendor.sh --cdn    # opt BACK IN to the pinned CDNs (not for air-gapped use)
+# So this script exists for three narrow jobs:
 #
-# AIR-GAPPED INSTALL: run this once on a networked machine, then copy/zip the whole `academy`
-# folder (public/vendor/ included) to the target. Nothing else is needed — no npm, no internet.
-# Run  bash test/no-external-calls.test.js  to prove the tree makes no outbound calls.
+#   bash tools/fetch-vendor.sh --check   # VERIFY: recompute every SHA-384 against NOTICE.md.
+#                                        # Use this after copying the folder to an air-gapped box,
+#                                        # or any time you want to prove nothing was altered.
+#   bash tools/fetch-vendor.sh           # REPAIR: re-download anything missing or corrupt.
+#                                        # Needs network. Only useful if a file was deleted.
+#   bash tools/fetch-vendor.sh --cdn     # opt BACK IN to the pinned CDNs. NOT for air-gapped use.
+#
+# AIR-GAPPED INSTALL: copy or clone the `academy` folder to the target machine and run
+# `node server.js`. That is the whole procedure. Then `bash test/no-external-calls.test.js`
+# proves the tree makes no outbound calls of any kind.
 # ---------------------------------------------------------------------------------------------
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -28,12 +30,25 @@ VEN=$PUB/vendor
 TEX=$VEN/textures
 
 THREE_URL='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'
-THREE_SRI='sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu'
 TEX_BASE='https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/'
 EARTH=earth_atmos_2048.jpg
 MOON=moon_1024.jpg
 
+# The authoritative hash table, mirrored in public/vendor/NOTICE.md. Keep the two in step: if you
+# ever re-vendor an asset, update BOTH. Format is an HTML `integrity=` digest, so the three.js entry
+# is literally the published r128 SRI hash.
+#   <path relative to public/vendor>  <sha384-…>   <required|optional>
+read -r -d '' MANIFEST <<'EOF'
+three.min.js                  sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu required
+textures/earth_atmos_2048.jpg sha384-CdJTLUEa0xdQcLiyPPAGJYYGIfaqTjvSyDui9elYwNt8kspL5DwbzvhrR4Nw9W4O optional
+textures/moon_1024.jpg        sha384-DefE7ULhs/zJZO2+8xItLwvjjsmGUEPf16LvwNBo7/+HQM5eP54+uppYIM/Qf2Ww optional
+textures/earth_schematic.jpg  sha384-HSo2WNyYo4vOBkidybtsxoS+wN+LGo9j65TVeC5iB9gxOQGYQRxW4qQnpzOGYkJX required
+textures/moon_schematic.jpg   sha384-74TO4h24Ile8etSWXpdjgpOUahc7WP4KUq1JbFbVsrHmn9VVrHAtb+BZXa1H076/ required
+EOF
+THREE_SRI=$(printf '%s\n' "$MANIFEST" | awk '$1=="three.min.js"{print $2}')
+
 say(){ printf '  %s\n' "$*"; }
+digest(){ printf 'sha384-%s' "$(openssl dgst -sha384 -binary "$1" | openssl base64 -A)"; }
 
 fetch(){ # fetch <url> <dest>
   if   command -v curl >/dev/null 2>&1; then curl -fsSL "$1" -o "$2"
@@ -45,19 +60,47 @@ mode(){
   if grep -q 'src="vendor/three.min.js"' $PUB/tut1.html 2>/dev/null; then echo local; else echo cdn; fi
 }
 
-# ------------------------------------------------------------------ --check
+# ------------------------------------------------------------------ --check (verify integrity)
 if [ "${1:-}" = "--check" ]; then
   echo "Orbit Academy asset mode: $(mode)"
-  for f in "$VEN/three.min.js" "$TEX/$EARTH" "$TEX/$MOON" "$TEX/earth_schematic.jpg" "$TEX/moon_schematic.jpg"; do
-    if [ -s "$f" ]; then say "present  $f  ($(wc -c <"$f" | tr -d ' ') bytes)"
-    else say "absent   $f$([ "${f##*_}" = "schematic.jpg" ] && echo '   <-- ships with the repo; run tools/make-textures.py')"; fi
-  done
+  echo
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "  openssl not found — cannot verify hashes. Reporting presence only."
+  fi
+  bad=0; miss=0
+  while read -r rel want req; do
+    [ -n "${rel:-}" ] || continue
+    f="$VEN/$rel"
+    if [ ! -s "$f" ]; then
+      if [ "$req" = required ]; then say "MISSING  $rel   <-- required; re-run without --check, or restore from git"; miss=$((miss+1))
+      else say "absent   $rel   (optional photo map; the schematic map will be used)"; fi
+      continue
+    fi
+    sz=$(wc -c <"$f" | tr -d ' ')
+    if command -v openssl >/dev/null 2>&1; then
+      got=$(digest "$f")
+      if [ "$got" = "$want" ]; then say "OK       $rel  ($sz bytes)"
+      else bad=$((bad+1)); say "MISMATCH $rel  ($sz bytes)"; say "           expected $want"; say "           got      $got"; fi
+    else
+      say "present  $rel  ($sz bytes, unverified)"
+    fi
+  done <<EOF
+$MANIFEST
+EOF
+  echo
   say "textures.js ALLOW_CDN: $(grep -o 'ALLOW_CDN = [a-z]*' $PUB/textures.js | head -1 | awk '{print $3}')"
   echo
   echo "Remaining outbound references in public/ (excluding <a href> reading links):"
   grep -rhoE 'https?://[^"'"'"' )]+' $PUB/*.html $PUB/*.js 2>/dev/null \
     | grep -vE 'w3\.org|en\.wikipedia\.org|nasa\.gov|goes-r\.gov|celestrak|space-track|github\.com|nodejs\.org|localhost|10\.0\.0' \
     | sort -u | sed 's/^/    /'
+  echo
+  if [ "$bad" -gt 0 ] || [ "$miss" -gt 0 ]; then
+    echo "FAIL — $bad altered, $miss missing. Do not teach from this tree until resolved."
+    echo "       'git checkout -- public/vendor' restores the committed originals."
+    exit 1
+  fi
+  echo "PASS — every vendored asset matches public/vendor/NOTICE.md. Tree is intact and offline-ready."
   exit 0
 fi
 
@@ -73,51 +116,44 @@ if [ "${1:-}" = "--cdn" ] || [ "${1:-}" = "--restore" ]; then
   exit 0
 fi
 
-# ------------------------------------------------------------------ download + switch
-echo "1/2  Downloading into $VEN …"
+# ------------------------------------------------------------------ repair (re-download)
+echo "Repair mode — the repo already ships these files, so this only fills genuine gaps."
 mkdir -p "$TEX"
-# three.js is REQUIRED (the sims cannot run without it). The photographic planet maps are OPTIONAL:
-# schematic ones ship in the repo, so a failure here degrades fidelity, not function.
-if [ ! -s "$VEN/three.min.js" ]; then
-  fetch "$THREE_URL" "$VEN/three.min.js" || { echo "ERROR: could not download three.js — the simulators need it." >&2
-    echo "       Retry with network access, or copy three.min.js (r128) into $VEN/ by hand." >&2; exit 1; }
+need=0
+for rel in three.min.js "textures/$EARTH" "textures/$MOON"; do
+  [ -s "$VEN/$rel" ] || need=$((need+1))
+done
+for rel in textures/earth_schematic.jpg textures/moon_schematic.jpg; do
+  if [ ! -s "$VEN/$rel" ]; then
+    say "$rel is missing — it is COMMITTED, so restore it with:  git checkout -- public/vendor"
+    say "  (or regenerate both with: python3 tools/make-textures.py)"
+  fi
+done
+if [ "$need" -eq 0 ]; then
+  say "nothing to download — all fetchable assets are present."
+  say "run 'bash tools/fetch-vendor.sh --check' to verify their integrity."
+  exit 0
 fi
+
+[ -s "$VEN/three.min.js" ] || fetch "$THREE_URL" "$VEN/three.min.js" || {
+  echo "ERROR: could not download three.js — the simulators need it." >&2
+  echo "       It is committed to this repo: 'git checkout -- public/vendor' should restore it." >&2; exit 1; }
 [ -s "$TEX/$EARTH" ] || fetch "$TEX_BASE$EARTH" "$TEX/$EARTH" || say "note: Earth photo map unavailable — the schematic map will be used"
 [ -s "$TEX/$MOON" ]  || fetch "$TEX_BASE$MOON"  "$TEX/$MOON"  || say "note: Moon photo map unavailable — the schematic map will be used"
 
-# integrity check on the library (same hash the CDN tags pin)
 if command -v openssl >/dev/null 2>&1; then
-  got="sha384-$(openssl dgst -sha384 -binary "$VEN/three.min.js" | openssl base64 -A)"
+  got=$(digest "$VEN/three.min.js")
   if [ "$got" = "$THREE_SRI" ]; then say "three.min.js integrity verified (matches the pinned SRI hash)"
   else echo "ERROR: three.min.js hash mismatch!" >&2; echo "  expected $THREE_SRI" >&2; echo "  got      $got" >&2
-       echo "  Refusing to switch. Delete $VEN/three.min.js and retry." >&2; exit 1; fi
-else say "openssl not found — skipping the integrity check (assets downloaded)"
+       echo "  Refusing to continue. 'git checkout -- public/vendor' restores the committed original." >&2; exit 1; fi
 fi
 
-# The simulators already point at vendor/three.min.js and textures.js already has ALLOW_CDN=false —
-# local is the DEFAULT posture, so there is nothing to rewrite. Just make sure nobody left the tree
-# in --cdn mode.
+# Local is the DEFAULT posture, so there is nothing to rewrite — just make sure nobody left the
+# tree in --cdn mode.
 perl -pi -e 's{^const ALLOW_CDN = true;}{const ALLOW_CDN = false;}' $PUB/textures.js
 for f in $PUB/tut*.html; do
   perl -0pi -e 's{<script src="\Qhttps://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js\E"\s*\n?\s*integrity="[^"]*"\s*\n?\s*crossorigin="anonymous"></script>}{<script src="vendor/three.min.js"></script>}g' "$f"
 done
-
-echo "2/2  Verifying …"
-left=$(grep -l 'cdnjs.cloudflare.com\|cdn.jsdelivr.net' $PUB/tut*.html $PUB/*.js 2>/dev/null | tr '\n' ' ')
-if [ -n "$left" ]; then echo "  WARNING: CDN references remain in: $left"; else say "no CDN references remain in the simulators"; fi
 say "mode is now: $(mode)"
-cat <<'EOF'
-
-Done. public/vendor/ is populated; the course runs entirely from disk.
-
-For an AIR-GAPPED install: zip or copy this whole `academy` folder (with public/vendor/) to the
-target machine. Then either open public/index.html directly, or run `node server.js` for the
-tracked/roster mode. No internet, no npm, no build step.
-
-Still worth knowing for a fully sealed deployment:
-  • The Wikipedia / NASA / CelesTrak links in the worksheets are <a href> reading links. They are
-    never fetched unless a student clicks one; on an isolated network they simply fail to open.
-  • The Earth/Moon maps fall back to the SCHEMATIC versions that ship in the repo if the
-    photographic ones are absent, so the sims never depend on a download to function.
-  • Run  bash tools/go-offline.sh --check  at any time to see the current mode.
-EOF
+echo
+echo "Repaired. Verify with:  bash tools/fetch-vendor.sh --check"

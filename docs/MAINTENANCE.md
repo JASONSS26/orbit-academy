@@ -34,8 +34,9 @@ progress in `localStorage`), so the static files run anywhere.
 | `academy_data.json` | User store (password hashes + progress). **Gitignored — never commit.** |
 | `slides/moduleN.pptx` | 8-slide intro lecture deck per module (see Instructor Guide §6). |
 | `public/textures.js` | Planet-texture resolution for every sim + a loud banner if three.js is missing. See §2.5. |
-| `public/vendor/` | Third-party + generated assets: `three.min.js` (fetched once), `textures/*_schematic.jpg` (committed). |
-| `tools/fetch-vendor.sh` | Populates `public/vendor/` once, with a SHA-384 check. Also `--check` / `--cdn`. See §2.5. |
+| `public/vendor/NOTICE.md` | Provenance, license and SHA-384 for every third-party byte in the repo. Update it with the manifest in `fetch-vendor.sh` whenever an asset is re-vendored. |
+| `public/vendor/` | **All committed**: `three.min.js`, both photographic planet maps, both generated `*_schematic.jpg`, and `NOTICE.md` (provenance + licenses + SHA-384s). A bare clone is a complete offline course. |
+| `tools/fetch-vendor.sh` | `--check` verifies every vendored asset's SHA-384 against `NOTICE.md` (gated in `run.sh`). Bare = repair-download a deleted file; `--cdn` opts back out of local. See §2.5. |
 | `tools/make-textures.py` | Regenerates the committed schematic Earth/Moon maps (numpy + PIL, fixed seed). |
 | `test/` | `run.sh` spins up a fresh server and runs functional + security + DoS + **air-gap** suites. Bash (Git Bash/WSL on Windows). |
 | `test/no-external-calls.test.js` | Proves the client makes zero outbound calls (static + runtime). See §2.5. |
@@ -47,24 +48,37 @@ progress in `localStorage`), so the static files run anywhere.
 **The course must install and run on a standalone, air-gapped machine.** That is a hard requirement
 (US Space Force training use), not a nice-to-have, and it shapes the asset architecture.
 
-**Default posture: local-first.** A running install makes **zero outbound network calls**. Two things
-make that true:
+**Default posture: everything is committed.** As of v5.1 there is **no fetch step at all** — a bare
+`git clone` (or an unzipped download) is a complete, runnable, offline course. Two properties follow,
+and both are release gates:
 
-1. **three.js loads from `public/vendor/three.min.js`** — a local path in all eight sims. It is the one
-   file not committed (~600 KB of third-party minified JS), so `tools/fetch-vendor.sh` fetches it once
-   and verifies it against the **published SHA-384** (the same hash the old CDN tags pinned); a
-   mismatch aborts rather than installing an unverified library. If it is missing, `textures.js` paints
-   an explanatory banner instead of leaving a blank canvas — the failure mode that used to look like
-   broken physics.
+- **Zero outbound network calls** at run time, enforced by `test/no-external-calls.test.js`.
+- **Zero version drift.** Every installation runs byte-identical assets, verifiable years later
+  against a recorded hash. This matters more than the ~1.4 MB it costs: an accredited air-gapped
+  classroom cannot re-resolve a dependency, so "whatever the CDN serves today" was never acceptable.
+
+`public/vendor/NOTICE.md` is the provenance record — origin, license and SHA-384 for all five files.
+`bash tools/fetch-vendor.sh --check` recomputes every hash against it and is wired into `test/run.sh`,
+so tampering or truncation fails the suite. The script's download path still exists but is now a
+*repair* mode for a file someone deleted; it is not part of installation.
+
+1. **three.js loads from `public/vendor/three.min.js`** — a local path in all eight sims, and the file
+   is committed. Its hash is the **published r128 SRI digest**, i.e. the same value the old CDN tags
+   pinned, so vendoring provably did not alter the library. If it ever goes missing, `textures.js`
+   paints an explanatory banner instead of leaving a blank canvas — the failure mode that used to look
+   like broken physics.
 2. **Planet textures resolve through `public/textures.js`**, first hit wins:
 
    | # | Source | Notes |
    |---|---|---|
-   | 1 | `vendor/textures/earth_atmos_2048.jpg` | photographic, local. Placed by `fetch-vendor.sh`. |
-   | 2 | the pinned CDN copy | **only if `ALLOW_CDN` is true — it defaults to `false`.** |
-   | 3 | `vendor/textures/earth_schematic.jpg` | **committed to the repo.** Always available. |
+   | 1 | `vendor/textures/earth_atmos_2048.jpg` | photographic. **Committed.** |
+   | 2 | the pinned CDN copy | **only if `ALLOW_CDN` is true — it defaults to `false`.** Never reached in a default tree. |
+   | 3 | `vendor/textures/earth_schematic.jpg` | **committed**, and ours. Always available. |
 
-   Step 3 is why the tree is self-contained out of the box. It is deliberately **schematic** — ocean
+   Steps 1 and 3 are both in the repo, so the chain resolves on the first hop and step 2 is dead code
+   in normal operation. Step 3 still earns its place: it is the fallback if a site's accreditation
+   process strips the NASA-derived photographic maps (see `NOTICE.md`), and the course keeps working
+   with nothing but files we authored. It is deliberately **schematic** — ocean
    blue, a 15 degree graticule, gold equator, dashed tropics/polar circles, green prime meridian — and
    *not* a fabricated photo: we have no coastline data offline, and inventing continents would put
    wrong geography in front of students. It is also pedagogically better for Modules 1-3: you can count
@@ -190,6 +204,17 @@ this sync.
    an 8-slide deck in `slides/`, README module list.
 6. Hub cosmetics: `ROMAN` array in `index.html` and the certificate text if the module count grew.
 7. Run §7.
+
+## 6.4b Invariants added in v5.1
+
+- **Every asset the course needs is committed.** No install-time download, ever. If you add a
+  dependency, vendor it and add it to the manifest in `tools/fetch-vendor.sh` *and* to
+  `public/vendor/NOTICE.md` — `test/run.sh` verifies both.
+- **Client code must work from a `file://` URL.** `fetch()` rejects there rather than returning
+  `!ok`, and canvas pixel reads throw `SecurityError`. Wrap the await in `try/catch`; never rely on
+  `if(!r.ok)` alone. Guarded by `test/file-protocol.test.js`.
+- **`gallery.html` is the no-server entry point, not `index.html`.** The hub is server-mode only.
+  Any doc telling a user to open `index.html` without the server is a bug.
 
 ## 6.5 Verification rules (learned the hard way)
 

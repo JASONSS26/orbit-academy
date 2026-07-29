@@ -31,6 +31,19 @@ echo
 echo "### air-gap suite (no server needed)"
 node test/no-external-calls.test.js; N=$?
 
+echo; echo "--- multiple instructors (role gates + last-instructor guard) ---"
+node test/multi-instructor.test.js; MI=$?
+
+echo; echo "--- both run modes: server-tracked AND bare gallery, worksheets interactive ---"
+node test/two-run-modes.test.js; M=$?
+
+echo; echo "--- file:// robustness (the ZIP-and-double-click install path) ---"
+node test/file-protocol.test.js; F2=$?
+
+echo; echo "--- vendored asset integrity (every third-party byte is committed; verify it) ---"
+bash tools/fetch-vendor.sh --check >/tmp/oa-vendor.$$ 2>&1; V=$?
+tail -n 12 /tmp/oa-vendor.$$ | sed 's/^/  /'; rm -f /tmp/oa-vendor.$$
+
 echo
-if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
-else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N)"; exit 1; fi
+if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
+else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI)"; exit 1; fi

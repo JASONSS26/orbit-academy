@@ -4,6 +4,96 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v5.2 — audit result: **PASS**
+
+New surface this cycle: three instructor-only endpoints (`/api/user/delete`, `/api/user/reset`,
+`/api/analytics`), one unauthenticated endpoint (`/api/setup`), and wrong-answer recording on
+`/api/task`. Security suite grew **30 → 48 checks**.
+
+**Decision recorded: no default account or password ships with the course.** A fixed instructor
+credential in the repository would be identical on every installation worldwide, would persist in git
+history permanently, and is the classic hard-coded-credentials weakness (CWE-798) — a predictable
+finding in any accreditation review, and unfixable after the fact. The problem it was meant to solve
+(a stray test account claiming the instructor role, stranding the real instructor as a student) is
+solved instead by `GET /api/setup`, which returns a single boolean — whether any account exists — so a
+fresh server can state that the next account created becomes the instructor. Disclosure is limited to
+"is this instance configured yet", it is only ever true once, and on a closed training LAN it is not
+sensitive. Asserted to return exactly the one key.
+
+**Role changes remain off the API.** An endpoint granting instructor rights would be the most
+valuable privilege-escalation target here. Promotion is offline via `tools/set-role.js`, which grants
+nothing to anyone who could not already read the data file.
+
+**Destructive endpoints.** Verified: student and anonymous callers are refused (403/401) on delete,
+reset and analytics; an instructor cannot delete their own account; the **last** instructor cannot be
+deleted; unknown accounts return 404; deleting a user purges their sessions so a live cookie cannot
+outlive the account. With two instructors present the last-instructor guard correctly relaxes —
+covered by `test/multi-instructor.test.js`.
+
+**Progress integrity.** Wrong answers are now reported, which introduced a way to send
+`done:false` for an already-completed task. `done` is therefore monotonic server-side: a miss (or a
+replayed request) can never un-complete a module a student has passed. Asserted directly.
+
+**Durability.** Debounced writes could be lost if the process was killed inside the 100 ms window —
+and closing the launcher window is a kill. Now flushed on `SIGINT`/`SIGTERM`/exit.
+
+**Data-handling defect found and fixed in the test harness, not the product:**
+`two-run-modes.test.js` used `ACADEMY_DATA` where the server reads `ORBIT_DATA`, so a test server
+silently fell back to the live `academy_data.json` and registered accounts into real student records.
+Nothing was lost, but the exposure was real. The test now keeps its store in the OS temp directory and
+asserts the live file was never written; `tools/set-role.js` had the same wrong variable name.
+
+**Distribution.** `tools/make-bundle.sh` refuses to build if `academy_data.json` (password hashes,
+student progress) would be included, if a required asset is missing, or if any CDN reference survives
+in `public/*.html`, and emits a SHA-256 for publication.
+
+**Re-verified unchanged:** path traversal, unauthenticated access, privilege escalation, session
+forgery, prerequisite bypass, input validation, body-size limits, XSS via worksheet/roster data,
+secrets hygiene. `academy_data.json` confirmed gitignored.
+
+Suites: functional 34 ✓ · security 48 ✓ · DoS ✓ · air-gap ✓ · vendor integrity 5/5 ✓ ·
+both run modes ✓ · file:// robustness 13/13 ✓ · multi-instructor 17/17 ✓ · Module 8 cockpit 17/17 ✓ ·
+Module 6 physics 5/5 ✓.
+
+## v5.1 — audit result: **PASS**
+
+Scope of change since v5.0: all vendored assets committed to the repository; `fetch-vendor.sh --check`
+turned into a hash verifier and gated in `test/run.sh`; two `file://` robustness fixes in client code;
+install documentation rewritten. No change to `server.js` logic beyond its version string, so the
+auth/session/roster surface is unchanged from the v5.0 audit and its 30 security checks still pass.
+
+**Supply chain — the substantive new consideration.** Committing third-party binaries means the repo
+itself is now the trust boundary, so:
+
+- `public/vendor/NOTICE.md` records origin, license and SHA-384 for all five files. three.js is MIT
+  (notice intact in the file's own header); the two photographic planet maps ship in the three.js
+  examples tree and derive from NASA imagery; the two schematic maps are ours, reproducible from
+  `tools/make-textures.py` with a fixed seed.
+- The three.js digest **equals the published r128 SRI hash** — the same value the old CDN `integrity=`
+  attribute pinned. Vendoring provably did not alter the library.
+- `bash tools/fetch-vendor.sh --check` recomputes all five hashes and **fails the suite** on mismatch
+  or on a missing required file. Verified by appending a single byte to `moon_1024.jpg` (detected) and
+  by deleting `three.min.js` (detected, exit 1). Optional photo maps absent are reported, not failed.
+- Net effect on attack surface: **reduced.** A default install now issues no outbound request at all,
+  so there is no CDN, DNS or TLS dependency left to attack or to be blocked by a proxy.
+
+**Client robustness (both were denial-of-function bugs on `file://`, not security holes):**
+
+- `public/index.html` — `fetch('/api/me')` *rejects* rather than resolving `!ok` when there is no
+  origin, so the hub hung blank with no diagnostic. Now caught, with an explanation and a link to the
+  no-server entry point. No change to what the server will accept.
+- `public/tut8.html` — `getImageData` on a canvas holding a `file://` image raises `SecurityError`
+  (tainted canvas). Now guarded and cached as a known failure, with an on-screen label, so the render
+  loop cannot be killed by it.
+
+**Re-verified this cycle:** path traversal, unauthenticated access, privilege escalation, session
+forgery, prerequisite bypass, input validation, request-body limits, XSS via worksheet/roster data,
+and secrets hygiene — all pass unchanged. `academy_data.json` confirmed gitignored; the new
+`public/vendor/` entries were reviewed to be sure the ignore-rule edit exposed nothing else.
+
+Suites: functional 34 ✓ · security 30 ✓ · DoS ✓ · air-gap 16 checks / 0 outbound calls ✓ ·
+vendor integrity 5/5 ✓ · Module 8 cockpit 17/17 ✓ · Module 6 physics 5/5 ✓.
+
 ## v5.0 — audit result: **PASS**
 
 The v5.0 change set is large but almost entirely **client-side content and assets**; `server.js`

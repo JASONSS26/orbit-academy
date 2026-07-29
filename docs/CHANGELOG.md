@@ -2,6 +2,185 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v5.2 — 2026-07-29 (course management: manage students, see where they struggled)
+
+**Headline: the instructor dashboard becomes a course-management tool.** It could previously only
+show who had passed what. It can now remove and reset students, and — the more useful half — show
+*which questions the class got wrong*.
+
+### Wrong answers are now recorded
+The engine only ever told the server about **correct** answers, so there was no struggle data at all;
+every task looked like it was solved first try. Incorrect submissions are now reported too
+(fire-and-forget, so a failed report can never block a student), and the server keeps a `misses`
+count alongside `attempts`. `done && misses === 0` is the signal worth teaching from: everyone
+eventually answers correctly, because a wrong answer simply asks again.
+
+**Invariant added:** `done` must never regress. A miss arriving after completion — or any replayed
+request — must not un-complete a task, or a student could lose a module they had already passed.
+Covered by a security test.
+
+### Instructor dashboard
+- **Roster gains per-student `reset` and `delete`.** Delete requires typing `DELETE`, not a one-click
+  OK: an instructor working down a roster of similar-looking rows is exactly where a misclick costs
+  someone's work. Deleting also drops that user's sessions, so a deleted account cannot keep using a
+  live cookie.
+- **New "Where the class struggled" tab.** Ranks the tasks with the most wrong answers across the
+  cohort, and shows a per-student grid of modules passed with wrong-answer counts — so "behind" and
+  "struggling" are distinguishable at a glance.
+- Server refuses to let an instructor delete **themselves** or the **last remaining instructor**;
+  both would leave the course with no route back except editing JSON by hand.
+
+### Accounts
+- **New `tools/set-role.js`** — list accounts, promote or demote by email. Role is assigned exactly
+  once at registration (first account ever created becomes the instructor), and there is deliberately
+  **no API** to change it: an endpoint granting instructor rights is the most valuable
+  privilege-escalation target this backend could expose. So role changes are an offline, file-level
+  operation, which grants nothing to anyone who could not already read the data file.
+- The tool **verifies its own write by re-reading the file**, because a running server holds the whole
+  database in memory and rewrites it on every progress save — silently undoing edits made underneath
+  it. That is a real failure that happened during development: a promotion reverted to `student`
+  seconds later with no error anywhere. It now reports `REVERTED` and the fix, instead of lying.
+- Refuses to demote the last instructor.
+
+### New instructor FAQ — `public/faq.html`
+Answers the questions that actually come up: why you're shown as a student and how to fix it, who
+becomes the instructor, the two run modes side by side, running a classroom off one machine, opening
+the worksheet editor, where progress is stored, letting a student skip ahead, air-gapped install,
+blank simulators, and what to back up. Linked from the guide and the gallery.
+
+### Certificates
+- **Removed the "JASON / US Space Force Training" line from the completion certificate.** Certificates
+  now carry only the course name, so they are appropriate for any audience.
+
+### Fixes
+- `guide.html` and `INSTRUCTOR_GUIDE.md` still claimed three.js was "loaded from a pinned CDN
+  (SRI-checked)" — stale since v5.1 vendored it. Corrected.
+
+Security audit: **PASS**. Suites: functional 34 ✓, security **48** ✓ (was 30 — 15 new checks covering
+delete/reset/analytics privilege gating, self-delete and last-instructor refusals, and the
+done-must-not-regress invariant), DoS ✓, air-gap ✓, vendor integrity 5/5 ✓, both run modes ✓,
+file:// robustness 13/13 ✓, Module 8 cockpit 17/17 ✓.
+
+## v5.1 — 2026-07-29 (everything in the repo; install without a terminal)
+
+**Headline: `git clone` — or an unzipped download — is now the complete install.** Every byte the
+course needs is committed, including three.js and all four planet maps. No fetch step, no `npm`, no
+build. Two consequences, both deliberate:
+
+- **An air-gapped machine needs no preparation at all.** Copy the folder, open it, teach. Previously
+  three.js had to be downloaded on a networked machine first — a step that could be skipped or done
+  wrong, and the failure mode was a blank simulator.
+- **Zero version drift.** Every installation runs byte-identical assets, verifiable years later
+  against a recorded hash. An accredited classroom cannot re-resolve a dependency, so "whatever the
+  CDN serves today" was never an acceptable answer.
+
+### Distribution — two editions from one source
+- **New `tools/make-bundle.sh`** builds the distributable zips: the **full** edition (~11 MB) and a
+  **standalone** learner edition (~9.6 MB, `--vanilla`). Both are checksummed and verified by
+  unzipping to a clean directory and booting.
+- **New `START-HERE.html`** — the landing page a non-specialist meets first, offering the two modes as
+  two buttons rather than a wall of prose.
+- **New `start-academy.sh`** for Linux, with per-distribution Node install hints (apt/dnf/pacman/zypper).
+- The standalone edition ships **no `server.js`, no hub, no editor**, so there is nothing in it to
+  misconfigure — and the build **prunes every link to a page it does not include** (this caught four
+  files still pointing at `index.html`/`faq.html`).
+- **Deliberately NOT a `.pkg`/`.msi`.** The course has one dependency (Node.js) and only for the
+  tracked mode. Unsigned native installers warn more loudly than a zip, signing needs a paid Apple
+  Developer ID or Windows code-signing certificate, and in an accredited or air-gapped facility
+  installers frequently cannot run at all — whereas an unpacked folder passes review easily. The
+  reasoning is recorded in the script header so it is not re-litigated by guesswork.
+- Two folders (vanilla + managed) was considered and rejected: they would share the same ~11 MB of
+  `public/`, so every worksheet fix would land twice and they would drift. One tree already does both
+  jobs; only the *download* is worth splitting.
+
+### First-run instructor setup — no shipped credentials
+- **New `GET /api/setup`** reports one boolean: whether any account exists. On a fresh server the hub
+  now says plainly *"No accounts exist yet — the account you create now becomes the INSTRUCTOR"* and
+  switches the form to registration, so the role cannot be claimed by a stray test account. That was
+  the actual failure mode: the real instructor ends up a student with no in-app way back.
+- This is the deliberate alternative to shipping a default instructor account and password. A fixed
+  credential in the repository would be identical on every installation worldwide, would remain in git
+  history permanently, and is the classic hard-coded-credentials weakness. Nothing is shipped and no
+  secret exists.
+- **Multiple instructors are supported and now tested** (`test/multi-instructor.test.js`, 17 checks):
+  a promoted instructor gains every instructor-only surface; "cannot delete the last instructor"
+  correctly *relaxes* once a second exists; "cannot delete yourself" holds regardless; and deleting an
+  instructor invalidates their session rather than leaving a live cookie.
+
+### Durability fix — saves could be lost on shutdown
+`saveDB()` debounces writes by 100 ms so a burst of completions costs one write. But the normal way to
+stop this server is closing the launcher window, which is a kill — so a student who had just answered a
+question could lose it. The server now **flushes any pending write on `SIGINT`/`SIGTERM`/exit**,
+verified by registering an account and immediately sending `SIGTERM`.
+
+### Test-harness bug worth recording
+`two-run-modes.test.js` passed `ACADEMY_DATA` to the server, but the variable is **`ORBIT_DATA`** — so
+the override was ignored and the test server fell back to the **live `academy_data.json`**, registering
+test accounts into real records. No data was lost, but only by luck. Fixed, and the test now asserts
+the live file's mtime is unchanged and keeps its scratch store in the OS temp directory, so a future
+typo fails loudly instead of writing to a real cohort. `tools/set-role.js` had the same wrong name.
+
+### Two run modes, documented and tested as a pair
+- **README now opens with a "Two ways to run it" comparison** — server mode (`node server.js`,
+  accounts, tracked progress) versus bare mode (open `gallery.html`, no install, `localStorage`) —
+  with an explicit row confirming the worksheets are fully interactive in **both**.
+- **New `test/two-run-modes.test.js`** boots the real worksheet engine with the real Module 1 content
+  in each mode and *clicks a correct quiz answer through the real handler chain*, then asserts the
+  completion landed in the right store and survives a fresh browser: server via a live HTTP session,
+  bare via `localStorage`. Server mode also asserts every asset both entry points need is served.
+  Gated in `test/run.sh`.
+
+### Worksheet layout
+- **The "module complete" banner now sits after the summary and the "Learn more" resources** in all 8
+  worksheets, instead of above them. A student who finished was previously congratulated and handed an
+  exit button before the key points and further reading — easy to close the tab with both unread.
+  Pinned by a layout assertion (`#exam` → `#endmatter` → `#done`) so it cannot drift back.
+
+### Provenance and integrity
+- **New `public/vendor/NOTICE.md`** — origin, license and SHA-384 for all five vendored files. The
+  three.js digest is the published r128 SRI hash, proving vendoring did not alter the library.
+- **`tools/fetch-vendor.sh --check` is now a real verifier**: it recomputes every hash against that
+  manifest, distinguishes *required* from *optional* files, and fails on tamper or truncation
+  (verified by appending one byte to a texture). **Wired into `test/run.sh` as a release gate.**
+- The script's download path survives as a *repair* mode for a deleted file, not an install step.
+- Documented the escape hatch: if a site's accreditation forbids the NASA-derived photographic maps,
+  delete them — the chain falls through to the schematic maps we drew ourselves and nothing breaks.
+
+### Two bugs that would have hit the first non-technical user
+- **`index.html` hung blank when opened as a file.** The hub is server-mode, and `fetch('/api/me')`
+  *rejects* on `file://` rather than returning `!ok`, so the `!r.ok` branch never ran and no error
+  ever surfaced. It now catches the rejection and explains the situation, with a link to
+  `gallery.html` (which needs no server) and to the launcher for full mode. **The README had been
+  telling people to double-click exactly this file.**
+- **Module 8's forward window threw on `file://` in Chrome.** `getImageData` on a canvas holding a
+  `file://` image is a `SecurityError` (tainted canvas). Since the render loop catches and logs once,
+  the symptom was a silently frozen cockpit that looked like broken physics. Now guarded, cached as a
+  known failure so it does not retry per frame, and it labels itself on screen: *"flat shading — open
+  via the server for mapped planets."*
+
+### Install documentation rewritten for non-specialists
+- **New "📦 Install it — plain instructions, no command line"**, with a Solo-vs-Class mode comparison
+  so the reader picks a path before touching anything.
+- **macOS and Windows sections rewritten click-by-click**, ZIP-first: what to click, what lands
+  where, what it should look like, and what to do when it doesn't. Both cover the traps that actually
+  bite — Windows' **Unblock** checkbox (the top cause of "downloaded but nothing works"), macOS
+  Gatekeeper on `start-academy.command`, and iCloud/OneDrive eviction of course files.
+- **Corrected entry point everywhere:** `gallery.html` for no-install use, not `index.html`. The old
+  claim that `index.html` "works, saving progress in localStorage" was simply false — that file
+  contains no `localStorage` code and only talks to the server.
+- Per-platform "if something looks wrong" tables written in symptoms, not causes.
+
+### Verification
+Module 6 fan suite re-run in full this cycle — all five scenarios PASS (`scatter`, `l1knife`,
+`tadpole`, `dro`, `freeret`); `docs/SECURITY.md` carries the figures. It takes ~40 s **per mode** by
+design and is invoked `node test/tut6-physics.verify.js public/tut6.html <mode>`; the previous entry's
+claim that it was "too slow to run" was wrong, and is corrected. Measured cost of the *live*
+simulator: **under 0.01% of a 16.7 ms frame budget** in every flight regime.
+
+Security audit: **PASS** (`docs/SECURITY.md` → v5.1). Suites: functional 34 ✓, security 30 ✓, DoS ✓,
+air-gap 16 checks / 0 outbound calls ✓, vendor integrity 5/5 ✓, Module 8 cockpit 17/17 ✓,
+Module 6 physics 5/5 ✓.
+
 ## v5.0 — 2026-07-28 (Module 8 rebuilt; the course goes fully offline)
 
 **Headline: the course now runs with ZERO outbound network calls**, so it installs on standalone /

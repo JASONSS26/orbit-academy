@@ -8,12 +8,14 @@
    makes the course dependent on the open internet for something it should own. So each texture is
    now resolved through a chain, first hit wins:
 
-     1. public/vendor/textures/earth_atmos_2048.jpg   — the photographic map, held LOCALLY.
-                                                        Put there by `bash tools/fetch-vendor.sh`.
-     2. the pinned CDN copy                           — only if ALLOW_CDN below is true.
-     3. public/vendor/textures/earth_schematic.jpg     — SHIPS WITH THE REPO. Always present, so the
-                                                        course is fully self-contained with no
-                                                        network at all.
+     1. public/vendor/textures/earth_atmos_2048.jpg   — the photographic map. COMMITTED to the repo.
+     2. the pinned CDN copy                           — only if ALLOW_CDN below is true. Never
+                                                        reached in a default tree.
+     3. public/vendor/textures/earth_schematic.jpg     — COMMITTED, and drawn by us. The fallback if
+                                                        a site strips the NASA-derived photo maps.
+
+   Every one of those files is in the repository, so the chain resolves on hop 1 and the course is
+   fully self-contained with no network at all. See public/vendor/NOTICE.md for hashes and licenses.
 
    The step-3 fallback is deliberately SCHEMATIC rather than a fabricated photo: ocean blue with a
    15° graticule, a gold equator, dashed tropics/polar circles and a green prime meridian. We have no
@@ -22,10 +24,9 @@
    watch Earth rotate and read inclination straight off it. Regenerate with tools/make-textures.py.
 
    DEFAULT POSTURE: ALLOW_CDN is FALSE and the sims load three.js from public/vendor/, i.e. the
-   course is fully local out of the box and makes no outbound request of any kind. Populate
-   public/vendor/ once with `bash tools/fetch-vendor.sh` (it fetches three.js and, optionally, the
-   photographic maps, verifying the library against its published SHA-384). `--cdn` restores the
-   pinned-CDN behaviour for anyone who would rather not vendor. */
+   course is fully local out of the box and makes no outbound request of any kind. Nothing needs
+   fetching — every asset is committed. Verify a tree with `bash tools/fetch-vendor.sh --check`;
+   `--cdn` restores the pinned-CDN behaviour for anyone who would rather not vendor. */
 'use strict';
 const ALLOW_CDN = false;     // DEFAULT: fully local, no outbound attempt. `tools/go-offline.sh --cdn` flips it.
 

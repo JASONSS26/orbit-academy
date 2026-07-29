@@ -23,12 +23,14 @@ workbooks/**/*.tmp
 
 # distributable bundles (built on demand — not repo content)
 orbit-academy-*.zip
+START-HERE.html.bak
 
 # ---- vendored third-party assets --------------------------------------------
-# DELIBERATE: the repo ships our own schematic maps (always present, so the course
-# is self-contained with zero network) but NOT redistributed third-party binaries.
-# Each install runs `bash tools/fetch-vendor.sh` once on a networked machine, then
-# copies the folder to the air-gapped target. See README "Requirements".
-public/vendor/three.min.js
-public/vendor/textures/earth_atmos_2048.jpg
-public/vendor/textures/moon_1024.jpg
+# NOT ignored, deliberately. Every byte the course needs is committed, so a bare
+# `git clone` is a complete, runnable, air-gapped course with no fetch step and no
+# version drift. Provenance, licenses and SHA-384s: public/vendor/NOTICE.md.
+# Verify with `bash tools/fetch-vendor.sh --check`.
+
+# stray test scratch stores (tests now use the OS temp dir; this catches old ones)
+_twomode_test_data.json*
+_multi_test*.json*

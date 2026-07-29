@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Orbit Academy — Start Here</title>
+<style>
+ body{margin:0;background:#050a14;color:#cfe3ff;font:17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+ .w{max-width:820px;margin:0 auto;padding:40px 22px 70px}
+ h1{font-size:30px;margin:0 0 6px;background:linear-gradient(90deg,#5fd0ff,#ffcf4d);-webkit-background-clip:text;background-clip:text;color:transparent}
+ .sub{color:#6f86a8;margin:0 0 28px}
+ .c{background:#0b1526;border:1px solid #1d3350;border-radius:14px;padding:24px 26px;margin:18px 0}
+ .c h2{margin:0 0 4px;font-size:21px;color:#fff}
+ .tag{display:inline-block;font-size:12px;letter-spacing:.6px;padding:3px 9px;border-radius:20px;margin-bottom:10px}
+ .a{background:#12401f;color:#8ff0b0;border:1px solid #39d353}
+ .b{background:#123a5c;color:#9fd8ff;border:1px solid #5fd0ff}
+ a.btn{display:inline-block;margin-top:14px;background:#1f4a7a;border:1px solid #2b5686;color:#fff;
+   padding:12px 20px;border-radius:9px;text-decoration:none;font-weight:600}
+ a.btn:hover{background:#2b5c96;border-color:#5fd0ff}
+ code{background:#0a1526;border:1px solid #1d3350;border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14.5px;color:#8ff0b0}
+ ul{padding-left:22px} li{margin:6px 0} .dim{color:#6f86a8;font-size:15px}
+ table{border-collapse:collapse;width:100%;margin-top:8px;font-size:15px}
+ td,th{border:1px solid #1d3350;padding:7px 10px;text-align:left} th{color:#ffcf4d}
+</style></head><body><div class="w">
+<h1>◈ ORBIT ACADEMY</h1>
+<p class="sub">An interactive orbital-dynamics course. Everything it needs is already in this folder —
+nothing to download, no internet required, ever.</p>
+
+<div class="c">
+  <span class="tag a">START HERE · NOTHING TO INSTALL</span>
+  <h2>Just let me learn</h2>
+  <p>All eight modules, every worksheet and every simulator. Quizzes score and give feedback, and your
+  progress saves in this browser. No account, no setup.</p>
+  <a class="btn" href="public/gallery.html">Open the course →</a>
+  <p class="dim" style="margin-top:14px">Use Chrome, Edge or Firefox. In this mode Module 8's forward
+  window draws plain shaded planets instead of mapped ones — browsers block pixel reads on local
+  images. Nothing else differs.</p>
+</div>
+
+<div class="c">
+  <span class="tag b">FOR INSTRUCTORS · NEEDS NODE.JS</span>
+  <h2>Run a class</h2>
+  <p>Adds accounts, progress that follows each student to any machine, modules that unlock in order,
+  an instructor roster showing where the class struggled, and a worksheet editor.</p>
+  <table>
+    <tr><th>Step</th><th>What to do</th></tr>
+    <tr><td>1</td><td>Install Node.js (free, ~50 MB) from <a href="https://nodejs.org" style="color:#ffcf4d">nodejs.org</a> — take the <b>LTS</b> installer and click through.</td></tr>
+    <tr><td>2</td><td><b>macOS:</b> double-click <code>start-academy.command</code><br>
+                       <b>Windows:</b> double-click <code>start-academy.bat</code><br>
+                       <b>Linux:</b> run <code>bash start-academy.sh</code></td></tr>
+    <tr><td>3</td><td>Leave that window open — it <i>is</i> the server. Browse to <b>http://localhost:8080</b>.</td></tr>
+    <tr><td>4</td><td><b>Register your own account first</b> — the first account created becomes the instructor.</td></tr>
+  </table>
+  <p class="dim" style="margin-top:14px">First run only: macOS may say "unidentified developer" —
+  right-click the launcher → <b>Open</b> → <b>Open</b>. Windows may show SmartScreen — <b>More info</b>
+  → <b>Run anyway</b>. Both are normal for downloaded scripts.</p>
+  <a class="btn" href="public/faq.html">Instructor FAQ →</a>
+</div>
+
+<p class="dim">Full documentation: <a href="README.md" style="color:#ffcf4d">README.md</a> ·
+<a href="public/guide.html" style="color:#ffcf4d">Instructor's guide</a> ·
+<a href="public/faq.html" style="color:#ffcf4d">FAQ</a>. Verify this copy arrived intact with
+<code>bash tools/fetch-vendor.sh --check</code>.</p>
+</div></body></html>

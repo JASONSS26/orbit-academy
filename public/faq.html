@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy — Instructor FAQ</title>
+<style>
+  :root{--bg:#eef1f5;--panel:#fff;--fg:#1a1e26;--dim:#5a6474;--line:#ccd3dd;--accent:#1a4c8b;--gold:#b8860b;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Georgia,serif;line-height:1.62;font-size:17px}
+  #top{position:sticky;top:0;z-index:10;background:var(--accent);color:#fff;padding:14px 26px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  #top .logo{font-weight:bold;font-size:18px;letter-spacing:.5px}
+  #top .sp{flex:1}
+  #top button{background:#fff;color:var(--accent);border:0;font:inherit;font-weight:600;padding:8px 15px;border-radius:7px;cursor:pointer}
+  #top button:hover{background:#e6eefb}
+  .layout{display:grid;grid-template-columns:290px 1fr;max-width:1180px;margin:0 auto;gap:0}
+  #toc{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;padding:22px 14px;font-size:14px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  #toc .h{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:14px 0 8px 8px}
+  #toc a{display:block;color:var(--accent);text-decoration:none;padding:5px 10px;border-radius:6px;margin-bottom:2px}
+  #toc a:hover{background:#dde6f4}
+  main{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:22px 22px 80px 0;padding:34px 46px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  h1{font-size:30px;color:var(--accent);margin:0 0 6px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .sub{color:var(--dim);margin:0 0 10px}
+  h2{font-size:22px;color:var(--accent);margin:38px 0 8px;padding-top:12px;border-top:2px solid #e4e9f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  h3{font-size:18.5px;color:#243;margin:26px 0 6px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  p{margin:10px 0}
+  ul,ol{margin:10px 0;padding-left:26px} li{margin:6px 0}
+  code{background:#eef2f7;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;color:#0a3}
+  a{color:var(--accent)}
+  blockquote{border-left:4px solid var(--gold);background:#fbf6e9;margin:14px 0;padding:10px 16px;color:#5a4a20;border-radius:0 6px 6px 0}
+  table{border-collapse:collapse;width:100%;margin:14px 0;font-size:15px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left;vertical-align:top}
+  th{background:#eaf0f8;color:var(--accent)}
+  pre{background:#eef2f7;border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow:auto;font-size:13.5px;line-height:1.5}
+  pre code{background:none;border:0;padding:0}
+  .q{font-weight:700;color:#16325c;font-size:18.5px;margin:26px 0 4px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .warn{border-left:4px solid #b3261e;background:#fdecea;color:#5f1512;margin:14px 0;padding:10px 16px;border-radius:0 6px 6px 0}
+  .ok{border-left:4px solid #1a7f37;background:#eaf6ec;color:#123d1c;margin:14px 0;padding:10px 16px;border-radius:0 6px 6px 0}
+  @media print{ #top,#toc{display:none} .layout{display:block} main{border:0;box-shadow:none;margin:0;padding:0} body{background:#fff;font-size:12pt} h2{page-break-after:avoid} table,blockquote,li,pre{page-break-inside:avoid} }
+  @media(max-width:820px){ .layout{grid-template-columns:1fr} #toc{display:none} main{margin:14px} }
+</style></head>
+<body>
+<div id="top"><span class="logo">◈ ORBIT ACADEMY</span><span>Instructor FAQ</span><span class="sp"></span>
+  <button onclick="window.print()">🖨 Print / Save PDF</button>
+  <button onclick="location.href='guide.html'">📘 Full guide</button>
+  <button onclick="location.href='gallery.html'">← Gallery</button></div>
+<div class="layout">
+<nav id="toc"><div class="h">Accounts &amp; roles</div>
+  <a href="#student">I'm shown as a student — fix it</a>
+  <a href="#whoinstructor">Who becomes the instructor?</a>
+  <a href="#nodefault">Is there a default login?</a>
+  <a href="#noapi">Why is there no button for this?</a>
+  <a href="#addremove">Adding / removing people</a>
+  <a href="#password">Someone forgot their password</a>
+  <div class="h">Running it</div>
+  <a href="#modes">The two ways to run it</a>
+  <a href="#classroom">Running a classroom</a>
+  <a href="#editor">Opening the worksheet editor</a>
+  <a href="#progress">Where progress is stored</a>
+  <a href="#gating">Unlocking modules early</a>
+  <a href="#delete">Deleting or resetting a student</a>
+  <a href="#struggled">Seeing what the class got wrong</a>
+  <a href="#newcohort">Starting a new cohort</a>
+  <div class="h">Offline &amp; troubleshooting</div>
+  <a href="#airgap">Air-gapped machines</a>
+  <a href="#blank">A simulator is blank</a>
+  <a href="#flat">Module 8's window looks flat</a>
+  <a href="#backup">Backups</a>
+</nav>
+<main>
+<h1>Instructor FAQ</h1>
+<p class="sub">The questions that actually come up when running Orbit Academy. For the full narrative
+version — course structure, teaching notes, module-by-module beats — see the
+<a href="guide.html">Instructor's Guide</a>.</p>
+
+<h2>Accounts &amp; roles</h2>
+
+<h3 id="student">The hub shows me as a <em>student</em>. How do I fix that?</h3>
+<p>Almost always this means <b>someone registered before you did</b> — usually a test account made
+while setting the server up. Only the very first account created becomes the instructor.</p>
+<p>Fix it from a terminal in the course folder. First see where things stand:</p>
+<pre><code>node tools/set-role.js</code></pre>
+<p>That lists every account, oldest first, with a ★ next to each instructor. Then promote yourself:</p>
+<pre><code>node tools/set-role.js you@example.org instructor</code></pre>
+<div class="warn"><b>Stop the server first.</b> The server keeps the whole database in memory and
+rewrites the file every time a student saves progress, so a change made underneath a running server
+gets silently undone. Close the launcher window (or press Ctrl-C), run the command, then start it
+again. Log out and back in to see the change.</div>
+<p>The same command demotes an account by passing <code>student</code> instead. It refuses to remove
+the last instructor, since that would leave nobody able to reach the roster or the editor.</p>
+<p>Having two or more instructors is perfectly fine — you do not need to demote the old test account,
+though it is tidy to do so once you have promoted yourself.</p>
+
+<h3 id="whoinstructor">Who becomes the instructor?</h3>
+<p><b>The first account ever registered on that server</b>, automatically. Everyone who registers
+afterwards is a student. So when you set up a new machine, <b>register your own account before you
+let any students near it</b>.</p>
+
+<h3 id="nodefault">Is there a default instructor login I can use?</h3>
+<p><b>No, deliberately.</b> No account or password ships with the course. A fixed credential in the
+repository would be the same on every installation everywhere, would stay in the project's history
+permanently, and is exactly the weakness security reviews look for.</p>
+<p>Instead, a brand-new server tells you what is about to happen: its sign-in page says no accounts
+exist yet and that <b>the account you create now becomes the instructor</b>. So there is nothing to
+look up — just be first.</p>
+
+<h3 id="noapi">Why isn't there just a button to promote someone?</h3>
+<p>Deliberate. An endpoint that hands out instructor rights is the single most valuable target on
+this backend — it would grant the roster, every student's progress, and the worksheet editor. Role
+changes are therefore an offline, file-level operation. Anyone who can run <code>set-role.js</code>
+already has the data file in their hands, so it gives away nothing new.</p>
+
+<h3 id="addremove">How do I add or remove people?</h3>
+<p><b>Adding:</b> students register themselves at the hub — send them the address and they create
+their own accounts. There is nothing for you to do.</p>
+<p><b>Removing:</b> use the <b>delete</b> button on that person's row in the Roster tab — see
+<a href="#delete">Deleting or resetting a student</a>. Back up
+<code>academy_data.json</code> first; deletion cannot be undone.</p>
+
+<h3 id="password">Someone forgot their password.</h3>
+<p>Passwords are stored as salted scrypt hashes and cannot be recovered — by design, and there is no
+reset flow. The practical fix is to register a fresh account. If you need to preserve their progress,
+stop the server and copy the <code>progress</code> object from the old entry to the new one in
+<code>academy_data.json</code>.</p>
+
+<h2>Running it</h2>
+
+<h3 id="modes">What are the two ways to run this?</h3>
+<p>Both are fully supported, and <b>the worksheets are completely interactive either way</b> —
+quizzes score, feedback appears, tasks tick off, progress is saved. The only difference is where
+progress lives and whether there are accounts.</p>
+<table>
+  <tr><th></th><th>1 · Server mode</th><th>2 · Bare mode</th></tr>
+  <tr><td><b>How you start it</b></td>
+      <td>Double-click <code>start-academy.command</code> (macOS) or <code>start-academy.bat</code>
+          (Windows), or run <code>node server.js</code>; then open
+          <a href="http://localhost:8080">http://localhost:8080</a></td>
+      <td>Double-click <code>public/gallery.html</code></td></tr>
+  <tr><td><b>Needs Node.js?</b></td><td>Yes</td><td><b>No — nothing to install</b></td></tr>
+  <tr><td><b>Worksheets interactive</b></td><td>✅</td><td>✅</td></tr>
+  <tr><td><b>Progress saved</b></td><td>On the server, per account — follows the student to any
+      browser or machine</td><td>In that one browser only</td></tr>
+  <tr><td><b>Accounts / login</b></td><td>✅</td><td>None — everyone is "Guest"</td></tr>
+  <tr><td><b>Modules unlock in order</b></td><td>✅</td><td>❌ all open</td></tr>
+  <tr><td><b>Roster + worksheet editor</b></td><td>✅</td><td>❌</td></tr>
+  <tr><td><b>Start at</b></td><td><code>index.html</code> (the hub)</td>
+      <td><b><code>gallery.html</code></b></td></tr>
+  <tr><td><b>Best for</b></td><td>Teaching a cohort; tracking who finished what</td>
+      <td>One person learning; a reviewer; a laptop in a vault</td></tr>
+</table>
+<div class="ok">In bare mode start at <b><code>gallery.html</code></b>, not <code>index.html</code>.
+The hub is the server-mode page; opened as a bare file it will tell you so and offer you the gallery
+link.</div>
+
+<h3 id="classroom">How do I run this for a room full of students?</h3>
+<p>Run the server on one machine and give students that machine's address instead of
+<code>localhost</code> — for example <code>http://192.168.1.20:8080</code>.</p>
+<ul>
+  <li><b>macOS:</b> System Settings → Network → Wi-Fi → Details → TCP/IP → IP Address.
+      Allow incoming connections for Node when asked.</li>
+  <li><b>Windows:</b> Settings → Network &amp; Internet → Wi-Fi → Properties → IPv4 address.
+      Allow Node through the firewall on <b>Private networks</b>.</li>
+</ul>
+<p>Register your instructor account before the students arrive, and leave the launcher window open —
+closing it stops the course for everybody.</p>
+
+<h3 id="editor">How do I open the worksheet editor?</h3>
+<ol>
+  <li>Start the server and open <a href="http://localhost:8080">http://localhost:8080</a>.</li>
+  <li>Sign in with your <b>instructor</b> account.</li>
+  <li>Click <b>✏️ Edit worksheets</b> on the hub — or go straight to <a href="editor.html">editor.html</a>.</li>
+</ol>
+<p>It edits objectives, tutorial text, every exercise's teach/predict/do/observe/think blocks, quiz
+questions, options, correct answers and per-option feedback, and the final-check questions — from a
+form, with no code editing. Each save keeps a timestamped backup beside the file.</p>
+<p>A student account is refused by the <em>server</em>, not merely by a hidden button, so this is the
+one thing that genuinely requires the instructor role. If you see a permission error, check
+<a href="#student">the role question</a> above.</p>
+
+<h3 id="progress">Where is progress actually stored?</h3>
+<p><b>Server mode:</b> <code>academy_data.json</code> in the course folder — accounts, salted
+password hashes and every task completion. That single file <em>is</em> your class records.</p>
+<p><b>Bare mode:</b> in the student's browser (<code>localStorage</code>), per browser and per
+machine. Clearing site data erases it, and it does not follow them to another computer.</p>
+
+<h3 id="gating">Can I let a student skip ahead?</h3>
+<p>Prerequisite gating is enforced by the server, so there is no in-app override. Two options: have
+them work in bare mode (<code>gallery.html</code>), where every module is open; or stop the server and
+mark the prerequisite module complete in their <code>progress</code> entry in
+<code>academy_data.json</code>. The gallery is much the easier route for a one-off.</p>
+
+<h3 id="delete">Can I delete a student, or reset their progress?</h3>
+<p>Yes — both are on the <b>Roster</b> tab of the instructor dashboard, one pair of buttons per row.</p>
+<ul>
+  <li><b>reset</b> clears that student's progress but keeps their login, so they can start over with
+      the same account.</li>
+  <li><b>delete</b> removes the account and its progress permanently, and immediately invalidates any
+      session they still have open.</li>
+</ul>
+<p>Deleting asks you to type <code>DELETE</code> rather than just clicking OK — working down a roster
+of similar-looking rows is exactly where a misclick costs somebody's work.</p>
+<div class="warn">Neither can be undone from the dashboard. Your copy of
+<code>academy_data.json</code> is the only way back, which is the practical argument for taking one
+before each cohort.</div>
+<p>The server will refuse to let you delete <b>your own account</b> or the <b>last remaining
+instructor</b> — either would leave the course with nobody able to reach the roster or the editor.</p>
+
+<h3 id="struggled">Can I see which questions people got wrong?</h3>
+<p>Yes — the <b>📊 Where the class struggled</b> tab on the instructor dashboard. Two views:</p>
+<ul>
+  <li><b>Questions the class got wrong most often</b>, ranked, with how many students got each one
+      right on the first try. This is the teaching signal: a task many students missed is usually a
+      problem with the explanation, not the students.</li>
+  <li><b>Per student</b>, a grid of modules with wrong-answer counts — so you can tell someone who is
+      simply <em>behind</em> from someone who is <em>struggling</em>.</li>
+</ul>
+<p>Note that <b>every student eventually gets every answer right</b>, because a wrong answer just asks
+again. So "passed" tells you little on its own; the wrong-answer count is what carries the
+information. A green cell means passed with no mistakes, amber means passed after struggling.</p>
+<p>This only works in <a href="#modes">server mode</a> — bare mode has nowhere to report to. It also
+only counts work done from this version onward; earlier progress has no wrong-answer history because
+the course never recorded it.</p>
+
+<h3 id="newcohort">How do I start a fresh cohort on the same machine?</h3>
+<ol>
+  <li><b>Back up <code>academy_data.json</code></b> somewhere outside the course folder — that file is
+      your record of the cohort that just finished.</li>
+  <li>Either <b>reset</b> each returning student from the roster (keeps their logins), or <b>delete</b>
+      the accounts and let the new group register themselves.</li>
+  <li>Keep your own instructor account. If you delete everything and start over, remember the
+      <b>first account to register becomes the instructor</b> — so register yourself first.</li>
+</ol>
+
+<h2>Offline &amp; troubleshooting</h2>
+
+<h3 id="airgap">Does this work on a machine with no internet?</h3>
+<p>Yes — that is the design target, and it is tested on every release. Everything the course needs is
+inside the folder, including the 3-D library and the planet maps. There is nothing to download at
+install time or at run time.</p>
+<p>Copy the folder to the isolated machine and follow the normal instructions. To confirm the copy
+arrived intact:</p>
+<pre><code>bash tools/fetch-vendor.sh --check</code></pre>
+<p>The last line should read <code>PASS — every vendored asset matches
+public/vendor/NOTICE.md.</code> That file also records where every third-party file came from and
+under which license, if your accreditation process asks.</p>
+
+<h3 id="blank">A simulator is blank, or says "3-D library not loaded".</h3>
+<p>This is <b>never</b> an internet problem — the library ships inside the folder. It means a file did
+not survive the copy or the unzip.</p>
+<ul>
+  <li><b>Windows:</b> you probably missed the <b>Unblock</b> checkbox. Right-click the original ZIP →
+      Properties → tick <b>Unblock</b> → OK, then extract again. This is the most common install
+      failure by a wide margin.</li>
+  <li>Check that <code>public/vendor/three.min.js</code> exists and is about 600 KB.</li>
+  <li>Run <code>bash tools/fetch-vendor.sh --check</code>; in a git clone,
+      <code>git checkout -- public/vendor</code> restores the originals.</li>
+</ul>
+
+<h3 id="flat">Module 8's forward window shows plain spheres, not continents.</h3>
+<p>Expected in <b>bare mode</b>, and it says so on screen. Browsers refuse to let a page opened from
+disk read the pixels of a local image, and that window paints the planets by sampling the map. Run in
+server mode to get the mapped view. No instrument reading, number or physics result is affected.</p>
+
+<h3 id="backup">What should I back up?</h3>
+<p><b><code>academy_data.json</code></b> — that one file holds every account and all progress. The
+server keeps a <code>.bak</code> beside it, but that is not a backup strategy: copy it somewhere else
+before and after each cohort. It contains password hashes, so treat it as sensitive, and note that it
+is deliberately excluded from git for that reason.</p>
+<p>Everything else in the folder is replaceable from the repository or the ZIP.</p>
+</main>
+</div>
+</body></html>
