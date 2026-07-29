@@ -19,6 +19,24 @@
   #tag{position:absolute;top:6px;left:50%;transform:translateX(-50%);color:#3d557a;font-size:15px;letter-spacing:2px;z-index:2}
   #warpInd{position:absolute;top:8px;left:10px;z-index:2;background:rgba(6,12,24,.8);border:1px solid #2b5686;
     border-radius:7px;padding:5px 11px;color:var(--accent);font-size:18px;font-weight:bold}
+  /* ---- first-run CONTROLS card: how to drive the simulator. Shown once per browser; the ⌨ button
+     in the View panel brings it back. ---- */
+  #ctrlCard{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
+    background:rgba(3,7,14,.86);backdrop-filter:blur(3px)}
+  #ctrlCard.show{display:flex}
+  #ctrlBox{width:min(92%,760px);background:linear-gradient(#0a1626,#060d18);border:1px solid #2b4a70;
+    border-radius:14px;padding:22px 26px;box-shadow:0 12px 60px rgba(0,0,0,.6)}
+  #ctrlBox h3{margin:0 0 4px;font-size:24px;color:#fff}
+  #ctrlBox .sub{color:var(--dim);font-size:16px;margin-bottom:14px}
+  .ctrlRow{display:grid;grid-template-columns:190px 1fr;gap:10px;align-items:baseline;
+    padding:9px 0;border-top:1px solid #16304e;font-size:17px;line-height:1.5}
+  .ctrlRow b{color:var(--accent)}
+  .ctrlRow span{color:#cfe3ff}
+  #ctrlBox button{margin-top:16px;width:100%;background:#1e5c33;border:1px solid #39d353;color:#fff;
+    font-family:inherit;font-size:19px;font-weight:bold;padding:13px;border-radius:9px;cursor:pointer}
+  #ctrlBox button:hover{filter:brightness(1.15)}
+  #ctrlBtn{margin-top:7px;background:#12233c;border:1px solid #2b4a70;color:#9fd0ff;font-family:inherit;
+    font-size:15px;padding:6px 10px;border-radius:6px;cursor:pointer}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.82);border:1px solid #1d3350;border-radius:10px;
     padding:14px 16px;font-size:18px;line-height:1.6}
@@ -86,11 +104,25 @@
     <h3>View</h3>
     <label class="chk"><input type="checkbox" id="showApo" checked>mark perigee / apogee</label>
     <div style="color:var(--dim);font-size:14.5px;margin-top:4px">drag=pan · shift/right-drag=rotate · pinch/wheel=zoom · arrows=rotate · <kbd>,</kbd><kbd>.</kbd> time · <kbd>R</kbd> reset view</div>
+    <button id="ctrlBtn" onclick="showControls()">⌨ how do I drive this? — show the controls</button>
   </div>
 </div>
 
 <div id="stage">
   <canvas id="c"></canvas>
+  <!-- first-run controls introduction (dismissible; reopen from the View panel) -->
+  <div id="ctrlCard"><div id="ctrlBox">
+    <h3>🛰 Driving the simulator</h3>
+    <div class="sub">You are looking at a real 3-D scene. Four things to know, then go play.</div>
+    <div class="ctrlRow"><b>🖱 Drag</b><span><b>PANS</b> the view — slide the whole scene around.</span></div>
+    <div class="ctrlRow"><b>🖱 Shift-drag<br>or right-drag</b><span><b>ROTATES</b> the camera around the Earth — use it to look at an orbit <i>edge-on</i> and see its tilt.</span></div>
+    <div class="ctrlRow"><b>🖱 Wheel / pinch</b><span><b>ZOOMS</b> in and out.</span></div>
+    <div class="ctrlRow"><b>⬅ ➡ ⬆ ⬇ arrows</b><span>Rotate too, smoothly and hands-free: ⬅➡ swing around the equator, ⬆⬇ tip you over the pole.</span></div>
+    <div class="ctrlRow"><b><kbd>,</kbd> and <kbd>.</kbd></b><span>Control <b>TIME</b>. <kbd>,</kbd> slows the clock, <kbd>.</kbd> speeds it up — the rate shows top-left. A LEO orbit takes 90 minutes and GEO takes a day, so you will use these constantly.</span></div>
+    <div class="ctrlRow"><b><kbd>R</kbd></b><span>Resets the view if you get lost.</span></div>
+    <div class="ctrlRow"><b>◀ Left panel</b><span>Your control board: the <b>tick boxes</b> switch real constellations on, the <b>sliders</b> set the altitude, speed and inclination of your own object, and <b>◇ INJECT OBJECT</b> launches it.</span></div>
+    <button onclick="hideControls()">Got it — let me fly ✈</button>
+  </div></div>
   <div id="tag">ORBIT ACADEMY · Tutorial 1 · How orbits work</div>
   <div id="warpInd">time ×1</div>
 </div>
@@ -474,7 +506,15 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();
     if(pinchD)camR=Math.max(1.5,Math.min(200,camR*(pinchD/d)));pinchD=d;}},{passive:false});
 canvas.addEventListener('touchend',()=>{drag=0;pinchD=0;});
 const keys={};
-addEventListener('keydown',e=>{keys[e.key]=true;
+/* First-run controls card. Shown once per browser (localStorage), reopenable from the View panel —
+   students who never find pan/zoom/rotate or the time keys cannot do half the exercises. */
+function showControls(){ document.getElementById('ctrlCard').classList.add('show'); }
+function hideControls(){ document.getElementById('ctrlCard').classList.remove('show');
+  try{ localStorage.setItem('t1_controls','1'); }catch(e){} }
+(function(){ let seen=false; try{ seen=localStorage.getItem('t1_controls')==='1'; }catch(e){}
+  if(!seen) showControls(); })();
+addEventListener('keydown',e=>{ if(e.key==='Escape') hideControls();
+  keys[e.key]=true;
   if(e.key===','||e.key==='<')warp=Math.max(0.03125,warp/2); if(e.key==='.'||e.key==='>')warp=Math.min(64,warp*2);
   if(e.key.toLowerCase()==='r'&&!e.metaKey&&!e.ctrlKey){camTheta=0.9;camPhi=1.0;camR=12;panPivot.set(0,0,0);}
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();});

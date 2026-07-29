@@ -247,7 +247,9 @@ Payoff: geostationary = a 24-hour orbit that keeps pace with the ground.
   ~90% of its surface strength; astronauts float because they are falling *with* their ship, not
   because gravity quit.
 
-The deck for this module is `slides/module1.pptx` (8 slides matching this outline).
+The deck for this module is `slides/module1.pptx` (9 slides matching this outline — including a
+**Driving the simulator** slide covering the mouse, the arrow keys, the `,`/`.` time keys and the
+control board, which pairs with worksheet Part A).
 
 **Module 2 — Angular Rates & Geosync.** Central skill: angular rate vs. true speed, and why the GEO
 belt is prime, finite real estate (360 one-degree slots). The ground-telescope view (stars streak
@@ -562,22 +564,36 @@ Everything from Modules 1–6 gets used in anger.
 **Intro lecture (10 minutes, before students open the worksheet).**
 
 - *Hook* — today you stop studying orbits and fly one. Your fuel gauge is the exam.
-- *Beats* — (1) Plan before you fly: vis-viva gives each burn's Δv; the logbook's running total
-  decides go/no-go. (2) The warm-up mission: service a GEO satellite — 2,400 + 1,460 ≈ 3,860 m/s
-  against a 6,500 m/s tank — and the plan is only half the job: the balance pays for *phasing*
-  ~8° along the belt to the target satellite, so sloppy hand-flying eats the margin. (3) The graduation flight
-  (unlocked only by a successful GEO run): the Moon *moves* while you coast ~4 days, so you lead
-  it ~120° and aim just past it — TLI ~3,090 m/s. (4) The counter-intuitive finale: at closest
-  approach you turn around and brake (~900 m/s LOI) so the Moon's gravity can keep you — and the
-  planner grades lunar plans with the full three-body sim, because no clean vis-viva check exists
-  for capture.
+- *Beats* — (1) **What Δv is**: a burn changes your velocity, and propellant buys that change at an
+  exponential rate, so the tank (6,500 m/s for GEO, 9,500 for the Moon) is the mission's real limit.
+  (2) **Send them to TRAIN first** — free flight, unlimited fuel, nothing scored — because the next
+  beat has to be *felt*, not told. (3) The **counter-intuitive rule**: to catch a satellite ahead of
+  you, burn REVERSE. A lower orbit has a shorter period, so you come round sooner and creep up on it
+  (δT/T = 1.5·δa/a → ~5°/day for a 400 km dip; 1° of the GEO belt is 736 km). Your speed at the burn
+  point actually *falls* — it is the period that wins the race. (4) The warm-up mission: service a
+  GEO satellite — 2,400 + 1,460 ≈ 3,860 m/s against a 6,500 m/s tank — and the plan is only part of
+  the job: you arrive ~8° **behind** the target and phase in, which is what the balance of the tank
+  pays for. (5) The graduation flight (unlocked only by a clean GEO run): the Moon *moves* while you
+  coast ~4 days, so lead it ~120° and aim ~395,000 km — just **past** it. TLI ~3,090 m/s, and it is a
+  knife edge: ±1.5 m/s flips a capture into an impact or a miss. (6) **Three** burns, not two: at
+  closest approach you turn around and brake (~600 m/s to the local circular speed — *less* than the
+  900 in the logbook), and because capture leaves an **ellipse**, a third burn rounds it out **at an
+  apsis**, the only place where one along-track burn can. (7) Say the scoring out loud: you must
+  **hold** the target box a full revolution, not just touch it.
 - *Live demo* — in PLAN mode in `tut8`, pick **🛠 Service a GEO satellite**, click **✨ solve it
   for me**, then **▶ GO — run sim**: the predictor flies the whole two-burn transfer end to end.
-- *Misconception to pre-empt* — "to get captured, speed up toward the Moon." Arrive without
+  If time allows, fly the GEO mission once with **🤖 AUTO FLY** on and let the class read the Δv and
+  the grade off the debrief — it sets the standard they are trying to match by hand.
+- *Misconceptions to pre-empt* — (a) "to get captured, speed up toward the Moon." Arrive without
   braking and the Moon slingshots you right past; capture *is* the retrograde burn at closest
-  approach.
+  approach. (b) "to catch something ahead of me, thrust toward it." That raises your orbit,
+  lengthens your period, and it pulls further away.
 
-The deck for this module is `slides/module8.pptx` (8 slides matching this outline).
+The deck for this module is `slides/module8.pptx` — **12 slides** matching these beats:
+title · why you care · **Δv is the currency** · Mission 1 (GEO servicing) · **To catch up, drop
+LOWER** · Mission 2 (lead the Moon) · Lunar Orbit Insertion · **Circularize only at an apsis** ·
+the cockpit (TRAIN / PLAN / FLY + the rendezvous director) · **How you're scored** · what you'll
+do · the one thing to remember.
 
 ---
 

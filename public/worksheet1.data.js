@@ -48,7 +48,7 @@ const WORKSHEET = {
     'Try each one now: drag to slide the view, Shift-drag to spin around Earth, and roll the wheel to zoom. Then come back and start the exercises below. If you ever lose your bearings, press <b>R</b>.',
   ],
   parts: [
-    { title: 'PART A · Drive the simulator', blurb:'Before any physics, get comfortable moving the view and turning objects on and off. There is nothing you can break — press R to reset.', tasks:['ctl1','ctl2','ctl3'] },
+    { title: 'PART A · Drive the simulator', blurb:'Four tools to learn first: the MOUSE (drag to pan, wheel to zoom, Shift-drag to rotate), the ARROW KEYS (steady rotation), the , and . keys (time flow), and the control board on the left (switches, sliders, INJECT). Nothing here can be broken — press R to reset the view.', tasks:['ctl1','ctl2','ctl3','ctl4'] },
     { title: 'PART B · Meet the real orbits, one at a time', blurb:'Each checkbox in the sim is a real population of satellites, shown to scale. Turn them on ONE at a time and study each before moving on.', tasks:['a1','a2','r_leo','r_sl','r_gps','r_geo'] },
     { title: 'PART C · What makes an orbit? (inject your own at 600 km)', blurb:'Now build orbits yourself and watch how release speed sets the whole shape.', tasks:['b1','b2','b3','b4','fan'] },
     { title: 'PART D · Too much speed: escape', blurb:'Push past escape velocity and watch a bound ellipse open into a one-way hyperbola.', tasks:['esc1'] },
@@ -92,8 +92,8 @@ const WORKSHEET = {
         'There are only three moves, and they’re the same in every module. <b>Pan</b> slides your viewpoint sideways. <b>Zoom</b> flies you closer or farther. <b>Rotate</b> swings you around to see the scene from a new angle — over a pole, from the side, wherever you like. Getting fluent with these three now means that later, when the physics gets interesting, you can always find the best angle to watch it from.',
         'Nothing you press can break anything. If you get twisted around and lose the Earth, the <b>R</b> key instantly snaps you back to the starting view — so explore freely.',
       ],
-      do:'Open the simulator. With your mouse: <b>left-drag</b> to slide (pan) the view, <b>pinch the trackpad or roll the wheel</b> to zoom in and out, and <b>Shift-drag</b> (or right-drag) to rotate around Earth. Try the <b>arrow keys</b> to rotate too. When you’re turned around, press <b>R</b> to reset.',
-      observe:'you are moving your viewpoint, not the Earth — the planet and satellites hold still while you fly around them.',
+      do:'Open the simulator — a <b>⌨ controls card</b> greets you on the first run (the ⌨ button in the <b>View</b> panel brings it back any time). Now do each move deliberately, with a target: <b>left-drag</b> to slide the view so Earth sits off to one side; <b>roll the wheel or pinch</b> until the whole ISS orbit just fits, then zoom right in until the planet fills the screen; <b>Shift-drag</b> (or right-drag) to swing underneath and look up at Earth from below. Then take your hands off the mouse and use the <b>arrow keys</b>: hold <b>⬅</b> or <b>➡</b> to spin around the equator, and <b>⬆</b>/<b>⬇</b> to tip over the pole until the ISS orbit is exactly <b>edge-on</b> — a straight line across the planet. Finally press <b>R</b> and watch the view snap home.',
+      observe:'you are moving your viewpoint, not the Earth — the planet and satellites hold still while you fly around them. The arrow keys give a slow, steady rotation that is far better than the mouse for lining up an exactly edge-on view, which is how you will judge the <i>tilt</i> of an orbit later in this module.',
       think:[
         'When you drag, does the Earth actually move, or does it just fill a different part of your screen?',
         'From how far out can you still see the whole scene at once? How close can you get to the surface?',
@@ -124,8 +124,8 @@ const WORKSHEET = {
         'Real orbits are slow. The fastest satellites here take about 90 minutes to circle the Earth; the far-out ones take a full day. If the simulator ran at real speed you’d stare at a frozen picture — nothing would visibly move. So the sim lets you <b>warp time</b>, compressing hours into seconds so you can actually watch motion happen.',
         'Speeding time up doesn’t change the physics one bit — the orbits are exactly as accurate fast as they are slow. It only changes how quickly you watch them play out. A readout at the top-left tells you the current rate (for example “minutes per second” or “hours per second”), and you can always tap <b>,</b> a few times to slow way down — to 1⁄32 speed — and study a moment closely.',
       ],
-      do:'Press <b>.</b> (period) a few times to speed up time and watch satellites move; press <b>,</b> (comma) to slow it back down. The time-rate indicator is at the top-left of the view.',
-      observe:'the satellites start to visibly sweep along their paths as you warp time, and the top-left readout shows how much real time passes per second.',
+      do:'Press <b>.</b> (period) a few times to speed up time and watch satellites move; press <b>,</b> (comma) to slow it back down — the time-rate indicator is top-left. Now use it with a purpose: speed time up until the <b>ISS</b> takes roughly <b>ten seconds</b> to go once around, and note the rate you needed. Then tick <b>GEO</b> on and try to watch one of those satellites complete a lap: you will have to speed time up a lot further. Slow it back to ×1 when you are done and notice how nearly frozen everything looks.',
+      observe:'the satellites start to visibly sweep along their paths as you warp time, and the top-left readout shows how much real time passes per second. A LEO satellite needs only a modest speed-up to be watchable; GEO needs far more, because one GEO lap takes a whole day against about 90 minutes in LEO. Time warp is not a gimmick — without it, most of what this course teaches happens too slowly to see.',
       think:[
         'At real speed, could you even tell the satellites were moving?',
         'Does speeding up time change the shape or size of an orbit, or only how fast you watch it?',
@@ -135,6 +135,25 @@ const WORKSHEET = {
         opts:['Because the physics is wrong at normal speed','Because real orbits take ~90 minutes to 24 hours, far too slow to watch in real time','To save electricity','It makes the orbits more accurate'],
         a:1, why:'Correct — a real orbit takes 90 min (LEO) to a full day (GEO), so you speed time up to see motion; the top-left readout tells you the rate.',
         feedback:['The physics is the same at any time rate.','','Time warp is about watchability, not power.','Accuracy is unchanged — you’re just watching faster.'] } },
+    { id:'ctl4', title:'The control board: switches, sliders, and INJECT',
+      teach:[
+        'Everything you <i>do</i> in this simulator happens on the panel down the left-hand side, and it comes in three kinds. The <b>tick boxes</b> at the top are switches: each one turns a whole real satellite population on or off. Below them, three <b>sliders</b> describe an object you are about to launch — how high you release it, how fast you throw it sideways, and how tilted its path will be. And the <b>◇ INJECT OBJECT</b> button actually launches it.',
+        'The order matters, and it catches people out: the sliders only decide what the <i>next</i> object will be. Moving a slider does nothing to something already in orbit — an object in flight is on its own from the moment you release it, exactly like the real thing. To try a different speed, you set the slider and inject again.',
+      ],
+      predict:'If you inject an object and then drag the speed slider, do you expect the object already up there to change its path?',
+      do:'Set <b>release altitude</b> to 600 km, leave the speed where it is, and press <b>◇ INJECT OBJECT</b>. Now drag the <b>tangential speed</b> slider well to the left and watch the object you already launched — does it react? Press <b>◇ INJECT OBJECT</b> again to launch a second one at the new speed, and compare the two paths. Then use <b>clear my objects</b> to wipe the slate.',
+      observe:'the sliders only load the <i>next</i> shot — the object already in flight ignores them completely and keeps coasting on the speed it was given. Injecting again adds a second, different orbit alongside the first, which is exactly how you will compare speeds in Part C.',
+      think:[
+        'Why is it physically right that a slider cannot change an object that has already been released?',
+        'What would you have to do, in real life, to change an orbit that is already flying?',
+      ],
+      quiz:{ q:'You inject an object, then move the speed slider. What happens to the object already in orbit?',
+        opts:['Its orbit changes to match the new slider value',
+              'Nothing — the sliders only set up the NEXT injection; an object in flight keeps the speed it was released with',
+              'It disappears','It speeds up but keeps the same shape'],
+        a:1, why:'Correct — release conditions are set at the moment of injection. After that the object simply coasts, and only a rocket burn (Module 8) could change its path.',
+        feedback:['The sliders are inputs for the next launch, not a remote control.','','Only "clear my objects" removes them.','Nothing about it changes at all.'] } },
+
     // ---- PART B · meet the real orbits, one at a time ----
     { id:'a1', title:'How high is space, really?',
       teach:[

@@ -70,7 +70,7 @@ function simulate(plan, opts){ opts=opts||{};
     const a=-wMoon*(tt+tShift); return [x*Math.cos(a)-y*Math.sin(a), x*Math.sin(a)+y*Math.cos(a)]; };
   for(let k=0; t<tMax; k++){
     // fire any burns whose time we've reached, recording where (co-rotating) each burn happens
-    while(bi<burns.length && t>=burns[bi].t-1e-6){ burnMarks.push({t, xy:corot(s[0],s[1],t), b:burns[bi]});
+    while(bi<burns.length && t>=burns[bi].t-1e-6){ burnMarks.push({t, xy:corot(s[0],s[1],t), xyI:[s[0],s[1]], b:burns[bi]});
       s=applyBurn(s, burns[bi].fore||0, burns[bi].side||0); bi++; }
     // land EXACTLY on the next burn time (don't overstep by up to dt): burn geometry — especially
     // the knife-edge lunar aim — must not depend on the integration step size.

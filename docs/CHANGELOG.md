@@ -2,6 +2,377 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## Unreleased — 2026-07-23 (module8 deck deepened to 12 slides; instructor guide beats rewritten)
+- **`slides/module8.pptx` → 12 slides.** Two of the module's stated learning goals had no slide at all:
+  - **"Δv is the currency"** — what a burn physically delivers, why the rocket equation makes it
+    exponential, and the two tanks (6,500 / 9,500 m/s).
+  - **"How you're scored"** — the real success gates (GEO: 5% radius, 4% speed, 3.5° of the target,
+    *held* a full orbit; Moon: bound, inside the SOI, 8% of circular, held a revolution), the grade
+    weights (40/30/30 and 50/50) and every failure mode including the 100 m collision rule.
+  Also added **"Circularize only at an apsis"**, which ties the GEO trim and the lunar burn 3 to one
+  rule, and corrected stale copy on the existing slides: the GEO mission is now described as a
+  two-burn transfer *plus a phasing leg to rendezvous*, the lunar flight as *three* burns, the aim
+  point as 395,000 km (was 397,500), and TLI's ±1.5 m/s knife edge is called out.
+- **Instructor guide Module 8 beats rewritten** to match, in the order the deck now runs: Δv as
+  currency → TRAIN first → the backwards-to-catch-up rule (with δT/T = 1.5·δa/a, ~5°/day, 736 km per
+  degree) → GEO servicing and its phasing leg → lead the Moon and the knife edge → three burns with
+  the brake at closest approach and the apsis circularization → say the scoring out loud. Adds a
+  second misconception to pre-empt ("thrust toward the thing ahead of you") and suggests flying one
+  GEO mission on AUTO FLY as a live demo so the class sees the standard. Deck reference updated to
+  12 slides with the full running order.
+- Card sub-labels on the new slides were measured against their boxes and shortened until nothing
+  overflows.
+
+## Unreleased — 2026-07-23 (Module 1 controls introduction; module 1 + 8 decks)
+- **Module 1 now introduces its controls properly.** The simulator supported mouse pan/zoom/rotate, the
+  arrow keys, `,`/`.` time warp and `R` to reset all along — but only documented them in a single dim
+  line of small print, which is easy to miss and leaves half the exercises undoable. `tut1.html` now
+  shows a **first-run controls card** (once per browser, reopenable from a ⌨ button in the View panel,
+  Escape to dismiss) covering the mouse, the arrow keys, the time keys, `R`, and the left-hand control
+  board.
+- **Worksheet 1's Part A now makes students USE each tool, with a target rather than a gesture:** pan
+  until Earth sits off to one side, zoom until the ISS orbit just fits then right in to the surface,
+  Shift-drag underneath to look up at Earth, then hands off the mouse and use the arrow keys to tip the
+  view until an orbit is exactly **edge-on** (which is how inclination is judged by eye later). The time
+  task now has a measurable goal — speed up until an ISS lap takes ~10 s, then try the same for GEO and
+  discover how much further you must go. New task **ctl4 "The control board"** introduces the switches,
+  the three sliders and ◇ INJECT, and teaches the thing that catches everyone out: the sliders only load
+  the NEXT shot — an object already in flight ignores them, exactly as in reality. (21 tasks.)
+- **`slides/module1.pptx` → 9 slides:** a new **"Driving the simulator"** slide (mouse / arrow keys /
+  `,` and `.` / control board), placed just before "What you'll do". Built by cloning an existing slide's
+  shape tree so the background, decorative ovals, card styling and fonts match exactly.
+- **`slides/module8.pptx` reconciled with the rewritten module** and grown to 9 slides: budgets
+  corrected to **3,860 / 6,500** and **9,500**; LOI restated as **~600 m/s at closest approach** (and
+  noted as *less* than the 900 planned) with capture leaving an ellipse so a **third** burn rounds it
+  out at an apsis; the cockpit slide now lists the **three modes** (TRAIN / PLAN / FLY) plus the
+  rendezvous director instead of the old PLAN/FLY/BURN-NOW/ILS four; "What you'll do" rewritten around
+  TRAIN-first, fly-by-hand-then-AUTO, phasing, and the three lunar burns; and a **new "To catch up, drop
+  LOWER"** slide carries the module's counter-intuitive centrepiece (shorter lap, ~5°/day from a 400 km
+  dip, 736 km per degree). The closing line is now "Plan the Δv, fly the plan — and to catch something
+  ahead of you, drop LOWER." Instructor guide deck references updated to match.
+
+## Unreleased — 2026-07-23 (Module 8: TRAIN mode slowed to a watchable pace)
+- **TRAIN ran at 1,200× — a whole LEO orbit in 4.6 seconds** (owner: "timing starts WAY too fast in
+  training mode"). That is useless for the one thing the sandbox exists for: watching a burn reshape
+  the orbit. It is now **60×**, about **92 s per lap**, with "." scaling up to 960× (≈6 s/lap) when you
+  want to skip ahead and "," slowing further. The first CAPCOM drill message now tells the pilot the
+  clock is deliberately slow here and points at the "," / "." keys.
+- Worth recording why it drifted: the 1,200× figure was chosen to match the *old effective* pace, back
+  when a bug floored every warp near ~1,200× regardless of the setting. Fixing the `dtReal` cap
+  (previous entry) let high warps finally reach their nominal rate — which made the nominal 1,200× in
+  TRAIN suddenly real, and far too fast.
+
+## Unreleased — 2026-07-23 (Module 8: lunar arrival — one number, eased clock, cue at perilune)
+- **The cue and the Δv gauge no longer disagree.** They quoted different quantities by construction:
+  the annunciator showed the REMAINING residual while the gauge marker showed the CUMULATIVE total for
+  the burn, so after a pulse the screen read "brake 400" beside a gauge targeting 700. A single
+  `burnTargetNow()` is now the only source of truth for the annunciator, the gauge marker and the side
+  panel, and it returns the cumulative total — a number that does not slide as you fly it. Measured
+  over a whole lunar arrival: **0 mismatches** (was 1,767 samples apart).
+- **Also fixed: the annunciator's text was never cleared**, only hidden by CSS — so stale orders (a TLI
+  cue still reading "3,086 m/s FORWARD" hours later) lingered in the DOM. It is emptied when not cued.
+- **The approach no longer flashes past.** The cruise warp (12,000×) was held right down to ~5,000 km
+  from the Moon, so the arrival — the part worth watching — went by in under a second before the cue
+  armed out of nowhere. The lunar arrival clock is now **capped by RANGE** (2,000× outside 45,000 km,
+  then 600× / 300× / 120× as you close inside 20,000 / 10,000 / 6,000 km) so it only ever winds down.
+  Applied as a cap rather than a ladder rung, which also removes the lurch back up to 1,500× that
+  appeared when the burn window opened — and deliberately not applied to the confirmation orbit,
+  victory lap or loiter, since capping those by range stretched a two-lap victory to eight minutes.
+- **LOI is cued at closest approach, and not before** (owner: "it tells me to do it way too early").
+  The cue is now suppressed entirely while the Moon is beyond 25,000 km, and it is re-timed to the live
+  predicted perilune only when that prediction is a real encounter (inside 25,000 km). CAPCOM now
+  explains the burn when its window opens rather than just naming a number.
+- **On the ~600 m/s that looked "way too much": it is correct — and cheaper than planned.** At the
+  reference perilune (5,140 km, 1.614 km/s relative to the Moon) bare capture needs only 233 m/s, a
+  circular orbit right there needs **637 m/s**, and the logbook plan allows 900. The cue quotes the
+  circularize-at-perilune figure because that is what leaves burn 3 costing tens of m/s instead of
+  hundreds. The cue and CAPCOM now say so explicitly.
+- **Performance on approach:** the live trajectory prediction ran on EVERY frame while thrusting (the
+  `!firing` term in its throttle) — up to ~3,000 RK4 steps per frame during the LOI burn. It is now
+  throttled to 250 ms while firing, and its horizon/step budget shrink inside the Moon's sphere of
+  influence (12 h instead of 8 days), where there is nothing to foresee days ahead anyway.
+
+## Unreleased — 2026-07-23 (Module 8: lunar arrival — no more UPWARD orders, brisk timing, loiter)
+- **"Burn UPWARDS" is gone; burn 3 is always an along-track burn at an apsis.** The circularization was
+  ordered as the largest *component* of a full circularization vector, so the cue could legitimately
+  read "UPWARD ~200 m/s" — correct arithmetic, baffling instruction, and against the module's own
+  lesson (a radial burn tilts an orbit, it does not round it out). New `lunarApsisPlan()` mirrors the
+  GEO apsis planner: which apsis is next, when, and the single along-track Δv to fly there. Guidance,
+  the autopilot and the completion test all use it. Measured over a full arrival: **0 cues demanding a
+  radial burn**, where before they were routine.
+- **The arrival no longer hangs then lurches.** Two causes: (1) burn 3 was being *re-timed while its
+  window was already open*, so the countdown kept being pushed out from under the pilot — the clock
+  appeared to stall at one spot; re-timing now stops once the window opens (5 revisions, all outside).
+  (2) The lunar confirmation orbit and victory lap ran at 2,600–2,800×, which flashed past. Both now
+  run at 600× for the Moon — watchable — and the victory lap is two laps instead of one. Time inside
+  the burn-3 window: **7.2 s** of wall clock.
+- **Pre-burn warning cut from ~40 s to ~6 s, and made frame-rate independent** (owner request: "20 sec
+  feels like a long time… 10 sec is plenty" — then, after a first pass, "still starts 20 sec out").
+  Three things were wrong:
+  1. The ladder was 60× stand-by / 4× on the cue → 40.5 s of waiting. Now **240× / 15×**, with the red
+     cue arming at T-45 s instead of T-90 s.
+  2. The countdown armed on the whole **±1800 s** burn window. A new `CUE_LEAD = 900 s` separates
+     *cueing the pilot* from the (deliberately wide) window used for burn bookkeeping, so the amber
+     countdown is a brisk run-up rather than half an hour of sim-time creeping past.
+  3. **The real reason it still felt like 20 s:** `dtReal` was capped at 0.05 s, so any loop slower
+     than 20 fps advanced the sim by *less* than the warp asked for — and the lunar arrival runs the
+     raytracer, the big NAV and the live prediction together. Measured across frame rates, the old
+     run-up took 40.7 s at 60 fps but **67.9 s at 12 fps and 101.9 s at 8 fps**. With the cap at 0.2 s
+     the new run-up is **5.8–6.6 s from 8 fps to 60 fps** — steady regardless of load.
+  The autopilot is unaffected (it runs the window at 300× and lands exactly on the burn time).
+- **You can now loiter at the Moon as long as you like.** Reaching a confirmed lunar orbit used to
+  fire the debrief and eject you. After the victory lap the flight now enters **LOITER**: mission won,
+  nothing further scored, free flight in lunar orbit, with a banner and a CAPCOM call — "stay up here
+  as long as you like… press **E** whenever you want the debrief". Guarded so the hold logic cannot
+  award endless victory laps and a dry tank cannot fail an already-won flight. The harness now drives
+  real key events (its DOM stub used to swallow them) and asserts the loiter is offered before pressing
+  E; a diagnostic run left to itself loitered from frame 12,276 out to T+8.34 d without ending.
+
+## Unreleased — 2026-07-23 (Module 8: the window is nadir-locked to whichever body owns you)
+- **The Moon no longer flips from the bottom of the window to the top.** The out-the-window camera
+  built its attitude from **Earth**-relative vectors, so once you were orbiting the Moon "belly down"
+  and "forward" referred to the wrong body: measured over one lap of a 4,500 km lunar orbit the Moon
+  ran OFF TOP → lower half → OFF BOTTOM → BEHIND CAMERA → OFF TOP again. The attitude reference is now
+  the body that owns you — Earth normally, the **Moon** inside its sphere of influence, matching the
+  thrusters (`applyBurnPad`) — so **nadir is the floor for both bodies**, steady, no flipping.
+- **…and you can now actually see the Moon out of the window.** Nadir-locking alone was not enough:
+  Earth from 400 km spans ±70° so a fixed 13.5° nose-down pitch fills the lower window, but the Moon
+  from a 4,500 km orbit spans only ±23° and sits ~77° off a nose-forward boresight — out of frame
+  entirely. The pitch now adapts to the body's apparent size, dipping just far enough to bring the limb
+  into the bottom of the window and no further (capped ~72°, which also keeps the "up" vector
+  well-conditioned). Result: the limb sits at a consistent screen position with the body filling the
+  bottom ~23% of the window from 2,200 km to 20,000 km out, while the familiar Earth-from-LEO view is
+  unchanged.
+- **"Lunar adjust burns seem to have little effect" — the burns were fine; the instruments were not.**
+  Demonstrated: a 20 m/s REVERSE trim in a 4,500 km circular lunar orbit moves the **Moon-relative**
+  low point 2,763 → 2,434 km (329 km), but the old **Earth-relative** readout reported
+  `e 1.000 → e 1.000` — no visible change at all. With the body-aware elements from this same batch,
+  plus the lunar NAV arrival zoom floor lowered 15,000 → 2,500 km (a 4,500 km orbit previously occupied
+  a third of a 30,000 km-wide view), trims are now plainly visible in both the numbers and the map.
+
+## Unreleased — 2026-07-23 (Module 8: lunar telemetry, trail resolution, apsis re-timing)
+Three inconsistencies the owner reported in the lunar mission, all reproduced with hard numbers via a
+lunar diagnostic run before being fixed.
+
+- **"CAPCOM says ESCAPE while I am orbiting the Moon."** The telemetry read-back and the live orbit
+  panel computed elements about the **Earth** only — and a craft comfortably bound to the Moon is
+  normally *unbound about the Earth*, so the cockpit announced "ESCAPE trajectory (e ≥ 1)" at a pilot
+  sitting in a good 4,480 km lunar orbit. Both readouts are now **body-aware**: a new `primaryBody()`
+  switches to the Moon inside its sphere of influence, and `orbElemsLocal()` reports elements about
+  whichever body owns you — "Moon orbit: peri … · apo … · e …", and escape is only ever announced
+  relative to the correct primary. (`orbElems()` deliberately stays Earth-centric: the GEO phasing
+  controller, apsis planner and success gates are all defined about the Earth.) The one remaining
+  escape call in a clean run is at T+101.3h, **before** LOI at 5,692 km — where it is factually
+  right and useful: brake or fly past.
+- **"The green trajectory is straight-line segments."** The actual-path trail used a flat 2,000 km
+  sampling threshold, which gives only ~15 points per lap of a 4,500 km lunar orbit — a visible polygon
+  exactly where the pilot is judging their capture. Sampling now scales with lunar range (60 km inside
+  20,000 km, 200 km inside the SOI, 2,000 km on the cruise) and the trail cap rose 4,000 → 9,000
+  points. Measured: point spacing near the Moon **2,001 km → 68–79 km**.
+- **"Stale burn commands."** Burn 3 is scheduled for an **apsis**, but its time was computed once when
+  the burn was created and never revised — so any trim moved the apsis and left the cue firing at the
+  wrong moment. It is now re-timed (rate-limited, while still more than 90 s out) for as long as it
+  is pending: **1 distinct scheduled time → 14** over the arrival in a clean run, converging into the
+  cue instead of drifting away from it.
+
+Both reference missions still fly clean: GEO on station T+1.71 d / 3,896 m/s; lunar captured and held,
+three burns, T+4.95 d / 3,771 of 9,500 m/s. All 15 harness checks pass.
+
+## Unreleased — 2026-07-23 (Module 8: the Δv meter is a signed NET; fuel stays a total)
+- **A correction now walks the THIS BURN Δv meter back down** (owner request). The meter answers "how
+  much of this burn have I flown?", so it is integrated as a **signed net** against the burn's
+  reference direction — the *ordered* direction when there is a cue, otherwise whatever you first
+  pressed. Overshoot a 2,400 m/s order and a REVERSE tap brings the number back toward 2,400; keep
+  going and it reads negative, which is honest (you have net-burned the other way). The bar clamps at
+  zero and a negative net trips the HOT indicator.
+- **The ⛽ fuel gauge deliberately does NOT come back.** `dvSpent` stays strictly additive, because
+  propellant does not care which way you point: the correction costs exactly what the overshoot did.
+  Verified: overshoot then two corrections read net 336 → 240 → 144 m/s while spend rose 336 → 432 →
+  528. That gap between "net achieved" and "total spent" is the economics of sloppy flying, so the two
+  gauges are now explicitly different — and the cockpit tour, the worksheet's instrument table and the
+  flight task all teach the distinction rather than leaving it to be discovered.
+
+## Unreleased — 2026-07-23 (Module 8: Δv integrator, stubborn cue, NAV title, ECI centring)
+- **The Δv integrator really does hold now — 5 s from the LAST thrust, and clicks accumulate.**
+  Three separate causes, only found once the test harness was fixed to register real listeners (the
+  DOM stub had made `addEventListener` a no-op, so every earlier "pass" had bypassed the keyboard and
+  mouse paths entirely):
+  1. **`burnDone` forced a reset on the next press.** While fine-trimming, a single tap can satisfy or
+     retire the scheduled burn — after which the very next tap zeroed the total. That is the reported
+     "hit the key 3 times and it resets". A press within the hold window now always *continues* the
+     running total; only a lapsed hold starts a fresh count.
+  2. **Two clocks.** `stepBurn` compared the rAF timestamp against a deadline set from
+     `performance.now()`. A browser's rAF timestamp is the frame start and can sit a frame behind, so
+     `dt` could come out negative (the first tick of a short click adding nothing) and the hold expiry
+     compared different timebases. It now reads `performance.now()` itself, once.
+  3. **The deadline is refreshed on every thrust tick**, not only on release — so it is genuinely 5 s
+     since thrust was last applied, robust to a swallowed pointerup (pointercancel, released off the
+     button, mouseup landing elsewhere).
+  Also: **sub-frame clicks used to deliver nothing at all.** A quick click can begin and end inside one
+  inter-frame gap, so `stepBurn` never ran while firing. `stopBurn` now flushes the final slice of
+  thrust. Verified through the real event handlers: six clicks 0.4 s apart accumulate 72 → 432 m/s
+  monotonically with the hold reading 4,648 ms after each; three 60 ms clicks landing between frames
+  each deliver ~90 m/s; the total clears ~5 s after the last input.
+- **The stubborn 🔴 BURN NOW is capped.** Reproduced: a sloppy under-burn left a cue that re-armed
+  **14 times over 6 sim-days** and was still demanding a burn at the end. Earth-period re-cues are now
+  capped at 3 (was 12); the "already flown" test is looser (apogee within 10%; near-circular at GEO
+  with e < 0.06); and a new nag guard retires any burn that has come round 3+ times while the craft is
+  within 15% of belt radius, handing the pilot to the ◎ RENDEZVOUS DIRECTOR with a CAPCOM explanation.
+  Same scenario now retires after 5 re-arms with the cue cleared.
+- **NAV panel title fixed** (owner report: overflowing, font ~2× too big): now two lines at roughly
+  half the size — "NAV · top view" over the frame name on its own line — so the long frame names fit.
+- **The Earth no longer wobbles in ECI.** The final-approach close-up centred on the moving
+  craft/target midpoint, which in an inertial frame swings the whole scene once a day. The ECI view is
+  now always **Earth-centred**; the close-up applies only in the belt-fixed frame, where the target is
+  stationary and the view is steady.
+
+## Unreleased — 2026-07-23 (Module 8: the unsatisfiable trim cue, guidance that says WHY)
+- **"Stuck telling me to burn 62 m/s FORWARD for no apparent reason" — found and fixed.** The
+  rendezvous director was quoting the instantaneous "what would make me circular at my current
+  radius?" residual. On a slightly eccentric orbit that demand **flips sign every half lap and never
+  reaches zero** (measured on e = 0.004 near GEO: −6 m/s at the low point, +6 at the high, zero
+  nowhere) — so it was an instruction the pilot could not satisfy, and following it burns fuel while
+  the orbit gets no rounder. It is the same trap that drained the lunar tank earlier.
+  The director now computes the **next apsis** analytically (true → eccentric → mean anomaly) and
+  gives the pilot all four things: **what** (FORWARD/REVERSE), **when** ("HIGH POINT IN 6h 00m", or
+  "CIRCULARIZE NOW" when the radial rate is under 3 m/s), **how much** (the exact Δv for that apsis),
+  and **why** ("burning anywhere else only tilts it — the correction flips direction every half lap").
+  New readouts: **eccentricity** and **next high/low point**. Fixed on the way: sitting exactly at an
+  apsis described the *next* one, labelling perigee the "high point" and demanding FORWARD when the
+  correct burn is REVERSE; and long countdowns now read "6h 00m" instead of "559:38".
+- **Planner ▶ GO playback slowed** ~4.5 s → ~12.5 s so the burns and the encounter can actually be
+  watched (owner request).
+- **▦ GATES and ⚙ FINE ×0.1 are now explained** rather than assumed: the gates CAPCOM call says what
+  the hoops are, that green = threaded and red = off-altitude, that **nothing is scored on them**, and
+  that ▦ GATES turns them off; the worksheet's cockpit table gains a gates row, and the rendezvous
+  task explains that full thrust delivers ~50 m/s in the shortest possible tap, which is far too
+  coarse when the burn you want is 6 m/s.
+- **Worksheet 8 gains task d4b, "Why the director tells you to wait"** — an exercise that has the
+  student trim at a non-apsis point, watch the eccentricity refuse to fall and the instruction
+  reverse half a lap later, then do it properly at an apsis. It ties the GEO trim and the lunar
+  burn 3 to one rule. (18 tasks now.)
+- **Integrated Δv meter hold restored** (owner report). An earlier change let the total persist
+  *indefinitely* inside a burn window so it would survive long pauses — but that removed the reset
+  half of the behaviour, so the meter accumulated across every tweak and never re-baselined. Back to
+  one rule everywhere: the total holds for ~5 s after you release, **every pulse restarts the timer**
+  (so tap-read-tap still walks a burn up to a value), then it clears. Verified: two pulses accumulate
+  480 → 960 m/s, hold a steady 5.0 s, clear at 5.5 s; a cleanly completed burn holds its matched pair
+  (2,381 flown against a 2,400 target) for read-back. Also, retiring an already-flown burn now leaves
+  that read-back on screen instead of instantly re-baselining to the next burn's target.
+
+## Unreleased — 2026-07-23 (Worksheet 8 rewritten; GEO flies in ECI throughout)
+- **Worksheet 8 is a major rewrite** — 17 tasks across 5 parts (was 10 across 4), a new cockpit
+  reference table, 10 exam questions, and a fully reconciled summary. New teaching spine:
+  1. **The three modes** — TRAIN (free flight, unlimited fuel, unscored — *start here*), PLAN
+     (design burns, spend nothing), FLY (scored, real clock, real tank).
+  2. **What Δv physically is** — the velocity change a burn delivers — *and* why it is currency:
+     the rocket equation makes propellant cost grow exponentially, so the tank is the mission.
+  3. **Maneuver intuition, hands-on in TRAIN** (new Part B): the Oberth effect (burn low and fast),
+     radial vs. along-track burns, and the counter-intuitive centrepiece — **to catch something
+     ahead of you, burn REVERSE**, because a lower orbit has a **shorter period**. Stated precisely:
+     your speed at the burn point *drops*; the shorter **period** is what wins the race, and the far
+     side of the orbit (not "apogee") is what falls. Quantified with δT/T = 1.5·δa/a, ~5°/day for a
+     400 km dip, 1° ≈ 736 km.
+  4. **Respect for timing and precision** (new task d3): fly the mission by hand, record grade and
+     Δv, then fly the *same* mission with 🤖 AUTO FLY and compare — the losses are overshoot and late
+     burns, and early errors compound out of one finite tank. TLI's ±1.5 m/s knife edge is the
+     capstone example.
+  5. **Rendezvous as a first-class phase** (d4): the 8° standoff, the three-move phasing maneuver,
+     reading the ◎ RENDEZVOUS DIRECTOR, the 100 m collision rule.
+  6. **Explicit scoring** (d5): the actual success gates and grade weights from `scoreFlight`
+     (GEO 40/30/30 altitude/circularity/proximity; Moon 50/50), grade bands, and every failure mode.
+  7. **Why circularizing only works at an apsis**, which motivates the lunar burn 3 timing.
+  Also: the ⚙ FINE ×0.1 trim, the **,** / **.** time-warp keys and **F** are taught explicitly; a
+  new "what this model does and does not include" section (planar, point masses, no drag/J2/Sun);
+  and the Δv logbook figure gained phasing/trim rows against the 6,500 m/s budget. Every figure
+  verified numerically against `flight8.js` (LEO 7.67, transfer 10.07 → 1.62, GEO **3.07** km/s —
+  corrected from 3.08 — sidereal day 86,164 s, LEO period 92 min, transfer 5.29 h, drift 5.19°/day,
+  736 km/deg).
+- **The GEO mission now flies in Earth Centered Inertial (ECI) throughout** (owner call, replacing
+  the auto-switch): one frame, no switching under the pilot, every orbit in its true shape. The
+  belt-fixed co-rotating view stays reachable with **F** — it is the only picture in which
+  "geostationary" is visible, so the worksheet sends students there once, on station — and the
+  reason it is unfit for flying is now taught rather than hidden (360°/day curls the 5.3-hour
+  transfer ~80°, skews the 92-minute parking lap ~23°). Labels spell the frame out in full instead
+  of the redundant "ECI inertial". The final-approach zoom (framing craft + target) now works in
+  every frame, not just belt-fixed. Cockpit harness assertion updated accordingly: it now checks the
+  frame *never* changes mid-flight.
+
+## Unreleased — 2026-07-23 (Module 8: post-refactor bug hunt, headless cockpit harness)
+Built a **headless cockpit harness** (DOM/canvas stubs + a unified rAF/performance clock) that boots
+the real `tut8.html` script, loads a plan, engages AUTO FLY and flies whole missions frame-by-frame,
+surfacing anything the render loop's try/catch would swallow. It found every bug below; both missions
+now fly end-to-end with zero errors — GEO: burns at T+1.54h/6.85h, hold from T+17.07h, **ON STATION
+T+1.71d on 3,896 m/s (5 autopilot burns)**; Moon: **3 burns** (TLI 3,087 → LOI 640 → circularize 44),
+**captured and held, T+4.95d on 3,771 / 9,500 m/s**.
+
+- **"Nothing shows on NAV and nothing happens" — fixed.** When the trail moved to inertial storage
+  the line defining `cp` (the logic-frame position) was dropped, but the belt-proximity check, the
+  ILS gates and the success box all still used it — so `stepFlight` threw on *every* frame: the
+  mission never advanced and every draw after it was skipped, blanking the instruments.
+- **Switching ✈ FLY with no mission running no longer drops you into a dead cockpit** — only the
+  green "load into cockpit & fly" button ever started a flight. Entering FLY now always starts one
+  (your stored plan, else the verified reference plan).
+- **Zero-Δv burns are dropped from the burn card.** A burn with a 0 target made
+  `done = burnDv >= dvTarget − 0.2` instantly true, so the autopilot stopped and re-lit the thruster
+  *every frame* instead of flying it (383 restarts on one lunar run).
+- **The lunar autopilot no longer drains the tank.** It was chasing "circular at my current radius"
+  continuously on an eccentric orbit — a moving target that never converges (it spent the entire
+  9,500 m/s and ended out of fuel). Circularization is now timed for an **apsis**, where the radial
+  component vanishes and one burn genuinely rounds the orbit out: burn 3 is scheduled (and re-cued)
+  at the next apsis via a new `lunarApsisETA()`, the autopilot waits for radial rate ≈ 0, and a
+  **fuel guard** suspends trims with 15% of the tank in reserve.
+- **The nagging 🔴 BURN NOW at ~1,400 m/s while fine-trimming is gone** (owner report). Retirement
+  judged only the instantaneous residual, but |v − v_circ| swings tens of m/s twice a lap on a
+  slightly eccentric orbit, so a pilot who had essentially finished circularizing kept failing the
+  test at window-open and the cue re-armed every orbit showing the *planned* 1,457 m/s. It now asks
+  whether the burn's JOB is done — apogee already at GEO (burn 1), or a ≈circular orbit at GEO
+  radius, e < 0.03 (burn 2). Verified: e = 0.02–0.025 near GEO now retires; a craft still on the
+  transfer ellipse (residual 1,448 m/s) correctly still gets cued.
+- **The cockpit no longer freezes during a burn** (owner report). Burns froze the orbital coast to
+  stay perfectly impulsive, which stopped the clock, telemetry, trail and prediction dead for the
+  several seconds of a big burn. The sim now keeps running at 1× while thrusting (small clamped
+  substeps). Measured cost of honest finite burns: the lunar closest approach shifts 5,140 → 5,071 km
+  — about 0.05 m/s equivalent, negligible against the ±1.5 m/s TLI knife edge — and the NAV caption
+  now reads "◈ BURNING — ORBIT UPDATING LIVE".
+
+## Unreleased — 2026-07-23 (Module 8: NAV display frame + rendezvous director)
+- **The "REALLY weird orbits" were a frame artifact — NAV now auto-switches, and says which frame
+  it is in.** Drawing the whole GEO flight belt-fixed meant a frame rotating 360°/day: it curled the
+  5.3-hour Hohmann transfer by ~80° and skewed the LEO parking lap ~23°. But an inertial map cannot
+  show "geostationary". Resolved by separating the two concerns:
+  - **LOGIC frame** (`toCorotF`) stays belt-fixed always — separation, gates, station-keeping and
+    scoring are unaffected by what is displayed.
+  - **DISPLAY frame** (`toDisp`) is ECI through launch + transfer (textbook circle → ellipse →
+    circle), auto-switching to belt-fixed at circularization for the approach, where it also zooms
+    to frame craft + target so the last few degrees and the gates are actually visible. The panel
+    title always names the frame; **F** cycles auto → ECI → belt-fixed.
+  - Required storing the planned ghost, the actual trail and the burn marks in **inertial**
+    coordinates + absolute time (projected at draw time, two cached projections), so a mid-flight
+    frame flip re-renders history correctly. `simulate()` now also returns inertial burn marks.
+  - The planner draws GEO in ECI (planning is about the transfer shape) and puts the target sat
+    where it will be **at arrival**, since that map is inertial and the belt turns once a day.
+- **◎ RENDEZVOUS DIRECTOR** (owner: "really hard to do the last little bit of proximity
+  maneuvering"). After the planned burns the ILS cluster becomes an approach director: range,
+  closing rate, degrees along the belt, belt-altitude error, drift rate — and an instruction in
+  plain words with a Δv figure ("STOP THE DRIFT — hold FORWARD ~15 m/s to make your period one
+  sidereal day"). It teaches the counter-intuition that makes proximity work hard: to **catch**
+  something ahead you go **LOWER**; to let it catch you, **HIGHER**. Staged CAPCOM tips fire at
+  5,000 / 2,000 / 800 km (the last one recommending ⚙ FINE and a 1–2° standoff). Worksheet 8 and
+  the cockpit tour teach both the director and the frame switch.
+- **Two bugs the director's own test exposed:** its "stop the drift" advice fired while still 2.5°
+  short (parking the pilot *outside* the rendezvous box) — now the stop lead scales with drift rate;
+  and the autopilot's 1.2°/0.35° phasing hysteresis replaces 3°/0.9°, which could hand over up to
+  ~4.5° from the target, outside the 3.5° box, so the hold never completed. Re-verified full auto
+  GEO: hold complete T+1.71 d, final separation 2.15° (standoff 1.5°), gates 902/928/395 km,
+  A (95), 3,928 / 6,500 m/s. Lunar reference re-checked: captured, minMoon 2,486 km.
+- **Persistent 🔴 BURN NOW after circularization fixed:** completion was judged only on thruster
+  RELEASE inside the window, so a burn finished by pulsing, finished late, or ended by an autopilot
+  segment was never struck off the card — and the missed-burn logic re-cued it every orbit (worse
+  after re-cues went 6 → 12). A burn is now retired as soon as the live residual says it is flown,
+  guarded so mid-transfer (where speed genuinely equals local circular speed at r = a) can't
+  retire it early.
+
 ## Unreleased — 2026-07-23 (Module 8: target visibility, standoff, budgets)
 - **"I never saw the target satellite" — found two bugs; the offset sign was NOT one of them**
   (verified by replicating the window's pinhole camera headlessly: +8° projects on-screen at
