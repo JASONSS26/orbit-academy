@@ -1375,6 +1375,19 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
        : training ? 60
        : victoryUntil ? (planTarget==='moon'? 600 : 2800)   // lunar victory lap: watchable, ~50 s/orbit
        : holdStartT ? (planTarget==='moon'? 600 : 2600)     // lunar confirmation orbit likewise
+       /* LOITER — the pilot is flying by hand with the mission already won, and there was NO rung
+          here: with every burn retired the ladder fell straight through to COAST_WARP (12,000× on the
+          lunar mission), so the clock slammed to cruise the instant loiter began. Anyone trying to do
+          something interesting — fly back to Earth, for instance — found it impossible.
+          Grade it on distance to the NEAREST SURFACE instead, so it is slow where there is something
+          to see and quick across the empty middle. The pilot's ',' / '.' trim still multiplies on top
+          (×1/16 … ×16), so a 4-day transit at 6,000× is ~9 minutes, or ~35 s with '.' held. */
+       : loiter ? (function(){
+           const hM = rmNow - F7.R_M;                        // height above the lunar surface
+           const hE = Math.hypot(fs[0],fs[1]) - F7.R_E;       // …and above Earth's
+           const d  = Math.min(hM, hE);
+           return d<2000 ? 120 : d<8000 ? 300 : d<20000 ? 600 : d<45000 ? 2000 : 6000;
+         })()
        : (planTarget==='geo' && nextBurn>=planBurns.length && planBurns.length) ? 2600   // phasing leg: the ~1-day drift to the target plays in ~30 s
        /* Run-up ladder, tuned so the wait is ~10 s of wall clock rather than a minute of patience:
           cruise → T-CUE_LEAD: full approach warp · T-900 s → T-45 s: 240× (~3.6 s)

@@ -860,6 +860,7 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
   if(keys['ArrowLeft'])vv.th+=rot; if(keys['ArrowRight'])vv.th-=rot;
   if(keys['ArrowUp'])vv.ph=Math.max(0.05,vv.ph-rot); if(keys['ArrowDown'])vv.ph=Math.min(Math.PI-0.05,vv.ph+rot);
   if(!paused) simT += (warp*wall)/86400;
+  syncSun(simT);                        // annual Sun drift — see syncSun (months pass in minutes here)
 
   // Moon + markers
   const mp=moonPos(simT); moon.position.copy(mp); moon.rotation.y=Math.atan2(mp.x,mp.z)+Math.PI;

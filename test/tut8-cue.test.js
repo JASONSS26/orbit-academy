@@ -49,5 +49,36 @@ ok('past lunar cruise (12000x) by 8 s',  capAt(8)>12000, Math.round(capAt(8))+'x
 ok('ramp ends ABOVE every cruise rung (no jump)', capAt(9)>12000, Math.round(capAt(9))+'x');
 ok('flightStartWall stamped on both entry points',
    (src.match(/flightStartWall=performance\.now\(\)/g)||[]).length>=2);
-console.log(bad?'\n'+bad+' FAILED':'\nBURN CUE + WARP EASE-IN VERIFIED');
+
+/* ---------------------------------------------------------------- LOITER WARP
+   Owner-reported: "module 8 jumps to a fast time warp partway through. I'm trying to fly back to
+   Earth and it's not helpful."
+
+   Cause: the warp ladder had NO rung for the loiter state. Loiter begins with every burn retired, so
+   `planBurns[nextBurn]` is undefined and every conditional above fell through to COAST_WARP() —
+   12,000x on the lunar mission. The clock slammed to cruise the moment the mission was won, which
+   makes hand-flying anywhere impossible.
+
+   Loiter is the one state where the pilot is definitely flying by hand and definitely not on a
+   schedule, so it should be the SLOWEST rung near anything interesting. Graded on height above the
+   nearest surface — Moon or Earth — so it is watchable at both ends of a return trip and brisk across
+   the empty middle. The ',' / '.' trim still multiplies on top. */
+ok('loiter has its own rung in the ladder', /: loiter \? \(function\(\)\{/.test(src));
+ok('loiter measures height above the NEAREST surface',
+   /const hM = rmNow - F7\.R_M/.test(src) && /const hE = Math\.hypot\(fs\[0\],fs\[1\]\) - F7\.R_E/.test(src)
+   && /Math\.min\(hM, hE\)/.test(src));
+
+const loiterWarp = d => d<2000 ? 120 : d<8000 ? 300 : d<20000 ? 600 : d<45000 ? 2000 : 6000;
+ok('low lunar orbit is watchable',        loiterWarp(100)===120,   loiterWarp(100)+'x at 100 km');
+ok('low Earth orbit is watchable',        loiterWarp(400)===120,   loiterWarp(400)+'x at 400 km');
+ok('the empty middle is brisk',           loiterWarp(200000)===6000, loiterWarp(200000)+'x mid-transit');
+ok('never reaches the old 12000x',        [100,400,5000,15000,30000,200000,384400].every(d=>loiterWarp(d)<=6000));
+ok('monotonic — never speeds up on approach', (()=>{
+     const ds=[384400,200000,45000,30000,20000,8000,2000,400,100];
+     const ws=ds.map(loiterWarp);
+     return ws.every((w,i)=>i===0||w<=ws[i-1]);
+   })(), [384400,200000,30000,8000,400].map(d=>loiterWarp(d)+'x').join(' -> '));
+ok('a hand-flown return is feasible', 4*86400/6000 < 120, (4*86400/6000).toFixed(0)+' s for a 4-day transit');
+
+console.log(bad?'\n'+bad+' FAILED':'\nBURN CUE + WARP EASE-IN + LOITER VERIFIED');
 process.exit(bad?1:0);

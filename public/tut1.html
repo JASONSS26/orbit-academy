@@ -180,6 +180,14 @@ const camera=new THREE.PerspectiveCamera(50,1,0.01,2000);
   layer(300,0.95,0.65,0.35,1.0);    // the few bright ones
 })();
 const sun=new THREE.DirectionalLight(0xffffff,1.5); sun.position.set(5,3,8); scene.add(sun);
+/* The Sun's INERTIAL direction barely moves over a few orbits, so a fixed light is fine for the
+   day/night sweep you get from Earth's spin. But this module can warp days at a time, and then a
+   frozen Sun is simply wrong — the terminator would never migrate with the season. Advance it at the
+   true annual rate (0.9856 deg/day) about the polar axis; obliquity is ignored here, matching how the
+   rest of the module treats the equatorial plane. */
+const SUN_R=Math.hypot(5,8), SUN_Y=3, SUN_A0=Math.atan2(8,5);
+function syncSun(days){ const a=SUN_A0 + 2*Math.PI*(days/365.25);
+  sun.position.set(Math.cos(a)*SUN_R, SUN_Y, Math.sin(a)*SUN_R); }
 scene.add(new THREE.AmbientLight(0x223344,0.6));
 
 // Earth (real texture, exact radius = 1 unit)
@@ -529,6 +537,7 @@ function loop(){requestAnimationFrame(loop);
   // stays LOCKED over its ground point — genuinely geostationary.
   const EARTH_DAY=86164;                    // sidereal day (s)
   earth.rotation.y = simT*TIMESCALE*(2*Math.PI/EARTH_DAY);   // PROGRADE (CCW from North)
+  syncSun(simT*TIMESCALE/86400);                              // annual Sun drift (see syncSun)
   // reference sats: each rides its own (possibly inclined) plane, prograde
   for(const ro of refObjs){const rate=simT*TIMESCALE*(2*Math.PI/ro.period);
     for(const st of ro.sats) st.mesh.position.copy(planeVec(st.rad,st.ph+rate,st.inc,st.raan));}

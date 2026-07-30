@@ -145,7 +145,20 @@ const scene=new THREE.Scene(); const cam=new THREE.PerspectiveCamera(50,1,0.01,2
     scene.add(new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size,transparent:true}))); }
   layer(1750,0.55,0.3,0.55,2.2); layer(450,1.05,0.7,0.3,1.0);
 })();
-scene.add(new THREE.DirectionalLight(0xffffff,1.3).translateZ(6)); scene.add(new THREE.AmbientLight(0x445566,0.7));
+/* The Sun light MUST follow the same sunAng that drives the Sun marker and the node-Sun readout.
+   It used to be a static light at +Z while sunGrp rotated with time — so this module, the one that
+   exists to teach SUN-SYNCHRONOUS orbits, showed the orbit plane precessing to keep pace with a Sun
+   marker whose illumination never moved. The picture contradicted the number right beside it: the
+   readout locked at 98.2 degrees while the terminator sat still. Driven from one variable now, so
+   they cannot disagree. */
+const sunLight=new THREE.DirectionalLight(0xffffff,1.3); scene.add(sunLight); scene.add(sunLight.target);
+function syncSunLight(){
+  /* sunGrp.rotation.y = sunAng, and three.js rotates +X toward -Z about +Y, so the marker sits along
+     (cos, 0, -sin). Put the light on the same ray. */
+  sunLight.position.set(Math.cos(sunAng)*20, 0, -Math.sin(sunAng)*20);
+  sunLight.target.position.set(0,0,0);
+}
+scene.add(new THREE.AmbientLight(0x445566,0.7));
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
 const earth=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),earthMat); scene.add(earth);
 OA_TEX.onto('earth', earthMat, 0x2b6fb5);   // local photo → pinned CDN → schematic
@@ -434,7 +447,7 @@ function loop(){requestAnimationFrame(loop);
     rebuild();
     earth.rotation.y += (2*Math.PI/86164)*simDt;         // sidereal spin, same clock as the satellite
   }
-  sunGrp.rotation.y=sunAng; updateSunHud();
+  sunGrp.rotation.y=sunAng; syncSunLight(); updateSunHud();
   // animation off → both clocks freeze together (a spinning Earth under a frozen satellite would
   // silently wreck any ground-track reasoning)
   cam.position.set(panPivot.x+camR*Math.sin(camPh)*Math.cos(camTh),panPivot.y+camR*Math.cos(camPh),panPivot.z+camR*Math.sin(camPh)*Math.sin(camTh));
