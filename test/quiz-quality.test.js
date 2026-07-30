@@ -41,7 +41,10 @@ const ROOT = path.resolve(__dirname, '..');
 const MARGIN = 10;                       // characters — roughly two words, the point it becomes visible
 
 /* Ceilings on the `clear` metric. Tighten as each worksheet is repaired; never loosen. */
-const THRESHOLD = { 1: 0.20, 2: 0.90, 3: 0.95, 4: 0.10, 5: 0.30, 6: 0.15, 7: 0.90, 8: 0.15 };
+const THRESHOLD = { 1: 0.20, 2: 0.15, 3: 0.15, 4: 0.10, 5: 0.30, 6: 0.15, 7: 0.15, 8: 0.15 };
+/* ALL EIGHT REPAIRED. Every ceiling is now at or below the 0.30 mark and the course-wide figure sits
+   below the 25% chance line — the longest-answer heuristic no longer beats guessing. Ceilings stay
+   per-worksheet so one module cannot quietly regress behind the others. Only ever lower them. */
 /* Worksheet 1 repaired: 77% -> 15%, below the 25% chance line. Its ceiling drops to 0.30 and the
    ratchet now holds it there. The remaining four are TIES (+0 to +7 characters) — the heuristic no
    longer discriminates, which is the actual goal; forcing every correct answer to be shorter would

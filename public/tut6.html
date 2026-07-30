@@ -508,12 +508,22 @@ function sitAt(k){
 }
 
 /* ------------------------------ warp/pause ------------------------------- */
-const WARPS=[1,60,600,3600,21600,43200,86400,172800,432000];
+/* Time-warp ladder, seconds of sim per second of wall clock. The top three rungs exist because the
+   L4 tadpole release librates over MONTHS: it starts at 432,000x (5 d/s) and the reviewer found that
+   '.' did nothing there — warpUp() looks for the next value ABOVE the current one, and 432,000 was
+   the last entry, so the key was silently dead in exactly the scenario that most needs to run fast.
+   Every FAN_WARP start rate must therefore sit strictly BELOW the top of this ladder. */
+const WARPS=[1,60,600,3600,21600,43200,86400,172800,432000,864000,1728000,3456000];
 // Step to the next ladder rung above/below the CURRENT warp (not indexOf: scenario defaults may sit
 // between rungs, and indexOf's −1 made '.' snap to 1× and ',' do nothing — time control felt dead).
-function warpUp(){ const next=WARPS.find(w=>w>warp); if(next) warp=next; showWarp(); }
-function warpDown(){ const lower=WARPS.filter(w=>w<warp); if(lower.length) warp=lower[lower.length-1]; showWarp(); }
-function showWarp(){ $('warpV').textContent=warp<3600?warp+'×':warp<86400?(warp/3600).toFixed(0)+'h/s':(warp/86400).toFixed(1).replace(/\.0$/,'')+'d/s'; }
+function warpUp(){ const next=WARPS.find(w=>w>warp); if(next){ warp=next; } showWarp(next===undefined?'already at maximum':''); }
+function warpDown(){ const lower=WARPS.filter(w=>w<warp); if(lower.length){ warp=lower[lower.length-1]; } showWarp(lower.length?'':'already at minimum'); }
+function showWarp(note){
+  const txt = warp<3600 ? warp+'×' : warp<86400 ? (warp/3600).toFixed(0)+'h/s'
+            : (warp/86400).toFixed(1).replace(/\.0$/,'')+'d/s';
+  /* Tell the pilot when a key press did nothing. A silently ignored key reads as a broken key. */
+  $('warpV').textContent = txt + (note ? '  (' + note + ')' : '');
+}
 function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶':'⏸'; }
 
 /* ------------------------------ scenarios -------------------------------- */
@@ -968,5 +978,6 @@ function banner(t,bg,fg){ const b=$('banner'); b.innerHTML=t; b.style.display='b
 /* -------------------------------- init ----------------------------------- */
 setFrame('emrot'); scenario('lpts'); setFanMode('scatter'); showWarp(); resize(); requestAnimationFrame(loop);
 </script>
+<script src="sliders.js"></script>
 </body>
 </html>

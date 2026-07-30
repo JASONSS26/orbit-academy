@@ -111,6 +111,13 @@
 
 <!-- SATELLITE ANATOMY OVERLAY -->
 <div id="anat" style="position:fixed;inset:0;z-index:50;background:rgba(2,6,14,.92);display:none;align-items:center;justify-content:center">
+  <!-- Always-visible exit. The Close button at the bottom of this panel scrolls off a laptop screen
+       below the diagram, so the first external reviewer could not find any way back to the simulator
+       and reopened the whole module instead. Esc also closes (see the key handler). -->
+  <button id="anatX" onclick="closeAnat()" title="Back to the simulator (Esc)"
+    style="position:absolute;top:14px;right:18px;z-index:60;background:#1f4a7a;border:1px solid #5fd0ff;
+           color:#fff;font-family:inherit;font-size:17px;font-weight:bold;padding:9px 18px;border-radius:9px;cursor:pointer">
+    ← Back to the simulator &nbsp;<span style="opacity:.7;font-weight:400">(Esc)</span></button>
   <div style="max-width:1035px;width:94vw;text-align:center">
     <div style="color:var(--accent);font-size:25px;font-weight:bold;margin-bottom:2px">Anatomy of a geostationary satellite — a close-up (inspector) view</div>
     <div style="color:#ff9d7a;font-size:16.5px;margin-bottom:8px">⚠ You could NOT see this from the ground: at 36,000 km a satellite spans only ~0.2″, far below the ~1″ atmospheric blur — it’s just a point. This is what an <b>inspector spacecraft flying alongside it</b> would see.</div>
@@ -175,14 +182,17 @@
         <div style="color:var(--accent);font-weight:bold;margin-bottom:4px">☀ Sun-tracking (satellite frame)</div>
         The Sun (yellow) circles once per day. Watch the blue panels <b style="color:#5fd0ff">rotate about the N–S axis</b>
         to stay face-on to it. Edge-on = no power; face-on = full power.
-        <label class="chk" style="margin-top:8px"><input type="checkbox" id="panelFreeze"> freeze panels (show what happens if they DIDN’T track)</label>
+        <label class="chk" for="panelFreeze" style="margin-top:10px;display:block;background:#12203a;border:1px solid #2b5686;
+               border-radius:8px;padding:9px 12px;cursor:pointer;color:#cfe3ff;font-size:17px">
+          <input type="checkbox" id="panelFreeze"> <b>❄ FREEZE the panels</b><br>
+          <span style="color:var(--dim);font-size:15px">tick this to see what happens if they did NOT track the Sun</span></label>
       </div>
     </div>
     <div style="margin-top:12px;display:flex;gap:10px;justify-content:center">
       <a href="https://www.goes-r.gov/3dModelAR/" target="_blank" rel="noopener"
         style="background:#0a3a33;border:1px solid #39d353;color:#c0ffe6;font-size:19px;padding:10px 22px;border-radius:8px;text-decoration:none">🛰 Explore the real GOES satellite in 3D (NOAA)</a>
-      <button onclick="document.getElementById('anat').style.display='none'"
-        style="background:#1f4a7a;border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:19px;padding:10px 22px;border-radius:8px;cursor:pointer">Close</button>
+      <button onclick="closeAnat()"
+        style="background:#1f4a7a;border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:19px;padding:10px 22px;border-radius:8px;cursor:pointer">← Back to the simulator</button>
     </div>
   </div>
 </div>
@@ -350,6 +360,8 @@ function flyToSatellite(){const ov=$('anat'),svg=$('anatSvg');ov.style.display='
   svg.style.transition='none'; svg.style.transform='scale(0.04)'; svg.style.opacity='0';
   requestAnimationFrame(()=>requestAnimationFrame(()=>{svg.style.transition='transform 1.2s cubic-bezier(.2,.8,.2,1),opacity .6s';svg.style.transform='scale(1)';svg.style.opacity='1';}));}
 $('anatomy').addEventListener('click',flyToSatellite);
+function closeAnat(){ $('anat').style.display='none'; }
+addEventListener('keydown', e=>{ if(e.key==='Escape' && $('anat').style.display!=='none') closeAnat(); });
 // left-view camera controls (canonical, matches tut1):
 //   left-drag = PAN · right/middle/Shift/Alt-drag = ROTATE · wheel = ZOOM · arrows = ROTATE
 //   The camera orbits a movable pivot (panPivot); panning slides that pivot in the view plane.
@@ -597,5 +609,6 @@ function drawFrame(x0,y0,S,caption){
 
 resize(); requestAnimationFrame(loop);
 </script>
+<script src="sliders.js"></script>
 </body>
 </html>

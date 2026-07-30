@@ -34,6 +34,9 @@ node test/no-external-calls.test.js; N=$?
 echo; echo "--- Module 3: sun-synchronous must be reachable ---"
 node test/tut3-sunsync.test.js; SS=$?
 
+echo; echo "--- sliders accept typed values (all sims) ---"
+node test/sliders.test.js; SL=$?
+
 echo; echo "--- quiz quality ratchet (longest-answer heuristic) ---"
 node test/quiz-quality.test.js; QQ=$?
 
@@ -63,5 +66,5 @@ bash tools/fetch-vendor.sh --check >/tmp/oa-vendor.$$ 2>&1; V=$?
 tail -n 12 /tmp/oa-vendor.$$ | sed 's/^/  /'; rm -f /tmp/oa-vendor.$$
 
 echo
-if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ] && [ $C8 -eq 0 ] && [ $TX -eq 0 ] && [ $WS -eq 0 ] && [ $SD -eq 0 ] && [ $WR -eq 0 ] && [ $QQ -eq 0 ] && [ $SS -eq 0 ] && [ $RV -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
-else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI cue=$C8 tex=$TX samp=$WS dial=$SD res=$WR quiz=$QQ sso=$SS rv=$RV)"; exit 1; fi
+if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ] && [ $C8 -eq 0 ] && [ $TX -eq 0 ] && [ $WS -eq 0 ] && [ $SD -eq 0 ] && [ $WR -eq 0 ] && [ $QQ -eq 0 ] && [ $SS -eq 0 ] && [ $RV -eq 0 ] && [ $SL -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
+else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI cue=$C8 tex=$TX samp=$WS dial=$SD res=$WR quiz=$QQ sso=$SS rv=$RV sliders=$SL)"; exit 1; fi

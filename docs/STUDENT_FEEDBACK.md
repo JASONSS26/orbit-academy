@@ -9,7 +9,7 @@ Status key: **TODO** · **DONE** · **DECIDE** (needs a call from the owner) · 
 
 ---
 
-## P0 — Assessment validity. The course does not currently test anything.
+## P0 — Assessment validity — **RESOLVED**
 
 > "A lazy student could choose the longest answer in all the quizzes and get them all right. The
 > wrong answers are always short, and the right answers are always long."
@@ -40,10 +40,36 @@ bringing distractors up to the same level of detail as the correct answer — a 
 the single best way to make the quizzes teach, because good distractors encode the common
 misconceptions.
 
-**Recommend:** treat as a blocking defect for any graded use of the course. Do it module by module,
-and add a test that fails the build if the longest-answer heuristic beats ~40% on any worksheet.
+**FIXED — all eight worksheets repaired.** Every distractor in the course was rewritten so that each
+wrong answer is a *real misconception stated with the same specificity as the truth*. That removes the
+length tell and makes a wrong click informative, which is the point of a distractor.
 
-**Status: TODO.** A detector exists (see the measurement above); it should become `test/quiz-quality.test.js`.
+| Worksheet | Before | After |
+|---|---|---|
+| 1 | 77% | **0%** |
+| 2 | 85% | **15%** |
+| 3 | 94% | **0%** |
+| 4 | 100% | **3%** |
+| 5 | 100% | **24%** |
+| 6 | 96% | **11%** |
+| 7 | 87% | **3%** |
+| 8 | 96% | **4%** |
+| **All** | **92%** | **7%** |
+
+The median gap between the correct answer and the mean distractor fell from **56 characters to 5**.
+Course-wide exploitability is now **7%**, well below the 25% chance line — the heuristic is worse than
+guessing, which is the correct end state.
+
+**A note on the metric, because it changed mid-repair.** The original detector counted a question as
+beatable whenever the correct option was longest by *any* margin. Once options are balanced they land
+within a few characters of one another, and a 2-character "win" is not something a reader can act on —
+so that measure would have understated the repair. `test/quiz-quality.test.js` now reports two numbers:
+`strict` (longest by any margin, ties broken by position) and `clear` (longest by more than 10
+characters, i.e. actually spottable). The gate uses `clear`; `strict` prints alongside so the softer
+number can never hide a regression. Both are visible in every run.
+
+The test is a **ratchet**: per-worksheet ceilings that may only ever be lowered, so no module can
+regress behind the others.
 
 ---
 
