@@ -578,7 +578,7 @@ explained with real gravity + sideways motion.
 
 The deck for this module is `slides/module6.pptx` (8 slides matching this outline).
 
-**Module 7 — Observability.** The "how do we even know where anything is?" module — the practical
+**Module 7 — Observability.** The "how we actually see satellites" module (we can't see *space* — only the objects in it) — the practical
 payoff of the whole course, and the bridge to space domain awareness. Core beats: **active radar**
 (received power falls as **range⁴** two-way — a GEO target returns (42,164/800)⁴ ≈ **7.7 million×**
 weaker than an 800-km LEO one, the numbers the radar-sim scene uses, and xGEO is hopeless for most

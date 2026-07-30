@@ -381,6 +381,132 @@ for (const f of SIMS) {
    caption written as  text + <b>…</b> + text  is laid out as three columns. It is a pure-CSS bug —
    nothing throws, so no runtime test can see it. Guard it structurally: in any sim whose .chk label
    is a flex container, everything after the checkbox must be wrapped in a single element. */
+/* ---------------------------------------------------------------- worksheet button
+   "I don't seem to have a button to get to workbook from module 7 simulator… it's at the bottom.
+    we need to be consistent about where that is."
+   Contract: EVERY simulator has the standard "📋 Back to worksheet" button, it opens the module's
+   own worksheet, and it lives in the TOP of the page (the first quarter of the file), never in a
+   footer. Module 1's tutor text tells students to expect exactly this, so it must stay true. */
+console.log('\nworksheet button — present, correct target, at the top');
+for (const f of SIMS) {
+  const n = /\d+/.exec(f)[0];
+  const html = fs.readFileSync(path.join(ROOT, 'public', f), 'utf8');
+  const i = html.indexOf('Back to worksheet');
+  check(f + ': has the standard worksheet button', i >= 0, '');
+  if (i < 0) continue;
+  const btn = html.slice(Math.max(0, i - 400), i);
+  check(f + ": button opens worksheet" + n + '.html', btn.includes("worksheet" + n + ".html"),
+    'points at the wrong worksheet');
+  check(f + ': button sits near the top, not in a footer',
+    i < html.length * 0.25, 'found at ' + Math.round(100 * i / html.length) + '% of the file');
+}
+
+/* ------------------------------------------------------------- tut8 sun indicator
+   The window's lighting is physically right but READS wrong (ecliptic-plane orbit, north =
+   screen-right, so the terminator crosses pole-to-pole = horizontally). The owner mistook it for
+   a bug; students will too. The ☀ marker + N→ tag are the legend that keeps the correct physics
+   from looking broken — they must not be lost in a window-renderer rewrite. */
+{ const t8 = fs.readFileSync(path.join(ROOT, 'public', 'tut8.html'), 'utf8');
+  check('tut8: window carries the ☀ sun indicator', /SUN INDICATOR/.test(t8) && /sun behind you/.test(t8), '');
+  check('tut8: indicator projects the SAME sun that lights the terminator',
+    /sun3\[0\]\*Uc\[0\]\+sun3\[1\]\*Uc\[1\]/.test(t8), 'must derive from sun3, not a second sun');
+  check('tut8: north tag explains the horizontal terminator (left edge: Rr = −ẑ, so north is left)',
+    /'← N'/.test(t8), '');
+  /* The GEO-mission somersault: camera up was a Gram–Schmidt residual that changed sign whenever
+     the aim-blended boresight crossed the nadir axis — Earth flipped top↔bottom. Up must be the
+     closed-form F × ẑ (continuous by construction) and right the CONSTANT −ẑ. */
+  check('tut8: camera up is closed-form F × ẑ, not a sign-flipping residual',
+    /const Uc=\[F\[1\],-F\[0\],0\]/.test(t8) && !/rhat\[0\]-rdF\*F\[0\]/.test(t8), '');
+  check('tut8: camera right is the constant −ẑ', /const Rr=\[0,0,-1\]/.test(t8), '');
+  /* Exposure history: flat 1.5x gain wasn't enough because the CAUSE is the map — the Blue
+     Marble is radiometrically dark (oceans ~40-60/255); other sims use the punchy atmos map.
+     Camera-style exposure now: gain 1.9 + gamma 0.82 via a 256-entry LUT, shading applied BEFORE
+     the LUT so the terminator stays dark. Ocean 55→123, cloud 200→255 (rolls off, no hard clip). */
+  /* PER-BODY exposure: the Earth curve on the already-bright LRO Moon clipped it to white
+     ("moon is now washed-out saturated"). Each raytraced body carries its own LUT. */
+  check('tut8: window exposes via PER-BODY gain+gamma LUTs',
+    /EXPOSE_EARTH=new Uint8ClampedArray\(256\)/.test(t8) && /\*1\.9 ?\),0\.82\)/.test(t8) &&
+    /EXPOSE_MOON/.test(t8) && /\*1\.08\),0\.95\)/.test(t8) &&
+    /const LUT=hit\.expose/.test(t8) && /LUT\[\(D\[i00\]/.test(t8), '');
+  check('tut8: nav map carries a persistent trace legend (actual / plan / predicted)',
+    /actual — flown so far/.test(t8) && /the flight computer/.test(t8) &&
+    /where the current orbit heads/.test(t8), '');
+  check('tut8: both bodies carry an exposure curve (a new body cannot ship without one)',
+    /expose:EXPOSE_EARTH/.test(t8) && /expose:EXPOSE_MOON/.test(t8), '');
+  /* Limb-chasing pitch is MOON-ONLY. Applied to Earth it faked the departure — the camera rotated
+     up to 72° nose-down so Earth never dropped out of the window after the first burn. Owner:
+     "after the first burn the earth should drop in the window to be out of the frame… I'm not sure
+     you'd see it out the front window after we leave LEO." He is right; verified geometry: at GEO
+     the disc is ±8.7° sitting ~68° below a fixed-pitch boresight. */
+  check('tut8: limb-chasing pitch applies only when the Moon is the primary',
+    /if\(CB\.name==='Moon'\)\{\s*\n\s*const vHalf/.test(t8), '');
+  /* Burn-time freeze fix + cockpit audio. simDtCap=0.6 stopped the world during a thrust hold;
+     3.0 keeps steps interleaved AND the sky moving. Secondary panels drop to 10 Hz mid-burn.
+     Audio is SYNTHESIZED ONLY (air-gap: no assets, no fetches), gesture-gated, mute persists. */
+  check('tut8: pilot warp trim spans ×64 both ways and quotes the absolute rate',
+    /Math\.min\(64, userWarp\*2\)/.test(t8) && /Math\.max\(1\/64, userWarp\/2\)/.test(t8) &&
+    /warpTrimMsg/.test(t8), '');
+  check('tut8: burn-time sim step cap lets the world keep moving (3.0, not 0.6)',
+    /if\(firing\) simDtCap=3\.0/.test(t8), '');
+  check('tut8: secondary panels throttle to 10 Hz while firing',
+    /if\(!firing \|\| t-\(window\._panT\|\|0\)>100\)/.test(t8), '');
+  check('tut8: raytracer trades resolution for cadence mid-burn',
+    /TARGET=firing\?3\.5:5\.0/.test(t8), '');
+  check('tut8: audio is synthesized WebAudio only — no media files, no fetches',
+    /createBuffer\(1,/.test(t8) && !/new Audio\(|\.mp3|\.ogg|\.wav/.test(t8), '');
+  check('tut8: audio context is gesture-gated and harness-safe',
+    /function auInit\(\)/.test(t8) && /if\(!Ctx\) return/.test(t8), '');
+  check('tut8: rumble follows thrust on AND off; NO radio beeps (owner call)',
+    /auRumble\(true\)/.test(t8) && /auRumble\(false\)/.test(t8) && !/auRadio/.test(t8), '');
+  /* The sound button ate the TRAIN button: both fixed at top:12px, sound at right:150px directly
+     over TRAIN at right:132px, so every TRAIN click landed on 🔊 — "training function seems now
+     dead". Fixed-position buttons on that row must not overlap; assert the audited offsets. */
+  { const btns=[...t8.matchAll(/id="(modeToggle|trainBtn|gatesBtn|sndToggle)"[^>]*/g)];
+    const rights={}; 
+    for(const m of btns){ const css=(/right:(\d+)px/.exec(m[0])||[])[1];
+      if(css) rights[m[1]]=+css; }
+    // pull the stylesheet values for the ones styled in CSS
+    for(const id of ['modeToggle','trainBtn','gatesBtn']){
+      const m2=new RegExp('#'+id+'\\{[^}]*right:(\\d+)px').exec(t8); if(m2) rights[id]=+m2[1]; }
+    const xs=Object.entries(rights).sort((a,b)=>a[1]-b[1]);
+    let overlap=false;
+    for(let i=1;i<xs.length;i++) if(xs[i][1]-xs[i-1][1]<100) overlap=true;
+    check('tut8: top-row fixed buttons cannot overlap (TRAIN stays clickable)',
+      !overlap && rights.sndToggle>rights.gatesBtn,
+      JSON.stringify(rights)); } }
+
+/* ------------------------------------------------------------- responsive side columns
+   "panels are oversized" on Windows laptops (1366px, 125-150% scaling): fixed-px grid columns
+   starved the center canvas. Every 3-column sim must clamp() its side columns to the viewport. */
+/* ------------------------------------------------------------- tut2 eclipse dimming
+   Satellites shine by reflected sunlight; in Earth's shadow they go dark (the module-7
+   "headlights" fact, previewed here). Cylinder shadow + smoothstep penumbra, opacity floor. */
+{ const t2 = fs.readFileSync(path.join(ROOT, 'public', 'tut2.html'), 'utf8');
+  /* Owner-corrected model: "the satellites go dark when the illuminated side of them is not
+     visible… as a function of illumination angle." Brightness = PHASE (illuminated fraction facing
+     the camera, (1+cos α)/2 like the Moon's phases) × ECLIPSE (dark inside Earth's shadow from any
+     angle). Both from the one sunV that lights the globe; the star field is never dimmed. */
+  check('tut2: brightness carries the phase term (1+cos α)/2 toward the camera',
+    /const phase=\(1\+sunV\.dot\(camDir\)\)\/2/.test(t2), '');
+  check('tut2: eclipse term survives (shadow cylinder + penumbra)',
+    /\(perp-0\.85\)\/0\.3/.test(t2), '');
+  check('tut2: phase and terminator share one sun (sunV), phases stay in lockstep with Earth',
+    /satBrightness=\(pos\)=>/.test(t2) && /pos\.dot\(sunV\)/.test(t2), '');
+  check('tut2: applies to GEO sats, junk, AND injected objects',
+    /\[satMeshes,junkMeshes\]/.test(t2) && /injected\) o\.mesh\.material\.opacity=satBrightness/.test(t2), '');
+  check('tut2: the star field is not touched by satellite dimming',
+    !/starPts[^\n]*satBrightness|satBrightness[^\n]*star/.test(t2), ''); }
+
+console.log('\nresponsive layout');
+for (const f of SIMS) {
+  const html = fs.readFileSync(path.join(ROOT, 'public', f), 'utf8');
+  const m = /#app\{[^}]*grid-template-columns:([^;]*);/.exec(html);
+  if (!m) continue;
+  const fixedSide = /(^|\s)\d{3,}px/.test(m[1]);
+  check(f + ': side columns are viewport-aware (clamp), not fixed px',
+    !fixedSide || /clamp\(/.test(m[1]), 'columns = ' + m[1].trim());
+}
+
 console.log('\nflex-label layout');
 for (const f of SIMS) {
   const html = fs.readFileSync(path.join(ROOT, 'public', f), 'utf8');

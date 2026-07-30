@@ -157,25 +157,64 @@ function drawGeoDiagram(phaseDeg){ const cv=$('geoDiagram'); if(!cv) return; if(
   g.textAlign='left';
 }
 
-/* ===================== SCENE: RADAR SIM (sky view + oscilloscope) =====================
-   Top view: Earth at the bottom, radar at the surface firing an expanding arc-pulse that FADES as it
-   spreads (constant angular span, dropping intensity/width). Targets sit at LEO/MEO/GEO ranges. When
-   the pulse reaches a target, an echo is launched back; when it returns to the radar, a ping paints on
-   the scope. The scope is a green oscilloscope trace with Gaussian noise; ping amplitude ∝ 1/range⁴,
-   so LEO saturates (clips), MEO is modest, GEO barely clears the noise. */
+/* ===================== SCENE: RADAR SIM (sky view + true A-scope) =====================
+   The three ideas this scene exists to teach, each carried by a specific mechanism:
+     1. FARTHER = WEAKER   — the outgoing pulse fades as it spreads, and the RETURNING echo fades
+                             too (that return leg is the second range² of the range⁴ law). GEO's
+                             echo visibly limps home. The scope uses the HONEST spread: 69 dB
+                             between LEO and GEO, not a compressed stand-in.
+     2. FARTHER = LATER    — the scope is a real A-scope. FIRE starts a sweep dot moving across the
+                             screen in lockstep with the sky-view pulse, and each spike POPS UP at
+                             the moment its echo physically lands: LEO early, MEO later, GEO last.
+                             The axis is labeled in real milliseconds (LEO ~5 ms, GEO ~281 ms), and
+                             each ping prints range = c·t/2 — which is what a radar IS.
+     3. AVERAGING WORKS    — an integration run visibly machine-guns pulses in the sky view while
+                             the noise floor sinks and GEO's spike climbs out of the grass. The
+                             noise drops BECAUSE pulses are being fired, not because a knob moved.
+   And the standing anti-lesson: GAIN amplifies signal and noise together, so it never rescues a
+   buried target — it only decides what saturates. */
 let skyCtx=null, scopeCtx=null;
 const RADAR={ maxR:45000 };   // km shown across the sky view (a bit past GEO's 42,164)
 const RTARGETS=[ {name:'LEO', r:800,  col:'#39d353'}, {name:'MEO', r:20000, col:'#5fd0ff'}, {name:'GEO', r:42164, col:'#ffcf4d'} ];
-let pulses=[];        // active outgoing pulses: {r0(km emitted-radius), t0}
-let echoes=[];        // returning echoes: {fromR, launchDist, amp, tgt}
-let scopeTrace=[];    // last painted ping amplitudes vs range bin (decays)
+
+/* HONEST single-pulse SNR (dB, at gain 0). Anchored so the differences are the true two-way
+   range⁴ ratios:  LEO→MEO = 40·log10(20000/800) = 56 dB;  LEO→GEO = 40·log10(42164/800) = 68.9 dB.
+   (The old table compressed this spread ~2.4× "for legibility", which quietly falsified the very
+   number the whole exercise is about.) */
+const TGT_SNR_DB={ LEO:46, MEO:-10, GEO:-23 };
+const C_KM_PER_MS=299.792458;                          // light speed, km per millisecond
+function echoMs(rKm){ return 2*rKm/C_KM_PER_MS; }      // real round-trip time (LEO 5.3, GEO 281)
+
+let pulses=[];        // outgoing pulses: {r(km), born}
+let echoes=[];        // returning echoes: {r(km left to travel), tgt, born}
+let lastPing={};      // target name -> perfNow() when its echo last reached the dish
+let sweepBorn=0;      // when the most recent pulse left the dish (drives the A-scope sweep)
+let scopeLinear=false; // one-shot "linear power" view (the argument FOR decibels)
 let radarLastFire=0;
-function fireRadar(){ pulses.push({r:0, born:perfNow()}); }
+const SKY_SPD=RADAR.maxR/2.2;   // km per wall-second in the sky view (~300,000× slower than light)
+
+function fireRadar(){ pulses.push({r:0, born:perfNow()}); sweepBorn=perfNow(); }
 window.fireRadar=fireRadar;
+function toggleScopeLinear(){ scopeLinear=!scopeLinear;
+  const b=$('radarLin'); if(b) b.textContent = scopeLinear? '📐 back to dB view' : '📏 linear power view'; }
+window.toggleScopeLinear=toggleScopeLinear;
 function perfNow(){ return (typeof performance!=='undefined')?performance.now():0; }
+
+/* How bright a target's RETURNING echo looks in the sky view. Log-mapped from the honest range⁴
+   ratio so all three stay visible, but the ordering and the "GEO barely crawls home" impression are
+   real: LEO ≈ 1.0, MEO ≈ 0.32, GEO ≈ 0.16. */
+/* Log-mapped so every echo stays *visible on screen* but the ordering is stark:
+   LEO 1.00, MEO 0.44, GEO 0.31. Two failed tunings are worth recording: /6 clamped MEO and GEO
+   to one floor (killing the ordering), and a 0.10 floor made GEO's return effectively invisible
+   in the animation — the owner caught it. Faint must never mean gone: each echo also carries a
+   solid wavefront dot precisely so the eye can follow a whisper of an arc all the way home. */
+function echoAlpha(T){ const ratio=Math.pow(RTARGETS[0].r/T.r,4);
+  return Math.max(0.25, Math.min(1, 1+Math.log10(ratio)/10)); }
+
 function drawRadarSky(dt){ const cv=$('radarSky'); if(!cv) return; if(!skyCtx) skyCtx=fit(cv);
   const w=cv.width,h=cv.height,g=skyCtx; g.clearRect(0,0,w,h); g.fillStyle='#04070e'; g.fillRect(0,0,w,h);
-  const gx=w*0.5, gy=h*0.94, sc=(h*0.9)/RADAR.maxR;   // radar at bottom-center; range → up the screen
+  const gx=w*0.5, gy=h*0.94, sc=(h*0.82)/RADAR.maxR;  // radar at bottom-center; range → up the screen
+  // (0.82, not 0.9: GEO's ring sat so close to the canvas top that its dot and label clipped)
   // Earth surface arc across the bottom
   g.fillStyle='#123'; g.strokeStyle='#2a5a8a'; g.lineWidth=2;
   g.beginPath(); g.arc(gx, gy+w*0.5, w*0.5, Math.PI*1.2, Math.PI*1.8); g.fill();
@@ -187,50 +226,47 @@ function drawRadarSky(dt){ const cv=$('radarSky'); if(!cv) return; if(!skyCtx) s
     g.beginPath(); g.arc(gx,gy,T.r*sc,Math.PI,2*Math.PI); g.stroke();
     T.sx = gx+ (T===RTARGETS[1]?w*0.12:T===RTARGETS[2]?-w*0.14:w*0.04); T.sy = ry;   // remember screen pos
     g.fillStyle=T.col; g.beginPath(); g.arc(T.sx, T.sy, h*0.02,0,7); g.fill();
-    g.font=(h*0.032)+'px monospace'; g.fillText(T.name+' '+T.r.toLocaleString()+' km', gx+w*0.03, ry-h*0.02); }
-  // advance + draw pulses (expand at a visual rate; strength fades with radius)
-  const spd=RADAR.maxR/2.2;   // km per second of wall time (so a pulse crosses in ~2 s)
-  for(const p of pulses){ p.r += spd*dt;
-    const frac=p.r/RADAR.maxR; const strength=Math.max(0, 1-frac);          // fades as it spreads
+    g.font=(h*0.032)+'px monospace';
+    g.fillText(T.name+' '+T.r.toLocaleString()+' km', gx+w*0.03, Math.max(h*0.045, ry-h*0.02)); }
+  // advance + draw pulses (expand at a visual rate; strength fades as the energy spreads — range² #1)
+  for(const p of pulses){ p.r += SKY_SPD*dt;
+    const frac=p.r/RADAR.maxR; const strength=Math.max(0, 1-frac);
     g.strokeStyle='rgba(120,220,150,'+(0.15+0.7*strength)+')'; g.lineWidth=Math.max(1, 6*strength);
     g.beginPath(); g.arc(gx,gy,p.r*sc,Math.PI,2*Math.PI); g.stroke();
-    // when the pulse crosses a target, launch an echo (once)
+    // when the pulse crosses a target, launch an echo (once per pulse per target)
     for(const T of RTARGETS){ if(!p['hit'+T.name] && p.r>=T.r){ p['hit'+T.name]=true;
-      // TRUE echo strength follows the two-way range⁴ law, relative to the LEO reference (=1).
-      // The scope shows this honest ratio scaled by the operator's GAIN knob — that's the whole lesson:
-      // the dynamic range is ~69 dB (7.7M×), so no one gain reveals all three at once.
-      const trueRatio=Math.pow(RTARGETS[0].r/T.r,4);
-      // The echo is a wavelet re-radiated FROM the target (not the whole ring), so start it at r=0
-      // measured as distance travelled back down its own sightline to the radar.
-      echoes.push({r:T.r, amp:trueRatio, trueRatio, tgt:T, born:perfNow()}); } }
+      echoes.push({r:T.r, tgt:T, born:perfNow()}); } }
   }
   pulses=pulses.filter(p=>p.r<RADAR.maxR*1.05);
-  // draw returning echoes: LIMITED-ANGLE concentric arcs centered ON the satellite, expanding back
-  // toward the radar as the return propagates. Only the satellite re-radiates — not the arc. The
-  // wavefront radius tracks the distance actually travelled back, so the leading arc reaches the
-  // radar just as the echo lands and the ping paints. Stays bold the whole way in.
-  for(const e of echoes){ e.r -= spd*dt;
+  // Returning echoes: limited-angle arcs re-radiated from the target, expanding back toward the
+  // dish. THE RETURN FADES TOO — this is range² #2, the other half of range⁴. LEO's echo storms
+  // home; GEO's creeps back as a ghost. When the wavefront reaches the dish, the scope pings.
+  for(const e of echoes){ e.r -= SKY_SPD*dt;
     if(e.r>0){ const T=e.tgt;
-      const back=(T.r-e.r)*sc;   // px the wavefront has travelled back down toward the radar
-      const toRadar=Math.atan2(gy-T.sy, gx-T.sx), halfSpan=0.55;   // ±~31° wedge toward the radar
-      g.strokeStyle='rgba(255,150,120,0.9)'; g.lineWidth=3;
-      g.beginPath(); g.arc(T.sx,T.sy, h*0.02+back, toRadar-halfSpan, toRadar+halfSpan); g.stroke(); }
+      const back=(T.r-e.r)*sc;
+      const toRadar=Math.atan2(gy-T.sy, gx-T.sx), halfSpan=0.55;
+      const a=echoAlpha(T);
+      g.strokeStyle='rgba(255,150,120,'+a.toFixed(3)+')'; g.lineWidth=Math.max(1,4*a);
+      g.beginPath(); g.arc(T.sx,T.sy, h*0.02+back, toRadar-halfSpan, toRadar+halfSpan); g.stroke();
+      // wavefront dot: the point of the echo arc nearest the dish, drawn solid so even the
+      // faintest (GEO) return is trackable as a moving object rather than a rumor
+      const wx=T.sx+Math.cos(toRadar)*(h*0.02+back), wy=T.sy+Math.sin(toRadar)*(h*0.02+back);
+      g.fillStyle='rgba(255,170,130,0.95)'; g.beginPath(); g.arc(wx,wy,h*0.010+h*0.006*a,0,7); g.fill(); }
+    else if(!e.landed){ e.landed=true; lastPing[e.tgt.name]=perfNow(); }   // ← the ping moment
   }
-  echoes=echoes.filter(e=>e.r>-200);   // return time ∝ range: GEO takes ~2× as long back as MEO
+  echoes=echoes.filter(e=>e.r>-200);
 }
 
-/* ---- SCOPE MODEL (honest radar physics) ------------------------------------------------------
-   • GAIN amplifies signal AND noise together → it NEVER improves SNR, it only decides what saturates.
-     So you can crank the gain forever and GEO stays buried: the noise rises right along with it.
-   • Only PULSE INTEGRATION helps. Averaging the returns lets the signal (fixed range bin) add up while
-     the random noise partly cancels, so SNR grows as √(pulses integrated). Watch it climb pulse-by-pulse.
-   • Vertical axis is dB (the true LEO→GEO drop is ~69 dB; we compress the spacing a little for legibility).
-   • Horizontal axis is RANGE = round-trip TIME (linear), so GEO's spike sits at ~2× MEO's, matching the
-     round-trip you see in the sky view. */
-const TGT_SNR_DB = { LEO:26, MEO:-2, GEO:-22 };   // single-pulse SNR of each target (compressed spread)
+/* ---- A-SCOPE ----------------------------------------------------------------------------------
+   Vertical: dB (honest 69 dB LEO→GEO spread), or linear power via the toggle.
+   Horizontal: range == round-trip time (linear). A sweep dot crosses in sync with the sky view, and
+   a target's spike EXISTS only after an echo has actually returned from it. */
 let integCount = 1;        // pulses currently integrated (1 = single-pulse mode)
 let averaging = null;      // {target, count, rate} while an averaging run is active
-function gainOffsetDb(){ return (+($('radarGain')?$('radarGain').value:20))/100*40; }   // 0…40 dB
+/* NOTE: there used to be a receiver-gain knob here. It was removed on the owner's call — it was
+   confusing the scene's one job. The physics it demonstrated (amplification lifts signal and noise
+   together, so it can never improve SNR) survives as a teach line in worksheet task a4; the sim now
+   shows only the thing that actually works: integration. */
 function targetN(){ const s=+($('radarAvg')?$('radarAvg').value:0); return Math.max(1,Math.round(Math.pow(10, s/100*3))); }  // 1…1000
 function radarAvgChanged(){ integCount=1; averaging=null; const N=targetN();
   if($('radarAvgV')) $('radarAvgV').textContent=N.toLocaleString();
@@ -238,50 +274,108 @@ function radarAvgChanged(){ integCount=1; averaging=null; const N=targetN();
 window.radarAvgChanged=radarAvgChanged;
 function startAveraging(){ const N=targetN(); if(N<=1) return; integCount=1; averaging={target:N, count:0, rate:N/4}; }
 window.startAveraging=startAveraging;
+
 function drawScope(){ const cv=$('radarScope'); if(!cv) return; if(!scopeCtx) scopeCtx=fit(cv);
   const w=cv.width,h=cv.height,g=scopeCtx; g.clearRect(0,0,w,h); g.fillStyle='#020a04'; g.fillRect(0,0,w,h);
-  const railY=h*0.10, base=h*0.88, margin=w*0.06;   // saturation rail on top, baseline near bottom
-  const dbMin=-6, dbMax=48;                          // absolute dB window
+  const railY=h*0.10, base=h*0.82, margin=w*0.06;
+  const dbMin=-30, dbMax=54;                        // honest window: GEO(-23) up past LEO(+46)
   const yForDb=db=>base-(Math.max(dbMin,Math.min(dbMax,db))-dbMin)/(dbMax-dbMin)*(base-railY);
-  const rToX=r=>margin + (r/RADAR.maxR)*(w-2*margin);   // LINEAR range axis (∝ round-trip time)
-  if($('radarGainV')) $('radarGainV').textContent='+'+Math.round(gainOffsetDb())+' dB';
-  // graticule (dB gridlines)
-  g.strokeStyle='rgba(60,180,90,.15)'; g.lineWidth=1; g.font=(h*0.032)+'px monospace';
-  for(let db=0;db<=dbMax;db+=12){ const y=yForDb(db); g.beginPath(); g.moveTo(margin,y); g.lineTo(w-2,y); g.stroke();
+  const rToX=r=>margin + (r/RADAR.maxR)*(w-2*margin);
+  const xToR=x=>(x-margin)/(w-2*margin)*RADAR.maxR;
+  const now=perfNow(), integDb=10*Math.log10(integCount), noiseDb=-integDb;
+
+  if(scopeLinear){
+    /* THE ARGUMENT FOR DECIBELS, experienced: linear power, normalized to LEO = full scale.
+       MEO is 2.5 millionths of that; GEO is 0.13 millionths. They simply do not exist on a linear
+       plot — which is precisely why radar engineers live in dB. */
+    g.fillStyle='#7fbf8f'; g.font=(h*0.04)+'px monospace'; g.textAlign='left';
+    for(const T of RTARGETS){ const x=rToX(T.r);
+      const p01=Math.pow(10,(TGT_SNR_DB[T.name]-TGT_SNR_DB.LEO)/10);   // LEO=1
+      const yTop=base-p01*(base-railY);
+      g.strokeStyle=T.col; g.lineWidth=5;
+      g.beginPath(); g.moveTo(x,base); g.lineTo(x,Math.min(base-1,yTop)); g.stroke();
+      g.fillStyle=T.col; g.textAlign='center';
+      g.fillText(T.name+(p01<0.001?' — invisible: '+(p01*1e6).toFixed(2)+' millionths of LEO':''), x, yForDb(52)); }
+    g.fillStyle='#9fb6d8'; g.textAlign='left'; g.font=(h*0.036)+'px monospace';
+    g.fillText('LINEAR power, LEO = full scale. This is why engineers use dB.', margin, h*0.06);
+    if($('radarMsg')) $('radarMsg').textContent='linear view: MEO and GEO are millionths of LEO — flip back to dB to see them at all';
+    return;
+  }
+
+  // graticule
+  g.strokeStyle='rgba(60,180,90,.15)'; g.lineWidth=1; g.font=(h*0.030)+'px monospace';
+  for(let db=-24;db<=dbMax;db+=12){ const y=yForDb(db); g.beginPath(); g.moveTo(margin,y); g.lineTo(w-2,y); g.stroke();
     g.fillStyle='#2f6f45'; g.textAlign='left'; g.fillText(db+' dB',2,y+h*0.012); }
-  // range ticks under each target
+  // range/time ticks with REAL round-trip milliseconds under each target
   for(const T of RTARGETS){ const x=rToX(T.r); g.strokeStyle='rgba(60,120,90,.25)';
-    g.beginPath(); g.moveTo(x,railY); g.lineTo(x,base); g.stroke(); }
-  // saturation rail
-  g.strokeStyle='rgba(255,80,80,.6)'; g.setLineDash([8,6]); g.lineWidth=1.5;
-  g.beginPath(); g.moveTo(0,railY); g.lineTo(w,railY); g.stroke(); g.setLineDash([]);
-  g.fillStyle='#ff8080'; g.textAlign='right'; g.fillText('saturation rail',w-6,railY-4); g.textAlign='left';
-  // noise floor level: rises with GAIN, falls by 10·log10(N) as integration accumulates
-  const gOff=gainOffsetDb(), integDb=10*Math.log10(integCount), noiseDb=gOff-integDb;
-  const nY=yForDb(noiseDb), jitter=(h*0.06)/Math.sqrt(integCount);   // grass level + fluctuation both drop with N
-  g.strokeStyle='#39d353'; g.lineWidth=1.4; g.beginPath();
-  for(let x=margin;x<=w;x+=2){ const n=(Math.sin(x*0.7+perfNow()*0.004)+Math.sin(x*0.31+perfNow()*0.006))*0.5;
-    const rnd=(((x*2654435761)>>>0)%1000/1000-0.5); const y=nY-(n*0.5+rnd)*jitter;
+    g.beginPath(); g.moveTo(x,railY); g.lineTo(x,base); g.stroke();
+    g.fillStyle='#5f9f75'; g.textAlign='center'; g.font=(h*0.032)+'px monospace';
+    g.fillText(Math.round(echoMs(T.r))+' ms', x, base+h*0.045); }
+
+  /* ---- ONE noisy trace, the way a real A-scope shows it -------------------------------------
+     The display is a single receiver trace: total power vs time. Each returned echo is a BUMP
+     RIDING IN THE NOISE, not a clean bar next to a separate "noise floor" — so a weak return is
+     genuinely indistinguishable from a noise excursion until averaging calms the trace.
+
+     Per range bin:  P(x) = Σ echo bumps  +  noise/N
+     The noise term both sinks (mean 1/N) and steadies (fluctuation ~1/√N of itself) as pulses
+     integrate; the bumps hold still. GEO's bump (-23 dB) is physically BELOW the single-pulse
+     noise (0 dB): with N=1 the trace at GEO's bin is pure grass, and it should be — that is the
+     honest statement of the problem. Crank N and the grass sinks until the bump surfaces. */
+  const noiseAt=(x)=>{ const n=(Math.sin(x*0.7+now*0.004)+Math.sin(x*0.31+now*0.006))*0.5;
+    const rnd=(((x*2654435761)>>>0)%1000/1000-0.5);
+    return Math.max(0.05, 1 + 1.1*(n*0.5+rnd)); };            // mean ≈1, deep fluctuation
+  const BW=RADAR.maxR*0.011;                                  // echo bump half-width, km
+  const bumpsAt=(r)=>{ let p=0;
+    for(const T of RTARGETS){ if(!lastPing[T.name]) continue;
+      const d=(r-T.r)/BW; p+=Math.pow(10,TGT_SNR_DB[T.name]/10)*Math.exp(-0.5*d*d); }
+    return p; };
+  g.strokeStyle='#39d353'; g.lineWidth=1.6; g.beginPath();
+  for(let x=margin;x<=w-margin;x+=2){
+    const P=bumpsAt(xToR(x)) + noiseAt(x)/integCount;
+    const y=yForDb(10*Math.log10(P));
     x===margin?g.moveTo(x,y):g.lineTo(x,y); }
   g.stroke();
-  g.fillStyle='#2f8f52'; g.textAlign='left'; g.fillText('noise floor',margin+2,nY-h*0.015);
-  // target spikes
-  let sat=[],vis=[],lost=[];
-  for(const T of RTARGETS){ const sigDb=TGT_SNR_DB[T.name]+gOff, x=rToX(T.r);
-    const clipped=sigDb>=dbMax, yTop=yForDb(sigDb), snr=sigDb-noiseDb, buried=snr<3;
-    g.strokeStyle=T.col; g.lineWidth=4; g.globalAlpha=buried?0.32:1;
-    if(buried) g.setLineDash([3,4]);
-    g.beginPath(); g.moveTo(x,base); g.lineTo(x,yTop); g.stroke(); g.setLineDash([]);
-    g.globalAlpha=1; g.fillStyle=T.col; g.font='bold '+(h*0.04)+'px monospace'; g.textAlign='center';
-    const tag=clipped?' ⚠SAT':buried?' (in noise)':' '+Math.round(snr)+' dB';
-    g.fillText(T.name+tag, x, Math.max(railY-h*0.012, Math.min(base-h*0.02, yTop-h*0.02)));
-    (clipped?sat:buried?lost:vis).push(T.name); }
-  g.textAlign='left'; g.fillStyle='#7fbf8f'; g.font=(h*0.038)+'px monospace';
-  g.fillText('range / round-trip time →   (LEO near · GEO ≈2× MEO)',margin+2,base+h*0.05);
+  g.fillStyle='#2f8f52'; g.textAlign='left';
+  g.fillText('receiver trace — echoes are bumps IN the noise', margin+2, yForDb(noiseDb)+h*0.055);
+
+  // A-scope SWEEP: a bright dot crossing in lockstep with the sky-view pulse, carrying a live
+  // clock. When it reads 281 ms it is standing on GEO's bin as GEO's echo lands — x IS time.
+  if(sweepBorn){ const rangeNow=SKY_SPD*(now-sweepBorn)/1000/2;   // ÷2: out AND back for bin R
+    if(rangeNow<=RADAR.maxR){ const x=rToX(rangeNow);
+      const ySw=yForDb(10*Math.log10(bumpsAt(rangeNow)+noiseAt(x)/integCount));
+      g.fillStyle='rgba(160,255,190,0.9)'; g.beginPath(); g.arc(x,ySw,h*0.014,0,7); g.fill();
+      g.strokeStyle='rgba(160,255,190,0.25)'; g.lineWidth=1;
+      g.beginPath(); g.moveTo(x,railY); g.lineTo(x,base); g.stroke();
+      g.fillStyle='#c9ffd9'; g.font='bold '+(h*0.034)+'px monospace';
+      g.textAlign=x>w*0.8?'right':'left';
+      g.fillText('t = '+Math.round(echoMs(rangeNow))+' ms', x+(x>w*0.8?-1:1)*h*0.025, ySw-h*0.035);
+      g.textAlign='left'; } }
+
+  // Markers ABOVE the trace (annotations, not data): name + SNR state at each pinged bin
+  let vis=[],lost=[];
+  for(const T of RTARGETS){ const ping=lastPing[T.name]; if(!ping) continue;
+    const age=(now-ping)/1000, x=rToX(T.r);
+    const sigDb=TGT_SNR_DB[T.name], snr=sigDb-noiseDb, buried=snr<3;
+    const yPk=yForDb(10*Math.log10(Math.pow(10,sigDb/10)+1/integCount));
+    const flash=age<0.45? (1-age/0.45) : 0;
+    if(flash>0){ g.globalAlpha=0.35+0.5*flash; g.strokeStyle=T.col; g.lineWidth=2;
+      g.beginPath(); g.arc(x,yPk,h*0.05*(1+2*(1-flash)),0,7); g.stroke(); g.globalAlpha=1; }
+    g.fillStyle=T.col; g.font='bold '+(h*0.036)+'px monospace'; g.textAlign='center';
+    g.globalAlpha=buried?0.55:1;
+    g.fillText((buried?'▾ ':'')+T.name+(buried?' (in the grass)':' '+Math.round(snr)+' dB'),
+      x, Math.max(railY+h*0.03, yPk-h*0.045));
+    g.globalAlpha=1;
+    if(age<6){ g.fillStyle='#8fb8a0'; g.font=(h*0.028)+'px monospace';
+      g.fillText('t='+Math.round(echoMs(T.r))+' ms → range = c·t/2 = '+T.r.toLocaleString()+' km', x, base+h*0.085); }
+    (buried?lost:vis).push(T.name); }
+  g.textAlign='left'; g.fillStyle='#7fbf8f'; g.font=(h*0.036)+'px monospace';
+  g.fillText('time since the pulse was sent →   (echoes land at 2·range/c: LEO 5 ms · MEO 133 ms · GEO 281 ms)',margin+2,base+h*0.135);
   // status line
   if($('radarMsg')){ let msg;
     if(averaging) msg='integrating… '+integCount.toLocaleString()+' / '+averaging.target.toLocaleString()+' pulses · SNR +'+Math.round(integDb)+' dB';
-    else { const parts=[]; if(sat.length)parts.push(sat.join('/')+' saturated'); if(vis.length)parts.push(vis.join('/')+' clean'); if(lost.length)parts.push(lost.join('/')+' in noise');
+    else if(!Object.keys(lastPing).length) msg='press FIRE PULSE and watch the sweep — echoes land left to right';
+    else { const parts=[]; if(vis.length)parts.push(vis.join('/')+' clear of the noise'); if(lost.length)parts.push(lost.join('/')+' hidden in the grass — try averaging');
       msg = integCount>1? ('integrated '+integCount.toLocaleString()+' pulses · '+parts.join(' · ')) : parts.join(' · '); }
     $('radarMsg').textContent=msg; }
 }

@@ -77,14 +77,40 @@ regress behind the others.
 
 | # | Where | Issue | Status |
 |---|---|---|---|
-| 1 | M5 Ex 15 | **Lead angle reversed.** Text says "too little lead and you get there early… too much and the Moon has already swept past." Backwards. Too little lead ⇒ you arrive **late**, behind the Moon; too much ⇒ you arrive **early**, before it. The reviewer's correction is right. The "Try it" text below it is also wrong in the same way. | TODO |
+| 1 | M5 Ex 15 | **Lead angle — the reviewer is mistaken; the original text was correct.** See the note below. | **WONTFIX (reviewer wrong)** |
 | 2 | M3 throughout | **"Shape" is used to mean eccentricity, but shape is set by size *and* eccentricity.** The reviewer caught the internal contradiction: Ex 2 demonstrates that period doesn't change when "shape" changes, then a later question asks why period stays fixed "if neither the size nor the shape changed". Terminology needs one consistent definition. | DECIDE |
-| 3 | M4 Ex 17 + Key Points | **"Drag makes it speed up" is at best misleading.** Reviewer: "friction doesn't speed you up." Correct framing: drag removes energy → orbit shrinks → at the lower altitude the *circular speed is higher*, so orbital speed increases. Needs rewording in both places. | TODO |
-| 4 | M4 Ex 3 | "What you're spending is delta-v" — you're spending propellant; Δv is the accounting unit. Reviewer's fix is correct and worth adopting. | TODO |
-| 5 | M5 tutorial | Hill-sphere percentages don't add up: "85%" in one place, "16%" in another. Round consistently (85/15 or 84/16). | TODO |
+| 3 | M4 Ex 17 + Key Points | **"Drag makes it speed up" is at best misleading.** Reviewer: "friction doesn't speed you up." Correct framing: drag removes energy → orbit shrinks → at the lower altitude the *circular speed is higher*, so orbital speed increases. Needs rewording in both places. | **DONE v5.3** (objectives + tutorial now carry the careful framing; d2 already had it) |
+| 4 | M4 Ex 3 | "What you're spending is delta-v" — you're spending propellant; Δv is the accounting unit. Reviewer's fix is correct and worth adopting. | **DONE v5.3** (propellant is spent; Δv is the budget unit — with the why) |
+| 5 | M5 tutorial | Hill-sphere percentages don't add up: "85%" in one place, "16%" in another. Round consistently (85/15 or 84/16). | **DONE v5.3** — they are two *different*, nearly coincident quantities (L1 at ~85%, Hill radius ~16%); the text now says so explicitly instead of rounding one to match the other |
 | 6 | M3 Ex 13 | Sun-synchronous **cannot be demonstrated**: the sim caps inclination at 90°, so i = 98.2° is unreachable, and the preset shows 90°. Owner already flagged: "does the SIM include J2 precession, if not we need to fudge it." | DECIDE |
-| 7 | M1 | "Re-entry" is used ambiguously — reviewer read it as re-entering *orbit*. Say "re-enters the atmosphere". | TODO |
+| 7 | M1 | "Re-entry" is used ambiguously — reviewer read it as re-entering *orbit*. Say "re-enters the atmosphere". | **DONE v5.3** |
 | 8 | M3 Ex 7 | TLE element order doesn't match the order the six elements were taught, and the table omits size/shape. Reviewer wants them introduced in TLE order with cross-references. Good idea, moderate rework. | DECIDE |
+
+### Note on item 1 — the lead angle, and a mistake worth recording
+
+The reviewer wrote: *"Text says 'too little lead and you get there early… too much and the Moon has
+already swept past.' Backwards."* That correction was accepted and the passage was rewritten. **The
+reviewer was wrong and the original text was right**, so the rewrite introduced a physics error into
+the course. It has been reverted, and `test/tut5-lead-angle.test.js` now pins it.
+
+The geometry, taken from the simulator's own constants rather than from intuition:
+
+- You burn at perigee; apogee is a half-turn — **180°** — away.
+- The lead angle is how far **ahead of your launch point** the Moon sits at ignition, so the Moon
+  must still cover **180° − lead** to reach your apogee. `tut5.html` encodes exactly this:
+  `TLI_IDEAL_LEAD = 180 − TLI_MOON_TRAVEL`.
+- Flight time is **4.98 d**, in which the Moon covers **65.6°** — so the ideal lead is **114.4°**.
+
+| lead | Moon reaches apogee | you reach apogee | result |
+|---|---|---|---|
+| 80° | day 7.59 | day 4.98 | **early** by 2.6 d — Moon still inbound |
+| 114° | day 4.98 | day 4.98 | together |
+| 160° | day 1.52 | day 4.98 | **late** by 3.5 d — Moon already swept past |
+
+A *smaller* lead leaves the Moon *more* ground to cover than you have flying time, so you get there
+first and wait. The lesson: a reviewer reporting a **symptom** ("this confused me") is nearly always
+worth acting on, but a reviewer supplying a **correction** must still be checked against the model.
+Deferring to the correction without checking is how a confident wrong answer gets published.
 
 ---
 
@@ -92,18 +118,18 @@ regress behind the others.
 
 | # | Module | Issue | Status |
 |---|---|---|---|
-| 1 | M6 Ex 7 | **`.` (time warp) does nothing** in the L4-tadpole release scenario, though it works elsewhere in the same module (Ex 9). | TODO |
+| 1 | M6 Ex 7 | **`.` (time warp) does nothing** in the L4-tadpole release scenario, though it works elsewhere in the same module (Ex 9). | **DONE v5.2** (warp ladder extended above the tadpole's starting rung) |
 | 2 | M1 Ex 19 | **Earth lost its continents**; fixed by reopening the sim. This is the `crossOrigin`/`file://` texture failure fixed in v5.2 — the reviewer was on an older build. Worth confirming with them. | LIKELY FIXED |
-| 3 | all | **Trackpad zoom is too coarse.** "Once you are zoomed in and want small adjustments, make that easy." Raised twice, called "jerky and frustrating". Needs non-linear zoom (fine control when close). | TODO |
-| 4 | M5 Ex 3 | **Reference frame doesn't persist when you change zoom scale** — switching zooms lands you in an inconsistent frame. Either persist the frame, or state frame *and* zoom in every instruction. | TODO |
-| 5 | M2 Ex 11 | **No way back from the satellite-anatomy / inspector view.** Needs a back button. | TODO |
-| 6 | M2 Ex 4 | The Sun rendered *inside* the GEO ring initially. | TODO |
-| 7 | all sims | **Sliders can't hit exact values.** "It is frustrating to want to hit 2000 and you go back and forth and give up." Add numeric entry beside each slider. Raised as a general request. | TODO |
-| 8 | M2 Ex 5, Ex 6 | **The figure-8 is not visible** where the text promises it. Reported twice. | TODO |
-| 9 | M3 Ex 2 | Large eccentricity puts the satellite inside the Earth with no warning — reviewer asked "BUG?". Needs a perigee-below-surface indicator. | TODO |
+| 3 | all | **Trackpad zoom is too coarse.** "Once you are zoomed in and want small adjustments, make that easy." Raised twice, called "jerky and frustrating". Needs non-linear zoom (fine control when close). | **DONE v5.2** (OA_ZOOM: proportional, deltaMode-normalised, Shift = fine) |
+| 4 | M5 Ex 3 | **Reference frame doesn't persist when you change zoom scale** — switching zooms lands you in an inconsistent frame. Either persist the frame, or state frame *and* zoom in every instruction. | **DONE v5.3** (em-scale frame choice remembered and restored) |
+| 5 | M2 Ex 11 | **No way back from the satellite-anatomy / inspector view.** Needs a back button. | **DONE v5.2** |
+| 6 | M2 Ex 4 | The Sun rendered *inside* the GEO ring initially. | **DONE v5.3** (sprite spawned at the origin until frame 1; now positioned at creation) |
+| 7 | all sims | **Sliders can't hit exact values.** "It is frustrating to want to hit 2000 and you go back and forth and give up." Add numeric entry beside each slider. Raised as a general request. | **DONE v5.2** (sliders.js: typed box on every slider) |
+| 8 | M2 Ex 5, Ex 6 | **The figure-8 is not visible** where the text promises it. Reported twice. | **RESOLVED v5.3** — Earth-fixed ground-track trail built and verified (closes into the analemma), then the exercise was cut at the owner's call ("the pattern on the earth is not that valuable"); the trail remains in the sim. |
+| 9 | M3 Ex 2 | Large eccentricity puts the satellite inside the Earth with no warning — reviewer asked "BUG?". Needs a perigee-below-surface indicator. | **DONE v5.3** (the warning existed but whispered from the dim hint bar; now alarm-styled + red perigee readout) |
 | 10 | M3 Ex 3 | TWIST (argument of perigee) has no visible effect except at extreme eccentricity — true, but should be *said*. | TODO |
 | 11 | M2 Ex 13 | Reviewer could not find the FREEZE checkbox the text refers to. | TODO |
-| 12 | M6 Ex 3 | Could not get a view showing the Moon's arrow pointing back toward the Moon at L1. | TODO |
+| 12 | M6 Ex 3 | Could not get a view showing the Moon's arrow pointing back toward the Moon at L1. | **DONE v5.3** (the arrows were correct but spanned 2–4% of the default view; scenario now presets a close-up camera, 5e10 display scale, labeled rows) |
 | 13 | M2 Ex 2 | Could not complete: find XM "Rock"/"Roll" in the belt. Also "USA is dark" (night side) making the footprint unreadable. | TODO |
 
 ---

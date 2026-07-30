@@ -53,7 +53,9 @@
 </head>
 <body>
 <header>
-  <h1>⑦ Observability — how we actually see space</h1>
+  <button onclick="(function(){var w=window.open('worksheet7.html','worksheet_t7');w&&w.focus();})()"
+    style="background:#1f4a7a;border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:17px;padding:8px 14px;border-radius:7px;cursor:pointer;float:right;margin-left:14px">📋 Back to worksheet</button>
+  <h1>⑦ Observability — how we actually see satellites</h1>
   <div class="sub">Take telescope pictures · watch satellite phases · read RA/DEC coordinates · tag &amp; fit an orbit · radar range⁴ &amp; integration</div>
 </header>
 <div class="wrap">
@@ -168,16 +170,15 @@
   <div class="scene" id="s-radar">
     <div class="card">
       <h2>📡 Radar — watch the pulse go out and the echoes come back</h2>
-      <div class="lede">A ground radar (bottom) fires a pulse — the expanding arc. Its strength <b>fades as it spreads</b>. When it reaches a target, an echo returns down its own sightline, and the <b>scope</b> (right) shows the ping at its <b>range = round-trip time</b>. The echoes span a <b>huge dynamic range</b>: by the two-way range⁴ law, LEO (800 km) returns ~7.7 <b>million</b>× stronger than GEO (42,164 km — that’s the GEO orbit’s radius from Earth’s center, used as its range here; from a radar directly beneath, the range is ≈36,000 km). <b>Turn up the gain</b> and you'll see the catch — the noise floor rises right along with the signal, so cranking gain <b>never</b> pulls GEO out of the grass; it only decides what <b>saturates</b>. The one thing that works is <b>pulse integration</b>: set N &gt; 1, press <b>START AVERAGING</b>, and watch the signal add up while the noise partly cancels — SNR climbs as <b>√(pulses)</b>, pulse by pulse, until the buried target finally stands clear.</div>
+      <div class="lede">A ground radar (bottom) fires a pulse and <b>times the echo</b> — that timing IS the measurement: range = c·t/2. Press <b>FIRE</b> and watch the scope's sweep dot: it carries a running clock showing the <b>time since the pulse left the dish</b>, and each spike pops up the instant its echo lands. <b>Farther = later</b> (LEO at ~5 ms, GEO at ~281 ms) and <b>farther = fainter</b> — the pulse spreads going out and the echo spreads coming back, so received power falls as <b>range⁴</b>: GEO returns ~7.7 <b>million×</b> weaker than LEO (a true 69 dB; try the linear view to feel that ratio). GEO starts buried in the noise. To dig it out, set <b>N &gt; 1</b> and press <b>START AVERAGING</b>: the radar fires a stream of pulses, the echo adds up in its time bin while the random noise partly cancels, and SNR climbs as <b>√N</b>.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
-        <div><canvas id="radarSky" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">Top view: Earth at the bottom, the radar pulse expanding outward (fading as it spreads), and targets at LEO / MEO / GEO ranges. The echo returns down its sightline — GEO's round-trip is ~2× MEO's.</div></div>
-        <div><canvas id="radarScope" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">Scope: vertical axis is <b>dB</b>, horizontal is <b>range / round-trip time</b> (linear — GEO sits at ~2× MEO). Green = noise floor. Spikes above the rail are <b>saturated</b>; spikes under the noise are undetectable.</div></div>
+        <div><canvas id="radarSky" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">Top view: the pulse fades as it spreads (range² out), and the <b>returning echo fades too</b> (range² back) — watch GEO's ghost of an echo creep home long after LEO's has landed.</div></div>
+        <div><canvas id="radarScope" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">A-scope: horizontal is <b>time since the pulse was sent</b> (the sweep dot's clock shows it in real ms), vertical is <b>dB</b> — the honest spread is 69 dB, LEO to GEO. A spike only appears once its echo has <b>actually returned</b>, and fainter echoes make thinner spikes.</div></div>
       </div>
       <div class="ctl">
         <button class="btn gold" id="radarFire" onclick="fireRadar()">📡 FIRE PULSE</button>
         <label><input type="checkbox" id="radarAuto" onchange="0"> auto-fire</label>
-        <label>🔊 receiver gain <input id="radarGain" type="range" min="0" max="100" value="20" style="width:260px"></label>
-        <span class="kv">gain: <b id="radarGainV">+8 dB</b></span>
+        <button class="btn" id="radarLin" onclick="toggleScopeLinear()">📏 linear power view</button>
       </div>
       <div class="ctl">
         <label>📚 integrate N pulses <input id="radarAvg" type="range" min="0" max="100" value="0" style="width:240px" oninput="radarAvgChanged()"></label>
@@ -185,7 +186,7 @@
         <button class="btn" id="radarStart" onclick="startAveraging()" style="display:none">▶ START AVERAGING</button>
         <span class="kv" id="radarMsg">gain lifts signal AND noise — try integrating</span>
       </div>
-      <div class="note">This is <b>monostatic</b> radar (transmit and receive at the same site). The lesson: <b>gain is not sensitivity.</b> Amplifying the receiver raises signal and noise together, so it can't dig a target out of the noise — only <b>integration</b> (or more transmit power, a bigger dish, or a closer target) improves the signal-to-noise ratio. Just as an optical sensor can only see a <b>sunlit</b> target, a radar can only detect an echo whose SNR clears its threshold.</div>
+      <div class="note">This is <b>monostatic</b> radar (transmit and receive at the same site). One thing the sim deliberately does NOT offer: a receiver-gain knob. Amplifying the received signal lifts the echo <b>and the noise by the same factor</b>, so it can never make a buried target detectable — only <b>integration</b> (or more transmit power, a bigger dish, or a closer target) improves the signal-to-noise ratio. Just as an optical sensor can only see a <b>sunlit</b> target, a radar can only detect an echo whose SNR clears its threshold.</div>
     </div>
   </div>
 

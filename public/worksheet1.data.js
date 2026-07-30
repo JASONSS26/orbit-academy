@@ -259,11 +259,11 @@ const WORKSHEET = {
     { id:'b1', title:'Too slow: smash into Earth',
       teach:[
         'Now you get to build orbits yourself. The core idea of this whole module is that at any given height, the <b>speed you release an object</b> at decides the entire shape of its path. Get a feel for that by starting with the failure case: going too slow.',
-        'An orbit only works if you’re moving sideways fast enough that the ground curves away beneath you as fast as you fall. Release too slowly and you can’t “miss” the Earth — you simply fall back into it. The path bends into a steep, stretched ellipse whose far side dips <i>below the surface</i>, so the object re-enters. This is exactly what a suborbital lob looks like: up, over, and back down into the ground.',
+        'An orbit only works if you’re moving sideways fast enough that the ground curves away beneath you as fast as you fall. Release too slowly and you can’t “miss” the Earth — you simply fall back into it. The path bends into a steep, stretched ellipse whose far side dips <i>below the surface</i>, so the object <b>re-enters the atmosphere</b> and comes down. This is exactly what a suborbital lob looks like: up, over, and back down into the ground.',
       ],
       predict:'Before you inject: if you release well below the speed needed to orbit, what do you think the path will do — settle into a lower circle, or fall back and hit the Earth? And where would it strike, near your release point or the far side?',
       do:'Set <b>release altitude = 600 km</b>. Set <b>speed ≈ 4.5 km/s</b> and click <b>INJECT OBJECT</b>. Then nudge the speed up to ~6 km/s and inject again — watch the far side lift a little but still dip below the surface, so it’s still a crash.',
-      observe:'the orbit is a steep ellipse whose far side plunges below the surface — it re-enters (crashes).',
+      observe:'the orbit is a steep ellipse whose far side plunges below the surface — it re-enters the atmosphere and comes down.',
       think:[
         'Where does the path first touch the Earth — near your release point, or on the far side?',
         'What do you think would happen if you nudged the speed up a little from 4.5 km/s?',

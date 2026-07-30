@@ -10,7 +10,11 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
     font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
-  #app{display:grid;grid-template-columns:449px minmax(0,1fr) 376px;height:100vh;gap:8px;padding:8px}
+  /* Side columns yield to the viewport. Fixed-px columns pinned 700-900px of width to the panels
+     before the VISUALIZATION got a pixel — on a 1366px Windows laptop at 125-150% display scaling
+     the center canvas was left a slot a few hundred px wide ("panels are oversized"). clamp() keeps
+     the designed width on big monitors and hands space back to the stage on small ones. */
+  #app{display:grid;grid-template-columns:clamp(300px,23vw,449px) minmax(0,1fr) clamp(260px,19vw,376px);height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
   h2{margin:0 0 6px;font-size:24px;color:#fff}
@@ -446,18 +450,29 @@ const forceGroup=new THREE.Group(); scene.add(forceGroup); forceGroup.visible=fa
 function arrow(fromX,len,color,y){ const dir=new THREE.Vector3(Math.sign(len),0,0);
   const a=new THREE.ArrowHelper(dir,new THREE.Vector3(fromX,y||0,0),Math.abs(len),color,Math.abs(len)*0.18,Math.abs(len)*0.1);
   a.line.material.linewidth=2; return a; }
+function txtSprite(text,x,y){ const cv=document.createElement('canvas'); cv.width=512; cv.height=64;
+  const g=cv.getContext('2d'); g.font='28px monospace'; g.fillStyle='#cfe3ff'; g.textAlign='center';
+  g.fillText(text,256,40);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false}));
+  sp.position.set(x,y,0); sp.scale.set(120000,15000,1); sp.frustumCulled=false; return sp; }
 function buildForceDiagram(){
   while(forceGroup.children.length) forceGroup.remove(forceGroup.children[0]);
   // at three points along the line, show Earth-pull (toward Earth, −x if x>0), Moon-pull, and net.
   const pts=[['L1',L1F*D_EM],['Moon',(1-massFrac)*D_EM],['L2',L2F*D_EM]];
-  const S=1.1e10;   // scale accel (km/s^2) → scene length
+  /* Display scale for accel (km/s²) → scene km. Tuned WITH the force-scenario camera preset
+     (R=240,000): the Moon-pull arrow at L1 spans ~18% of the view and Earth's ~39%, so the balance
+     is legible at a glance. At the old 1.1e10 the same arrows were 4% and 9% — the reviewer
+     "could not get a view" showing them at all. */
+  const S=5e10;
   pts.forEach(([nm,x],i)=>{
-    const y=(i-1)*60000;                              // stack them vertically so they don't overlap
+    const y=(i-1)*95000;                              // stack them vertically so they don't overlap
     const dxm=x-(1-massFrac)*D_EM;
     const aE = -MU_E/(x*x) * Math.sign(x);            // toward Earth (inward)
     const aM = (Math.abs(dxm)<1?0:-MU_M/(dxm*dxm)*Math.sign(dxm)); // toward Moon
     forceGroup.add(arrow(x, aE*S, 0x5fd0ff, y));      // Earth pull (cyan)
     if(nm!=='Moon') forceGroup.add(arrow(x, aM*S, 0xd8d2c4, y)); // Moon pull (grey)
+    // name each row: a floating text sprite above the arrows ("at L1", "at the Moon", "at L2")
+    forceGroup.add(txtSprite('at '+(nm==='Moon'?'the Moon':nm)+(nm==='L1'?'  (cyan ← Earth pull · grey → Moon pull)':''), x, y+26000));
   });
   forceGroup.traverse(o=>o.frustumCulled=false);
 }
@@ -566,6 +581,9 @@ function scenario(s){ scen=s;
   $('fanBox').style.display=(s==='fan')?'block':'none';
   $('zooBox').style.display=(s==='zoo')?'block':'none';
   clearFan(); if(s==='fan'){ setFrame('emrot'); }
+  if(s==='force'){ setFrame('emrot');
+    // frame the L1–Moon–L2 corridor: center on the Moon, span ~4× the L1 distance-from-Moon
+    for(const f of FRAMES){ views[f].target.set((1-massFrac)*D_EM,0,0); views[f].R=240000; } }
   if(s==='tess') buildTess();
   if(s==='halo') buildHalo();
   if(s==='zoo'){ setFrame('emrot'); buildZoo(); setZooRatio(zooRatio); }

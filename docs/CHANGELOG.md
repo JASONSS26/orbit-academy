@@ -2,6 +2,70 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v5.3 — 2026-07-30 (revision actions: radar rebuild, module 8 window, phase-correct brightness)
+
+**Module 7.** Radar scene rebuilt around its three teaching claims: echoes come back LATER (true
+A-scope — sweep dot with a live milliseconds clock, synced to the sky pulse; every ping prints
+range = c·t/2), drastically FAINTER (honest 69 dB LEO→GEO spread — the old scope compressed it to
+48; returning echoes fade by range⁴ with a trackable wavefront dot), and AVERAGING digs them out
+(echo bumps ride IN one noisy receiver trace; integration sinks the grass as 1/N while the bumps
+hold). Receiver-gain knob removed (owner call); linear-power toggle added. Radar is now exactly one
+worksheet exercise, and worksheet parts follow the sim's tab order (illumination → RA/DEC → picture
+→ fit an orbit → radar → custody). Tagline is now "how we actually see satellites."
+
+**Module 8.** Camera up vector is closed-form (F × ẑ) so the window can never flip upside down —
+the old Gram–Schmidt residual changed sign when the GEO aim-blend swept the boresight past nadir.
+Limb-chasing pitch is Moon-only: Earth now honestly drops out of the window after the transfer burn
+(at GEO the disc is ±8.7°, ~68° below a fixed boresight — you don't see Earth out the front window,
+and now you don't). 1.5× display exposure for the dark Blue Marble. ☀ sun indicator in the window,
+← N tag (north is screen-LEFT; the audit that proved the no-flip basis also caught the old tag on
+the wrong side), sun-direction vector on the NAV maps via the shared toDisp() transform. Speed dial
+removed; its body-aware guidance survives as a text call-out; Δv gauge moved to the dial's slot.
+
+**Module 2.** Satellite brightness = PHASE × ECLIPSE: the sunlit fraction facing the camera
+((1+cos α)/2, the Moon's-phases law) times an Earth-shadow term (cylinder + smoothstep penumbra;
+GEO dots go dark for the honest ~4.8% of each lap). Driven by the same sunV as Earth's terminator;
+the star field is untouched. Earth-fixed ground-track trail (closes into the analemma; figure-8
+exercise removed at owner's call, quiz ratchet re-balanced). Sun sprite no longer spawns at the
+origin — inside the GEO ring — before the first frame.
+
+**Module 5.** Per-scale default clocks (lunar orbiter ~33 s, month ~55 s, year ~37 s per cycle —
+at the old fixed 60× a lunar month took 10.9 h of wall time and the frame lesson was invisible);
+21600/86400 added to the warp ladder (indexOf(-1) had bricked the +/− keys after the release and
+TLI exercises); the Earth–Moon-scale frame choice persists across zoom excursions.
+
+**Module 6.** syncSun regression fixed (called every frame, never defined — the loop's own
+try/catch ate the ReferenceError and all four panels stayed black). L1 force-balance scenario:
+camera preset onto the L1–Moon–L2 corridor, 5e10 display scale, per-row labels. Flex checkbox
+captions wrapped (display:flex was shredding them into columns).
+
+**Modules 1/3/4 + layout.** M3 perigee-below-surface warning restyled as an alarm. M4 tightened
+24 → 22 exercises (duplicate two-step-recipe task and no-sim restatement merged; the merged task
+keeps the "why burn at apogee" quiz); five read-and-nod tasks converted to think-shape. M1
+first-run controls card clamp()ed to the viewport (was a fixed 760px modal that could hide its own
+dismiss button on 1366×768 Windows laptops); all six 3-D sims' side columns are viewport-aware.
+M5 worksheet: reviewer's lead-angle "correction" was itself wrong — original text restored and
+pinned by a test derived from the sim's constants; Hill-sphere 85%/16% reconciled (two nearly
+coincident quantities, now said so); M4 drag/Δv wording fixed; M1 "re-enters the atmosphere."
+
+**Module 8, late additions.** Burn-time freeze fixed: the mid-thrust step cap (0.6 s of sim per
+frame — the world visibly stopped during a hold) raised to 3 s, so a burn now plays out over the
+honest few minutes of sim time with the Moon, belt and orbit all still moving; secondary panels
+drop to 10 Hz mid-burn and the window raytracer trades resolution for cadence. Cockpit audio:
+a synthesized engine rumble (brown noise, 90 Hz lowpass, wobble; ramps with thrust, quieter on
+FINE). Pure WebAudio — no media assets, no network, air-gap intact; gesture-gated for autoplay
+rules; 🔊 toggle persists. (A CAPCOM radio squelch shipped for about an hour and was cut on the
+owner's call; the first sound button also landed on top of TRAIN and ate its clicks — moved, and
+the suite now fails if any two top-row buttons overlap.)
+
+**Infrastructure.** workbooks/active/ (the set the server actually serves) had been a stale v3.0
+mirror — server-mode students never received the v5.2 quiz repairs; synced, with a suite-failing
+drift guard. New suites: sim-boot (runs all 8 sims against the real vendored three.js, asserts
+renderer.render/2-D draws actually happen and console.error stays silent — "boots without
+throwing" was proven insufficient twice), worksheet-boot (strict DOM; the old auto-creating stub
+made use-before-create unrepresentable), tut5-lead-angle, tut7-radar. Worksheet buttons
+standardized top-of-page in all 8 sims. .gitignore excludes *.zip.
+
 ## v5.2 — 2026-07-29 (course management: manage students, see where they struggled)
 
 **Headline: the instructor dashboard becomes a course-management tool.** It could previously only

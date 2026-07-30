@@ -221,6 +221,24 @@ async function main() {
       missing.length === 0, 'missing: ' + missing.join(', '));
   }
 
+  /* ------------------------------------------------------------- two-tree drift
+     server.js serves worksheet content from workbooks/active/ ("the LIVE set"); bare file:// mode
+     reads public/. For MONTHS every content fix went only to public/, so server-mode students kept
+     the old quizzes while file:// students got the repaired ones — and every test read public/, so
+     nothing noticed. The two trees must be identical at all times. (The instructor Worksheet Editor
+     writes workbooks/active/; after editing, republish or copy back to public/.) */
+  const wbDir = path.join(ROOT, 'workbooks', 'active');
+  if (fs.existsSync(wbDir)) {
+    for (const n of [...sheets, '-final']) {
+      const f = 'worksheet' + n + '.data.js';
+      const a2 = fs.readFileSync(path.join(ROOT, 'public', f), 'utf8');
+      const b2p = path.join(wbDir, f);
+      check(f + ': public/ and workbooks/active/ are in sync',
+        fs.existsSync(b2p) && fs.readFileSync(b2p, 'utf8') === a2,
+        'the server serves the workbooks/active copy — a fix that only lands in public/ never reaches server-mode students');
+    }
+  }
+
   console.log('\n' + (fail === 0 ? 'ALL PASSED' : fail + ' FAILED') + ' (' + pass + ' checks)');
   process.exit(fail === 0 ? 0 : 1);
 }

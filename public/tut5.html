@@ -10,7 +10,11 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
     font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
-  #app{display:grid;grid-template-columns:449px minmax(0,1fr) 376px;height:100vh;gap:8px;padding:8px}
+  /* Side columns yield to the viewport. Fixed-px columns pinned 700-900px of width to the panels
+     before the VISUALIZATION got a pixel — on a 1366px Windows laptop at 125-150% display scaling
+     the center canvas was left a slot a few hundred px wide ("panels are oversized"). clamp() keeps
+     the designed width on big monitors and hands space back to the stage on small ones. */
+  #app{display:grid;grid-template-columns:clamp(300px,23vw,449px) minmax(0,1fr) clamp(260px,19vw,376px);height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
   h2{margin:0 0 6px;font-size:24px;color:#fff}
@@ -484,12 +488,19 @@ function setScale(s){ scale=s;
   // genuinely "ride the Moon"; the tighter zoom also shows the big elliptical lunar orbit clearly.
   const base = s==='moon'? R_MOON*6 : s==='em'? D_EM*1.9 : D_ES*0.6;
   for(const f of FRAMES){ views[f].R = (frameCentersMoon(f) && s!=='es') ? Math.min(base, HILL_MOON*1.4) : base; }
-  if(!quad){ if(s==='moon'&&(frame==='eci'||frame==='emrot')) setFrame('mci');
-    else if(s==='em'&&frame==='mci') setFrame('emrot');
+  /* Frame policy per scale. The lunar zoom needs a Moon-centered camera and the Sun–Earth zoom
+     an inertial one, so those two scales force their frame. The Earth–Moon scale is where the
+     reviewer hit the bug: pick ECL-EMBR, zoom to the Moon (forced to MCI), zoom back — and land in
+     the synodic frame, your choice silently discarded. So the em-scale frame the user last chose is
+     REMEMBERED and restored whenever they return. */
+  if(!quad){ if(s==='moon'&&frame!=='mci') setFrame('mci');
+    else if(s==='em') setFrame((emFrameChoice==='mci')?'emrot':emFrameChoice);
     else if(s==='es'&&frame!=='eci') setFrame('eci'); }
   applyScaleDefaults(); buildToggles(); resetView();
 }
+let emFrameChoice='emrot';   // the frame the user last chose at the Earth–Moon scale (see setScale)
 function setFrame(f){ frame=f;
+  if(scale==='em') emFrameChoice=f;
   document.querySelectorAll('#frameSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.frame===f));
   $('frameTag').textContent='frame: '+FRAME_NAMES[f];
 }

@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v5.2
+# 🛰 ORBIT ACADEMY — v5.3
 
 An interactive course teaching orbital dynamics to non-specialists — from "what is an orbit?" through
 cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator.
@@ -18,7 +18,7 @@ cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator
 | **Progress saved** | in your browser | per student, any machine |
 | **You get** | all 8 modules, interactive quizzes | + logins, modules unlocking in order, instructor roster, class analytics, worksheet editor |
 | **Use it for** | learning solo · reviewing · a laptop in a vault | teaching a group |
-| **Download** | `orbit-academy-v5.2-standalone.zip` | `orbit-academy-v5.2.zip` |
+| **Download** | `orbit-academy-v5.3-standalone.zip` | `orbit-academy-v5.3.zip` |
 
 No download handy? Click green **`<> Code` → Download ZIP** above; that is the full version.
 
@@ -56,7 +56,7 @@ If you want the exact clicks:
 ### 🐧 Linux
 
 ```
-1. unzip orbit-academy-v5.2.zip && cd academy
+1. unzip orbit-academy-v5.3.zip && cd academy
 2. Just the course:  xdg-open public/gallery.html
    Full course:      install node with your package manager, then
                      bash start-academy.sh
@@ -353,7 +353,7 @@ Each is a worksheet plus a 3-D simulator; each unlocks the next.
   (4 of 7 eventually make it home — only the true free-returns on Apollo's schedule), and
   **temporary minimoons** captured and released by lunar flybys (à la 2006 RH120 / 2020 CD3),
   with green **capture halos**, a to-scale dashed **Hill-sphere ring**, and auto-zoom.
-- **Module 7 — Observability** (complete): how we actually find & track objects — **radar**
+- **Module 7 — Observability** (complete): how we actually **see satellites** — **radar**
   (range⁴ law, gain-vs-integration, pulse SNR ∝ √N), **optical** reflected-sunlight phases &
   light curves, **RA/DEC** on a 3-D celestial sphere, a **tag-&-fit initial-orbit-determination**
   tool, parallax, and the orbitology → characterization → intent ladder.
@@ -412,6 +412,32 @@ locally, as above.)
 - `public/quiz.js` — tutorial registry
 - `docs/` — `INSTRUCTOR_GUIDE.md`, `SECURITY.md` (audit log), `CHANGELOG.md`, `TESTING.md`, `MODULE_NOTES.md`
 
+### New in v5.3
+
+- **Module 7 radar rebuilt** — a true A-scope: sweep dot with a live ms clock, echoes land as
+  Gaussian bumps IN a single noisy receiver trace, averaging visibly calms the grass (noise ∝ 1/N),
+  honest 69 dB LEO→GEO spread, linear-power view, gain knob removed. Radar is now ONE worksheet
+  exercise; worksheet 7's parts follow the simulator's tab order.
+- **Module 8 window fixes** — camera can no longer flip upside down (closed-form up vector), Earth
+  honestly leaves the frame after the transfer burn (limb-chasing is Moon-only), 1.5× display
+  exposure for the dark Blue Marble, ☀ sun indicator + north tag, sun-direction vector on the NAV
+  maps, speed dial replaced by a text call-out, Δv gauge relocated.
+- **Module 2** — satellite brightness = phase × eclipse (Moon's-phases physics, in lockstep with
+  Earth's terminator; stars unaffected); Earth-fixed ground-track trail; Sun no longer spawns
+  inside the GEO belt.
+- **Module 5** — per-scale default clocks (frames visibly move from the first second), warp ladder
+  repaired, frame choice persists across zoom scales.
+- **Module 6** — blank-screen regression fixed (syncSun), L1 force-balance scenario gets a real
+  close-up camera + labels, checkbox captions no longer shred into columns.
+- **Module 3** — perigee-below-surface warning is now unmissable. **Module 4** tightened (24 → 22
+  exercises, five read-and-nod tasks lightened). **Module 1** — first-run controls card fits small
+  screens; all six 3-D sims use viewport-aware side columns (Windows 125–150 % scaling).
+- **Content-sync guard** — `workbooks/active/` (what the server serves) had drifted from `public/`
+  since v3.0; synced, and the test suite now fails on any drift.
+- **New test suites** — sim-boot (all 8 sims run against the real three.js; asserts pixels are
+  actually drawn and console.error stays silent), worksheet-boot (strict DOM), tut5 lead-angle
+  (derived from the sim's own constants), tut7 radar physics. 100+ new checks.
+
 ### New in v5.2
 
 ```
@@ -451,7 +477,7 @@ bash tools/fetch-vendor.sh --check      # what is vendored; whether anything can
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v5.2: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v5.3: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. From **v5.0** the client is also verified to
 make **no outbound network calls** (`test/no-external-calls.test.js`, static + runtime), and the

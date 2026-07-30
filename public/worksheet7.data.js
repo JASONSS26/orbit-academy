@@ -1,5 +1,5 @@
 /* Worksheet 7 — Observability.
-   The Module 7 "how do we actually know where anything is?" space-domain-awareness module: active radar (range^4),
+   The Module 7 "how we actually see satellites" space-domain-awareness module: active radar (range^4),
    optical reflected-sunlight (the headlight analogy), thermal IR, cooperative vs. uncooperative,
    custody & cadence, maneuver detection, orbitology vs. characterization vs. intent, proximity ops,
    radar range/range-rate, optical RA/DEC angles, parallax for range, and surveys vs. pointed custody.
@@ -34,90 +34,42 @@ const WORKSHEET = {
   ],
 
   parts: [
-    { title:'PART A · Active radar & the range⁴ law', blurb:'How radar finds things — and why distance is brutal.', tasks:['a1','a2','a3','a4'] },
-    { title:'PART B · Optical: seeing by reflected sunlight', blurb:'The headlight analogy, shadow, and thermal IR.', tasks:['b1','b2','b3'] },
-    { title:'PART C · What each sensor measures', blurb:'Radar range/range-rate vs. optical angles (RA/DEC), and parallax for range.', tasks:['c1','c2','c3','c4','c5','c6','c7'] },
-    { title:'PART D · Measuring angles', blurb:'Arcminutes, arcseconds, and the arcsec-vs-second trap.', tasks:['d1','d2'] },
-    { title:'PART E · Custody, maneuvers & intent', blurb:'Cadence, maneuver detection, and the orbitology→characterization→intent ladder.', tasks:['e1','e2','e3','e4'] },
+    /* Ordered to MATCH THE SIMULATOR'S TAB ORDER (owner request): illumination → RA/DEC →
+       take a picture → fit an orbit → radar — so a student can walk the tabs left to right with
+       the worksheet alongside. Custody/intent closes the module (it has no sim scene; it is the
+       synthesis). Task ids are NOT renamed to match the new letters: progress is stored per id,
+       and renaming ids would orphan every student's saved work. */
+    { title:'PART A · Illumination: seeing by reflected sunlight', blurb:'Why you can only see a satellite the way you see a bicycle at night — when something else lights it. (Sim scene: 🌒 GEO phases.)', tasks:['b1','b2','b3'] },
+    { title:'PART B · RA/DEC: pinning a direction on the sky', blurb:'Optical gives angles — two precise coordinates and nothing else. (Sim scene: 🌐 RA / DEC coordinates.)', tasks:['c2','d1','d2','c3'] },
+    { title:'PART C · Take a picture: streaks are data', blurb:'What a tracking telescope actually records, and what the ends of a streak mean. (Sim scene: 📷 Take a picture.)', tasks:['c6','c5','c4'] },
+    { title:'PART D · Fit an orbit from a handful of angles', blurb:'From tagged streak endpoints to a full orbit. (Sim scene: 🎯 Tag & fit.)', tasks:['c7'] },
+    { title:'PART E · Radar: later, fainter, dug out by averaging', blurb:'One exercise, three facts: echoes come back later, drastically fainter, and averaging digs them out. (Sim scene: 📡 Radar sim.)', tasks:['c1','a1'] },
+    { title:'PART F · Custody, maneuvers & intent', blurb:'Finding it once is the easy part — the synthesis of everything above.', tasks:['e1','e2','e3','e4'] },
   ],
 
   tasks: [
     // ---- PART A: radar & range^4 ----
-    { id:'a1', title:'Why radar echoes fade so fast',
+    { id:'a1', title:'Radar in one exercise: later, fainter, and dug out by averaging',
       teach:[
-        'A radar transmits a pulse of radio energy and listens for the tiny fraction that bounces back off a target. On the way <b>out</b>, the beam spreads over a growing sphere, so the power hitting the target falls as <b>1/range²</b>. The echo then spreads out on the way <b>back</b>, falling as <b>1/range²</b> again. Multiply the two: the received echo falls as <b>1/range⁴</b>.',
-        'That fourth power is savage. Doubling the range makes the echo <b>2⁴ = 16×</b> fainter. Ten times farther is <b>10,000×</b> fainter. This is the single most important fact about radar tracking of space objects.',
+        'A radar shouts a radio pulse and times the faint echo. The timing <b>is</b> the measurement: range = c·t/2. And because the pulse spreads on the way out (1/range²) and the echo spreads again on the way back (1/range²), received power falls as <b>1/range⁴</b> — double the distance, 16× fainter; GEO at ~53× LEO’s range returns 53⁴ ≈ <b>7.7 million×</b> weaker. That one law is why radar owns LEO, strains at GEO, and cedes cislunar space to optical.',
+        'Radar’s compensating strength: it is <b>active</b> — it brings its own illumination, so it works at night and on targets deep in Earth’s shadow, where a telescope (which needs reflected <i>sunlight</i>) goes blind.',
       ],
-      predict:'A radar comfortably tracks a satellite in LEO. You now point it at a satellite <b>10× farther away</b>. Guess: how much weaker is the returned echo — 10×, 100×, or 10,000×?',
-      do:'Reason it through: received power ∝ 1/range⁴. Compute the ratio for a 10× increase in range.',
-      observe:'the echo scales as 1/range⁴, so 10× the range is 10⁴ = 10,000× weaker. The out-and-back spreading each contribute a factor of range², and they multiply.',
+      predict:'You fire one pulse at three targets — LEO (800 km), MEO (20,000 km), GEO (42,164 km). Two predictions: which echo arrives back first, and roughly how much weaker is GEO’s than LEO’s — 53×, 53², or 53⁴?',
+      do:[
+        'Open the 📡 Radar sim scene and press <b>FIRE PULSE</b> once. Watch the sweep dot cross the scope carrying its clock — the x-axis is <b>time since the pulse was sent</b>. LEO’s bump appears almost at once (~5 ms); GEO’s bin isn’t reached until ~281 ms. Check the radar’s arithmetic: range = c·t/2 = (300,000 km/s × 0.281 s) ÷ 2 ≈ 42,000 km.',
+        'Now look at what landed: LEO towers over the trace, MEO is modest, and at GEO’s bin there is… <b>grass</b>. GEO’s echo is real but sits below the noise — a bump smaller than the wiggles it hides in. (Press <b>📏 linear power view</b> to feel the 7.7-million× ratio.)',
+        'Slide <b>📚 integrate N pulses</b> to several hundred and press <b>▶ START AVERAGING</b>. The radar fires a stream of pulses; the echo repeats in the same time bin and adds up while the random noise partly cancels, so the grass calms and sinks — SNR grows as <b>√N</b> — until GEO’s bump stands clear.',
+      ],
+      observe:'farther targets return <b>later</b> (time = 2·range/c) and <b>drastically fainter</b> (range⁴). No amplifier can rescue a buried echo — it lifts signal and noise by the same factor — but <b>averaging</b> can, because the echo adds coherently while noise cancels: √100 = 10× SNR for 100 pulses.',
       think:[
-        'Why does the beam spread on the way out AND on the way back — where do the two factors of range² each come from?',
-        'A LEO target is ~800 km away; a GEO target ~42,000 km. That’s ~53× farther. Roughly how much weaker is the GEO echo?',
-        'What could a radar designer do to fight the range⁴ law (bigger dish, more power, longer integration)?',
+        'Where does integration’s √N improvement come from — what adds up, and what cancels?',
+        'A satellite passes into Earth’s shadow. Which sensor loses it — radar or optical — and why?',
+        'Integration costs time staring at one target. What does that trade against with thousands of objects to track?',
       ],
       quiz:{ q:'A radar’s received echo power scales with range as…',
         opts:['1/range, falling off linearly as the target moves away','1/range², the way light spreads from a distant star','1/range⁴ — the trip out and the trip back each cost range²','Not at all — the echo strength is independent of range'],
-        a:2, why:'Correct — the pulse spreads as 1/range² going out and the echo spreads as 1/range² coming back; the two multiply to 1/range⁴. Double the range → 16× fainter.',
-        feedback:['Radar is far steeper than linear.','1/range² is one-way (like a star’s light, or a beacon that emits its own signal); a radar echo is two-way.','','It depends very strongly on range — as the fourth power.'] } },
-
-    { id:'a2', title:'LEO is easy, GEO is hard, xGEO is brutal',
-      teach:[
-        'Put numbers on the range⁴ law. A LEO object sits a few hundred to ~2,000 km away; GEO is ~36,000 km; cislunar/xGEO objects are hundreds of thousands of km out. Because echo ∝ 1/range⁴, each jump costs enormously.',
-        'From LEO (~800 km) to GEO (~42,164 km — the ranges the simulator’s 📡 Radar sim scene uses) the range grows ~53×, so the echo is ~53⁴ ≈ <b>7.7 million×</b> weaker. Out to the Moon (~384,000 km) it is another ~9× in range beyond GEO — another factor of ~7,000. This is why ground radar owns LEO, strains at GEO, and why cislunar surveillance leans heavily on <b>optical</b> instead.',
-      ],
-      predict:'Radar is the workhorse for LEO. Do you expect it to be the primary tool for tracking objects out near the Moon? Why or why not?',
-      do:'Compare the radar echo strength for a LEO target vs. a GEO target using range⁴, taking LEO ≈ 800 km and GEO ≈ 42,164 km, as in the simulator’s 📡 Radar sim scene.',
-      observe:'GEO is ~53× farther than LEO, and 53⁴ ≈ 7.7 million, so the GEO echo is millions of times weaker. Radar is fighting an almost impossible ratio at cislunar distances — which is why optical dominates far out.',
-      think:[
-        'Given the range⁴ law, why is cislunar space domain awareness so much harder than LEO tracking?',
-        'Optical brightness of a sunlit object falls only as ~1/range² (one-way) plus a size factor — why does that make optical relatively more attractive at large range than radar?',
-        'What kinds of targets would still justify a huge, expensive deep-space radar despite the penalty?',
-      ],
-      quiz:{ q:'Why does radar dominate LEO tracking but fade for cislunar/xGEO objects?',
-        opts:['Radio waves stop propagating altogether beyond the GEO belt','The range⁴ law makes far echoes millions of times weaker, so optical takes over','There are too few objects beyond GEO to justify the radar time','Objects at GEO absorb radar energy instead of reflecting it back'],
-        a:1, why:'Correct — the two-way range⁴ falloff makes far echoes vanishingly weak; beyond GEO, reflected-sunlight optical (which falls only ~1/range²) becomes the more practical tool.',
-        feedback:['Radio still works; it’s the echo strength that collapses.','','Cislunar space has plenty of objects — that’s the problem.','It’s geometric spreading, not absorption.'] } },
-
-    { id:'a3', title:'Radar brings its own light — day or night, shadow or sun',
-      teach:[
-        'Radar’s one great advantage over optical: it is <b>active</b>. It supplies its own illumination (the transmitted pulse), so it works in daylight, at night, and on objects deep in Earth’s shadow. It does not care whether the Sun is lighting the target.',
-        'The price is the range⁴ law and large, power-hungry hardware. Optical is <b>passive</b> — it just collects whatever sunlight the object happens to reflect — so it is cheap and scales to great range, but only works on <b>sunlit</b> targets against a <b>dark</b> sky.',
-      ],
-      predict:'A satellite passes into Earth’s shadow. Which sensor loses it — the radar or the optical telescope? Which keeps working?',
-      do:'Consider a target in full shadow at night. Ask which sensing method still returns a measurement.',
-      observe:'the optical telescope goes blind (no reflected sunlight), but the radar still gets an echo because it brought its own illumination. Radar’s independence from sunlight is its key strength.',
-      think:[
-        'Why can radar work in broad daylight while optical space-tracking generally cannot?',
-        'What is the trade the radar pays for that independence?',
-        'If an adversary wanted to hide from optical sensors, what geometry would they exploit — and would it help against radar?',
-      ],
-      quiz:{ q:'What is active radar’s key advantage over optical tracking?',
-        opts:['It is cheaper to build and takes up considerably less space','It supplies its own illumination, so it works at night and in Earth’s shadow','It measures angular position far more precisely than a telescope can','Its range is effectively unlimited, unlike an optical system’s'],
-        a:1, why:'Correct — radar is active (it brings its own signal), so sunlight is irrelevant; optical is passive and needs the target sunlit. Radar pays for this with the range⁴ law and big hardware.',
-        feedback:['Radar is usually the bigger, costlier system.','','Radar angles are actually crude; optical wins on angles.','The range⁴ law strictly limits radar’s reach.'] } },
-
-    { id:'a4', title:'Radar sim — gain lifts the noise too; only integration digs a target out',
-      teach:[
-        'Open the simulator’s <b>📡 Radar sim</b> scene. A ground radar fires a pulse that expands and fades as it spreads; each target bounces an echo back, and the <b>scope</b> paints a spike at its range. LEO’s spike towers over the green <b>noise floor</b>, but GEO’s — ~7.7 million× weaker by the range⁴ law — is buried in the grass.',
-        'Your first instinct is to crank the <b>🔊 receiver gain</b>. It fails: an amplifier boosts signal <b>and</b> noise together, so the ratio never improves — gain only decides what <b>saturates</b>. What works is <b>pulse integration</b>: fire many pulses and average them. The echo lands in the same range bin every time and adds up, while the random noise partly cancels — so the signal-to-noise ratio grows as <b>√(pulses integrated)</b>.',
-      ],
-      predict:'GEO’s echo sits below the noise floor. If you crank the receiver gain way up, will its spike climb out of the noise?',
-      do:[
-        'In the <b>📡 Radar sim</b> scene, press <b>📡 FIRE PULSE</b> and watch the scope: LEO stands tall, GEO is lost in the noise.',
-        'Drag the <b>🔊 receiver gain</b> slider all the way up. The noise floor rises right along with the spikes — GEO stays buried, and LEO just hits the red <b>saturation rail</b>.',
-        'Set the gain back near its start. Slide <b>📚 integrate N pulses</b> toward the top (N of several hundred) and press <b>▶ START AVERAGING</b>. Watch the noise floor sink, pulse by pulse, until GEO’s spike finally stands clear.',
-      ],
-      observe:'gain never rescues a buried echo — it lifts signal and noise by the same amount, so the signal-to-noise ratio is unchanged; it only moves the saturation point. Integration is different: the echo repeats in the same range bin and accumulates while the random noise partly cancels, so SNR climbs as √(pulses) and a faint target slowly emerges from the grass.',
-      think:[
-        'Why does raising the gain leave the signal-to-noise ratio exactly where it was?',
-        'Where does integration’s √N improvement come from — what adds up, and what cancels?',
-        'Integration costs time staring at one target. What does that trade against when you have thousands of objects to track?',
-      ],
-      quiz:{ q:'In the radar sim, GEO’s echo is buried below the noise floor. What actually pulls it out?',
-        opts:['Integrating many pulses — the echo adds in its bin while noise partly cancels','Turning the receiver gain up as far as it will go, amplifying the echo','Nothing at all — an echo below the noise floor is lost for good','Turning the gain down, so that less noise reaches the detector'],
-        a:0, why:'Correct — only integration (or more transmit power, a bigger dish, or a closer target) improves the signal-to-noise ratio: the echo repeats in the same range bin and accumulates while the noise partly cancels, so SNR climbs as √(pulses). Gain lifts signal and noise together and changes nothing.',
-        feedback:['','Gain amplifies signal AND noise by the same factor — GEO stays exactly as buried; only the saturation point moves.','It is recoverable: integrate enough pulses and it climbs clear of the grass.','Turning gain down lowers signal and noise together too — the ratio never changes.'] } },
+        a:2, why:'Correct — the pulse spreads as 1/range² going out and the echo spreads as 1/range² coming back; the two multiply to 1/range⁴. Double the range → 16× fainter, and GEO returns ~7.7 million× weaker than LEO.',
+        feedback:['Radar is far steeper than linear.','1/range² is one-way (like a star’s light); a radar echo is two-way.','','It depends very strongly on range — as the fourth power.'] } },
 
     // ---- PART B: optical, headlights, shadow, thermal IR ----
     { id:'b1', title:'The headlight analogy — you see reflected sunlight',

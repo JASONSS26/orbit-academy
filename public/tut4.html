@@ -10,7 +10,11 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
     font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
-  #app{display:grid;grid-template-columns:436px minmax(0,1fr) 383px;height:100vh;gap:8px;padding:8px}
+  /* Side columns yield to the viewport. Fixed-px columns pinned 700-900px of width to the panels
+     before the VISUALIZATION got a pixel — on a 1366px Windows laptop at 125-150% display scaling
+     the center canvas was left a slot a few hundred px wide ("panels are oversized"). clamp() keeps
+     the designed width on big monitors and hands space back to the stage on small ones. */
+  #app{display:grid;grid-template-columns:clamp(300px,23vw,436px) minmax(0,1fr) clamp(260px,19vw,383px);height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
   h2{margin:0 0 6px;font-size:24px;color:#fff}

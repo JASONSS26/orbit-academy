@@ -12,7 +12,11 @@
     font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
   /* 3-column layout: controls | visualization (~34%) | readout+tutor, filling the viewport */
   /* fixed side columns so the central visualization gets ALL remaining width */
-  #app{display:grid;grid-template-columns:423px minmax(0,1fr) 423px;
+  /* Side columns yield to the viewport. Fixed-px columns pinned 700-900px of width to the panels
+     before the VISUALIZATION got a pixel — on a 1366px Windows laptop at 125-150% display scaling
+     the center canvas was left a slot a few hundred px wide ("panels are oversized"). clamp() keeps
+     the designed width on big monitors and hands space back to the stage on small ones. */
+  #app{display:grid;grid-template-columns:clamp(290px,22vw,423px) minmax(0,1fr) clamp(290px,22vw,423px);
     height:100vh;gap:10px;padding:10px}
   #stage{position:relative;border:1px solid #16304e;border-radius:10px;overflow:hidden;background:#000407}
   #c{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -24,12 +28,19 @@
   #ctrlCard{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;
     background:rgba(3,7,14,.86);backdrop-filter:blur(3px)}
   #ctrlCard.show{display:flex}
-  #ctrlBox{width:min(92%,760px);background:linear-gradient(#0a1626,#060d18);border:1px solid #2b4a70;
-    border-radius:14px;padding:22px 26px;box-shadow:0 12px 60px rgba(0,0,0,.6)}
-  #ctrlBox h3{margin:0 0 4px;font-size:24px;color:#fff}
-  #ctrlBox .sub{color:var(--dim);font-size:16px;margin-bottom:14px}
-  .ctrlRow{display:grid;grid-template-columns:190px 1fr;gap:10px;align-items:baseline;
-    padding:9px 0;border-top:1px solid #16304e;font-size:17px;line-height:1.5}
+  /* The first-run card must FIT THE STAGE it covers. It used to be a fixed 760px box with fixed
+     16-24px fonts and no height limit: on a 1366x768 Windows laptop (worse at 125-150% display
+     scaling) it was larger than the visualizer itself and the "Got it" button could sit off-screen
+     — a modal you cannot dismiss over a sim you cannot see. Everything below is clamp()ed to the
+     viewport, and the box scrolls internally rather than overflowing the stage. */
+  #ctrlBox{width:min(92%,700px);max-height:min(88%,640px);overflow:auto;
+    background:linear-gradient(#0a1626,#060d18);border:1px solid #2b4a70;
+    border-radius:14px;padding:clamp(10px,2vh,22px) clamp(12px,2vw,26px);box-shadow:0 12px 60px rgba(0,0,0,.6)}
+  #ctrlBox h3{margin:0 0 4px;font-size:clamp(17px,2.6vh,24px);color:#fff}
+  #ctrlBox .sub{color:var(--dim);font-size:clamp(13px,1.9vh,16px);margin-bottom:10px}
+  .ctrlRow{display:grid;grid-template-columns:minmax(96px,160px) 1fr;gap:10px;align-items:baseline;
+    padding:clamp(4px,1vh,9px) 0;border-top:1px solid #16304e;
+    font-size:clamp(13px,1.9vh,17px);line-height:1.45}
   .ctrlRow b{color:var(--accent)}
   .ctrlRow span{color:#cfe3ff}
   #ctrlBox button{margin-top:16px;width:100%;background:#1e5c33;border:1px solid #39d353;color:#fff;
@@ -133,7 +144,7 @@
   </div>
   <div id="tutor" class="panel">
     <div class="hd">🎓 Orbit tutor</div>
-    <div id="tutorText">Welcome! Try this: set the speed slider to <b>circular</b> and inject — you get a circle. Then inject again a bit slower, and a bit faster. Watch the shape change.</div>
+    <div id="tutorText">Welcome! Try this: set the speed slider to <b>circular</b> and inject — you get a circle. Then inject again a bit slower, and a bit faster. Watch the shape change.<br><br>One thing to know before anything else: the <b>📋 Back to worksheet</b> button at the <b>top-left</b> hops you back to the written exercises. Every simulator in this course has that same button in that same spot — sim and worksheet are meant to be used side by side.</div>
   </div>
   <div class="panel" style="font-size:17px;color:var(--dim)">
     <b style="color:var(--fg)">The big idea:</b> where you release + how fast sets the whole ellipse. Slower than circular → release point = <b>apogee</b>. Faster → <b>perigee</b>. Faster still → escape (≈10.7 km/s from 600 km).

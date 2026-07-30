@@ -4,6 +4,16 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v5.3 — audit result: **PASS**
+
+No change to the attack surface: v5.3 is a client-side release (simulator rendering, worksheet
+content, layout, tests). No new endpoints, no new inputs, no new file reads, no auth changes.
+`server.js` diff for this release is the version header only. Full checklist re-run 2026-07-30:
+path traversal, unauthenticated access, privilege escalation, session forgery, prerequisite
+bypass, input validation, DoS body-size, XSS (all new worksheet strings pass through the same
+data-file pipeline and `esc()` discipline), secrets in repo (`academy_data.json` gitignored;
+verified). Static + runtime network monitoring unchanged: zero outbound calls.
+
 ## v5.2 — audit result: **PASS**
 
 New surface this cycle: three instructor-only endpoints (`/api/user/delete`, `/api/user/reset`,

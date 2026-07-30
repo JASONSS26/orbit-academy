@@ -10,7 +10,7 @@ const WORKSHEET = {
     'Why <b>tangential (prograde/retrograde) burns</b> reshape an orbit efficiently while <b>radial burns</b> mostly waste fuel — including the paradox that pushing "up" can drop you into the Earth.',
     'How every big orbit change is really a <b>two-step maneuver</b> — raise your apogee, then match circular speed — as in a <b>LEO→GTO→GEO</b> transfer.',
     'What <b>escape velocity</b> is (~11.2 km/s at the surface) and how a fast-enough burn opens a closed orbit into an <b>unbound</b> path.',
-    'How <b>atmospheric drag</b> decays a low orbit toward re-entry — and the surprise that drag makes a satellite <b>speed up</b>.',
+    'How <b>atmospheric drag</b> decays a low orbit toward re-entry — and the surprise that a satellite steadily <i>losing</i> energy to drag ends up moving <b>faster</b>.',
     'What a <b>perturbation</b> is, and why continuous forces (drag, J2, sunlight, ion thrust) make orbits — and TLEs — <b>go stale</b>.',
   ],
   tutorial: [
@@ -22,7 +22,7 @@ const WORKSHEET = {
     {figure:'<svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg"><rect width="300" height="180" fill="#eef4fb"/><circle cx="110" cy="90" r="22" fill="#2b6fb5"/><circle cx="110" cy="90" r="60" fill="none" stroke="#1a4c8b" stroke-width="1.5" stroke-dasharray="4 3"/><ellipse cx="150" cy="90" rx="100" ry="60" fill="none" stroke="#1a4c8b" stroke-width="2"/><circle cx="110" cy="150" r="4" fill="#1a4c8b"/><path d="M110 150 l26 0" stroke="#1a4c8b" stroke-width="2" marker-end="url(#ar)"/><defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="#1a4c8b"/></marker></defs><circle cx="250" cy="90" r="4" fill="#1a4c8b"/><text x="120" y="168" font-size="10" fill="#1a4c8b">prograde burn</text><text x="205" y="86" font-size="10" fill="#1a4c8b">new apogee</text></svg>', caption:'A prograde burn (arrow) leaves your burn point as the low point and lifts the far side into a taller ellipse — a higher apogee.'},
     {h:'Big moves take two steps'},
     'To reach a much higher orbit you (1) burn <b>prograde</b> to raise your apogee out to the target distance, then (2) at that apogee, burn again to <b>match the circular speed</b> there. That’s the LEO→GTO→GEO transfer. Burn hard enough (about <b>11.2 km/s</b> from the surface, less from orbit) and you reach <b>escape velocity</b>: the orbit opens up and you never come back.',
-    'Finally, in low orbits the thin upper air causes <b>drag</b>, shrinking the orbit until re-entry (~7.8 km/s, about 17,500 mph). The twist: drag drops you to a lower, <b>faster</b> orbit — so friction actually speeds you up. Because drag, sunlight, and Earth’s bulge act continuously, a satellite’s orbit is always drifting — which is why a TLE snapshot goes stale.',
+    'Finally, in low orbits the thin upper air causes <b>drag</b>, shrinking the orbit until re-entry (~7.8 km/s, about 17,500 mph). The twist — and it is worth stating carefully, because the short version is simply wrong: <b>drag never pushes a satellite along</b>. It only ever takes energy away. But losing energy makes the orbit <i>smaller</i>, and a smaller orbit demands a <i>higher</i> speed, so the satellite ends up moving faster while being slowed the whole way down. Because drag, sunlight, and Earth’s bulge act continuously, a satellite’s orbit is always drifting — which is why a TLE snapshot goes stale.',
   ],
 
   // The perturbations reference table (reusing the worksheet's `elements` renderer).
@@ -55,7 +55,7 @@ const WORKSHEET = {
   parts: [
     { title:'PART A · Why prediction breaks down', blurb:'The limits of the tidy six-number picture, and the two kinds of engine.', tasks:['a1','a2'] },
     { title:'PART B · Delta-v: the currency of maneuvers', blurb:'Every orbit change costs a change in speed. Learn to spend it wisely.', tasks:['b1','b2','b3','b4'] },
-    { title:'PART C · Get from LEO to GEO — the challenge', blurb:'First try it your own way and tally the fuel. Then discover the efficient two-step recipe.', tasks:['c0a','c0b','c1','c2','c3'] },
+    { title:'PART C · Get from LEO to GEO — the challenge', blurb:'First try it your own way and tally the fuel. Then discover the efficient two-step recipe.', tasks:['c0a','c0b','c2'] },
     { title:'PART D · Escape velocity, unbound orbits & infall', blurb:'Burn hard enough and you never come back; cancel your sideways speed and you fall straight in.', tasks:['x1','x2','x4','x3'] },
     { title:'PART E · Atmospheric drag & disposal', blurb:'The one perturbation that ends missions — and can be used to dispose of them.', tasks:['d1','d2','d3'] },
     { title:'PART F · Radiation pressure, HAMR & solar sails', blurb:'The photon wind, and why some objects are nearly impossible to predict.', tasks:['e1','e2'] },
@@ -121,9 +121,8 @@ const WORKSHEET = {
         'There are two very different ways to push a spacecraft, and the difference decides how predictable it is. A <b>chemical thruster</b> gives a short, hard kick — a burn lasting seconds or minutes — and then the engine is off. Before and after that kick, the satellite simply <b>coasts on gravity alone</b>, tracing a clean, predictable ellipse. We call such a brief, powerful shove an <b>impulsive</b> burn.',
         'An <b>electric (ion) thruster</b> works the opposite way. It sips electricity from solar panels and puts out a whisper of thrust — but it keeps pushing for <i>days or weeks without stopping</i>. That’s wonderfully fuel-efficient, but it means the orbit is <b>always changing</b>: there’s never a long stretch of pure coasting to lock a prediction onto. A non-gravity force is acting the entire time.',
         'So a big chemical satellite way out in high orbit is easy to forecast — long, quiet coasts between rare burns. A continuously-thrusting ion craft like a <b>Starlink</b> is genuinely hard to forecast, not because it’s hiding, but because it never holds still on one orbit.',
+        'The point: a chemical burn is brief — the satellite coasts predictably before and after. An ion thruster pushes the whole time, so the orbit is never on a single fixed ellipse.',
       ],
-      do:'Compare the two engines described in the intro and the perturbations table. Picture the difference as motion: a chemical burn is one sharp step from one orbit to another; an ion burn is a slow, endless drift.',
-      observe:'a chemical burn is brief — the satellite coasts predictably before and after. An ion thruster pushes the whole time, so the orbit is never on a single fixed ellipse.',
       think:[
         'Between two chemical burns, what is the satellite doing — and why does that make it easy to predict?',
         'Why does an efficiency win (the gentle ion thruster) come with a prediction cost?',
@@ -137,7 +136,7 @@ const WORKSHEET = {
     // ---- PART B: delta-v, tangential vs radial, kill-tangential ----
     { id:'b1', title:'Delta-v and prograde/retrograde burns',
       teach:[
-        'To change an orbit, you fire a thruster — and the thing you’re really spending is <b>delta-v</b>, a plain change in speed measured in m/s or km/s. Think of it as the <b>cash in the satellite’s wallet</b>: it launches with a fixed tank of delta-v, every maneuver has a price, you pay it once, and you can never earn it back. When the delta-v runs out, the mission is over, even if every other system still works.',
+        'To change an orbit, you fire a thruster, and what you physically spend is <b>propellant</b> — the tank really does empty. Engineers nevertheless budget a mission in <b>delta-v</b> (Δv), the change in speed that propellant buys, measured in m/s or km/s. The reason is that the Δv a maneuver costs is a property of the <i>maneuver</i>, the same for a cubesat and a space station, while the propellant it takes depends on how heavy your spacecraft is and how good its engine is. Think of it as the <b>cash in the satellite’s wallet</b>: it launches with a fixed tank of delta-v, every maneuver has a price, you pay it once, and you can never earn it back. When the delta-v runs out, the mission is over, even if every other system still works.',
         'Where you point that burn matters. A <b>prograde</b> burn fires along your direction of travel and <b>speeds you up</b>; a <b>retrograde</b> burn fires backward and <b>slows you down</b>. Here’s the part that trips people up: the burn doesn’t move the point you’re standing at. Instead, it changes the <b>opposite side</b> of the orbit. Speed up, and the far side climbs higher; slow down, and the far side drops.',
       ],
       predict:'Before you fire: you’re in a circular orbit and you burn <b>prograde</b> (speed up) at one point. Do you think the whole ring grows evenly, or does one particular side of the orbit move? If one side moves, which one — the point you burned at, or the far side?',
@@ -243,6 +242,7 @@ const WORKSHEET = {
         'Here’s the efficient recipe the pros use — the <b>two-step transfer</b>. Do it in two well-aimed burns, both <b>along your direction of travel</b>:',
         '<b>Step 1 — raise your apogee to GEO.</b> One prograde burn at your low orbit of about <b>2,400 m/s</b> stretches your circular orbit into a tall ellipse whose far point (apogee) just reaches GEO altitude. That ellipse is the <b>Geo-Transfer Orbit (GTO)</b>. Now coast — for free — all the way out to apogee. <b>Step 2 — circularize.</b> Way out at apogee you’re moving too slowly to hold a circle there (~1.6 km/s vs. the ~3.1 km/s a GEO circle needs), so a second prograde burn of about <b>1,460 m/s</b> speeds you up and rounds the orbit off at GEO.',
         'Total: about <b>3,900 m/s</b>. Compare that to whatever you spent flailing in the last exercise — this is almost always far less.',
+        'And here is why this recipe is worth memorizing: it is <b>universal</b>. Raise your high point to where you want it, then match the circular speed once you arrive — LEO→GEO, a small station-keeping raise, even a shot out to the Moon. The scale changes; the two steps never do.',
       ],
       predict:'The efficient transfer takes two burns. Where along the orbit do you think each burn should happen — and which direction should each point?',
       do:[
@@ -256,34 +256,13 @@ const WORKSHEET = {
         'Why is it worth coasting all the way to apogee before the second burn, instead of burning early?',
         'Both burns point the same way (prograde). Why is neither one radial?',
       ],
-      quiz:{ q:'In the efficient LEO→GEO transfer, what are the two burns?',
-        opts:['A radial-out burn to climb, then a radial-in burn to settle the new orbit','A prograde burn low down to raise apogee to GEO, then a second at apogee','A retrograde burn to drop lower, then a long coast outward to the belt','One large burn aimed straight at GEO, held until the altitude matches up'],
-        a:1, why:'Correct — burn 1 (prograde, at perigee) lifts apogee out to GEO; coast; burn 2 (prograde, at apogee) circularizes. About 2,400 + 1,460 ≈ 3,900 m/s total.',
-        feedback:['Radial burns are the wasteful kind you just tested.','','A retrograde burn would lower your orbit.','A single burn can’t both raise apogee AND circularize — it takes two, at opposite ends.'] } },
-
-    // ---- PART C (cont.): the two-step, formalized ----
-    { id:'c1', title:'The two-step recipe: raise apogee, then match circular speed',
-      teach:[
-        'Now put the burns to work on a real job: moving from a low orbit all the way up to GEO. You can’t do it in one shove — and you already know why. A single prograde burn at LEO just lifts the <i>far side</i> of the orbit; the point you burned at stays low. So one burn can’t give you a nice round high orbit. It takes <b>two steps</b>.',
-        '<b>Step 1 — get to the apogee you want.</b> Fire prograde at LEO to stretch your orbit into a tall ellipse whose far side (apogee) reaches all the way out to GEO altitude. You’re now on a <b>transfer orbit</b>: high on one end, still low on the other. <b>Step 2 — match the circular speed there.</b> Coast up to that apogee and fire prograde <i>again</i>, this time to raise the low side up to meet it. That rounds the ellipse off into a circle at GEO.',
-        'This same two-step recipe — raise your high point, then circularize at it — works for <i>any</i> orbit-raising move, not just LEO→GEO. It’s the fundamental pattern. (The whole LEO→GEO trip costs about <b>3.9 km/s</b> of your precious Δv.)',
-      ],
-      predict:'Before you burn: you’re at 400 km and you want a round orbit way out at GEO. Do you think one big burn can do it, or will it take two? If the first burn stretches your orbit out to GEO, what shape do you predict the orbit will be — a circle, or a lopsided ellipse that falls back to 400 km?',
-      do:[
-        'Use the <b>GTO transfer</b> scenario (starts at 400 km LEO). <b>Step 1 — get to the apogee you want:</b> apply a <b>prograde</b> burn (~2,400 m/s) to stretch your orbit until apogee reaches the dashed GEO ring.',
-        '<b>Step 2 — match the circular speed there:</b> coast (speed up time) to apogee, then apply a second <b>prograde</b> burn (~1,460 m/s) until the orbit circularizes — watch for the “✓ Circular GEO reached” banner.',
-        'Try stopping after step 1 and letting it coast a full lap first — watch it fall right back to 400 km — so you can feel why the second burn is needed.',
-      ],
-      observe:'this is the universal recipe for a big orbit change: (1) burn to put your apogee at the target distance, then (2) at that apogee, change your speed to match the circular speed there. The first burn stretches LEO into the tall transfer ellipse; the second rounds it off at GEO. LEO→GEO costs ~3.9 km/s total.',
-      think:[
-        'After step 1 alone, what happens if you just coast — does the satellite stay at GEO, or fall back to 400 km? Why?',
-        'Why does the circularizing burn have to happen up at apogee, rather than back down at LEO?',
-        'Both burns were prograde — so why did the first one stretch the orbit while the second one rounded it out?',
-      ],
       quiz:{ q:'In a GTO transfer, why is the second (circularizing) burn done at apogee — the highest point?',
         opts:['Because thrusters only reach full efficiency far from Earth’s atmosphere','Because apogee already sits at GEO, so a burn there lifts perigee to match it','Because the satellite moves fastest at apogee, making the burn most effective','Because gravity is strongest there, and burning against it saves the most fuel'],
         a:1, why:'Correct — the transfer ellipse already reaches GEO at apogee; you just need to raise the perigee up to that same altitude, so you add speed at apogee to circularize there.',
         feedback:['Thrusters work anywhere; the choice of apogee is geometric.','','The satellite moves slowest at apogee, not fastest.','It’s about geometry (raising perigee to apogee), not gravity strength.'] } },
+
+    // ---- PART C (cont.): the two-step, formalized ----
+
     { id:'c2', title:'Which burn sequence actually reaches circular GEO?',
       teach:[
         'You’ve got the recipe — now let’s pressure-test it. Below are four plausible-sounding plans for getting from a circular 400 km LEO to a circular GEO. Only one actually works, and the wrong three each fail in an instructive way you can now predict.',
@@ -309,25 +288,7 @@ const WORKSHEET = {
         a:1, why:'Correct — Sequence B is the two-burn Hohmann transfer. A alone leaves you on an ellipse that falls right back to LEO perigee (apogee at GEO, but perigee still 400 km). C wastes energy and barely raises the orbit. D’s retrograde apogee burn lowers perigee further — the opposite of circularizing.',
         feedback:['A leaves perigee at 400 km — you’d fall back to LEO twice per orbit, not circular GEO.','',
                   'A radial burn does little work and won’t circularize you at GEO.','A retrograde burn at apogee lowers perigee — you need prograde to raise it.'] } },
-    { id:'c3', title:'The two-step idea, in one sentence',
-      teach:[
-        'Strip away the specific numbers and the whole macro-maneuver collapses into one clean sentence: <b>raise your high point out to where you want it, then, once you’re there, change your speed to match the circle at that distance.</b> That’s it. Step one sets <i>how far out</i> you go; step two sets the <i>shape</i> once you arrive.',
-        'What makes this worth memorizing is how universal it is. Going from LEO to GEO? Two steps. Raising a satellite a few hundred kilometers for station-keeping? Same two steps, smaller burns. Sending a probe all the way out to the Moon? Still the same recipe — raise apogee to the Moon’s distance, then manage your speed on arrival. The scale changes; the logic never does.',
-      ],
-      do:'Step back from the specific numbers. Whether you’re going LEO→GEO, or raising any orbit to a new circular altitude, restate the procedure to yourself as the same two steps — then imagine applying it to a totally different distance (say, out to the Moon) and check that it still holds.',
-      observe:'step 1 sets <i>how far out</i> your high point is; step 2, done at that high point, sets the <i>shape</i> — matching circular speed turns the transfer ellipse into a circle.',
-      think:[
-        'Can you say the whole maneuver in one sentence, without any numbers?',
-        'Which step controls the <i>distance</i> you reach, and which controls the <i>shape</i> of the final orbit?',
-        'Why does the exact same recipe work whether the target is 300 km higher or all the way at the Moon?',
-      ],
-      quiz:{ q:'What are the two steps of a standard orbit-raising (macro) maneuver?',
-        opts:['Point at the target altitude, then thrust continuously until you arrive there','Burn to raise apogee to the distance you want, then at apogee match the speed there','Kill all of your orbital speed, then fall to the new altitude and circularize','Burn radially outward once, then coast and let gravity round the orbit off'],
-        a:1, why:'Correct — get to the apogee you want, then at that apogee change your velocity to the local circular speed. Step 1 sets the distance; step 2 circularizes. It’s the same recipe for any Hohmann-type transfer, including all the way out to the Moon.',
-        feedback:['Impulsive transfers are two brief burns with a long coast between, not continuous thrust.','',
-                  'Killing your speed makes you fall in, not transfer to a higher orbit.','A radial burn is inefficient and won’t place you in a new circular orbit.'] } },
 
-    // ---- PART D: escape velocity, unbound orbits, infall ----
     { id:'x1', title:'Escape velocity',
       teach:[
         'So far every burn has left you <b>bound</b> — going around and around on a closed loop, always coming back. But there’s a threshold. Push your speed high enough and you gain more energy than Earth’s gravity can ever claw back, and you coast away for good. That threshold speed is <b>escape velocity</b>.',
@@ -447,10 +408,9 @@ const WORKSHEET = {
       teach:[
         'Every satellite eventually dies, and leaving a dead one in a busy orbit is a collision hazard for everyone else. So end-of-life <b>disposal</b> is part of the plan — and the smart way to do it depends entirely on where the satellite lives, because it comes down to Δv economics.',
         'For a satellite in <b>LEO</b>, disposal is cheap. A small <b>retrograde</b> burn dips your perigee down into the thicker atmosphere, and from there drag does all the rest of the work for free — it drags you down to burn up on re-entry. For a satellite way out at <b>GEO</b>, there’s no useful air to help, and deorbiting all the way to Earth would cost a prohibitive ~1.5 km/s of Δv you don’t have to spare. So GEO satellites do the opposite: a tiny (~11 m/s) prograde nudge lifts them into a <b>“graveyard” orbit</b> just above the belt, safely out of everyone’s way.',
+        'The point: dropping out of LEO takes little Δv — drag does the rest. Dropping from GEO all the way down would take ~1.5 km/s, so instead GEO satellites make a tiny (~11 m/s) boost to a “graveyard” orbit above the belt.',
       ],
       predict:'Before you reason it out: a dead LEO satellite and a dead GEO satellite both need disposing of. Do you think you’d get rid of them the same way — and if not, which one is cheap to drop out of the sky and which one is cheaper to push <i>up</i> and away?',
-      do:'Consider end-of-life disposal. For a LEO satellite, picture a small retrograde burn lowering perigee into the atmosphere so drag finishes the job. For a GEO satellite, weigh the ~1.5 km/s to deorbit against a ~11 m/s nudge to a graveyard orbit, and decide which makes sense.',
-      observe:'dropping out of LEO takes little Δv — drag does the rest. Dropping from GEO all the way down would take ~1.5 km/s, so instead GEO satellites make a tiny (~11 m/s) boost to a “graveyard” orbit above the belt.',
       think:[
         'Why is drag a disposal <i>helper</i> in LEO but no help at all at GEO?',
         'Deorbiting from GEO costs ~1.5 km/s but a graveyard boost costs only ~11 m/s — why is “up and away” the sensible choice there?',
@@ -486,10 +446,9 @@ const WORKSHEET = {
       teach:[
         'Now take that area-to-mass idea to its extreme. Picture the flimsiest junk in orbit: a scrap of foil, a torn thermal blanket, a floppy “trash-bag” of debris. These are <b>HAMR</b> objects — High Area-to-Mass Ratio — and sunlight blows them around like leaves in a breeze.',
         'That makes them a nightmare to track, and for a subtle reason. It’s not just that the push is strong; it’s that a floppy, <b>tumbling</b> object keeps turning different amounts of area toward the Sun. So the force on it is constantly changing in ways that are nearly impossible to model — its orbit wanders unpredictably. The flip side is beautiful: harness that same steady photon push on purpose, with a big reflective sheet, and you get a <b>solar sail</b> — a spacecraft that “sails” on sunlight alone, carrying no propellant at all.',
+        'The point: a HAMR object’s trouble isn’t just a big push — it’s that its tumbling, changing area makes that push vary unpredictably, so its future orbit is hard to pin down.',
       ],
-      do:'Consider extreme high-area, low-mass objects: shredded insulation, foil, or “trash-bag” debris tumbling in orbit. Picture how the force on them changes as they turn — then picture the same push used deliberately by a broad, flat solar sail.',
       body:'<p><b>HAMR</b> = <b>High Area-to-Mass Ratio</b> objects (bits of foil, thermal blankets, non-rigid “trash bags”). Radiation pressure blows them around like leaves in a wind. Worse, because they’re <b>flimsy and tumbling, their exposed area keeps changing</b>, so the force on them changes unpredictably — making their orbits notoriously hard to forecast. The very same photon-pressure force, harnessed on purpose with a large reflective sheet, is the principle behind a <b>solar sail</b> — a spacecraft that “sails” on sunlight with no propellant at all.</p>',
-      observe:'a HAMR object’s trouble isn’t just a big push — it’s that its tumbling, changing area makes that push vary unpredictably, so its future orbit is hard to pin down.',
       think:[
         'Why is a <i>tumbling</i> scrap of foil even harder to predict than a rigid one with the same area-to-mass?',
         'If the push varied predictably, would the orbit be so hard to forecast? What’s the real culprit?',
@@ -546,11 +505,10 @@ const WORKSHEET = {
       teach:[
         'Here’s where this whole module lands. You’ve now seen a long list of forces — drag, J2, radiation pressure, thruster burns — that all keep nudging an orbit off its ideal ellipse. The practical consequence is blunt: a set of orbital elements is only good for a while. It goes stale. So tracking a satellite can’t be a one-and-done measurement.',
         'It has to be an <b>ongoing job</b>. Operators re-observe an object again and again, updating its elements each time to keep pace with the drift. Maintaining that unbroken chain of “we still know which object this is and where it is right now” is called keeping <b>custody</b>. Break the chain — wait too long between looks, or mix up two objects that passed close together — and you may lose custody and have to <b>re-acquire</b>: search a patch of sky, find the object again, and sort out which track is which. Doing this across everything in orbit is a core task of <b>Space Domain Awareness (SDA)</b>.',
+        'The point: custody isn’t a fact you file away once — it’s a chain of fresh observations you have to keep renewing as the orbit drifts.',
       ],
-      do:'Put the pieces together: perturbations make orbits drift, so a set of elements is only good for a while. Read the note, then think through what has to happen, over and over, to keep knowing where an object is.',
       body:'<p>Tracking a satellite isn’t a one-time measurement — it’s an ongoing job. Because the orbit slowly drifts (drag, J2, radiation pressure, maneuvers), an operator has to <b>re-observe the object again and again</b> and update its elements. Keeping an unbroken chain of “we still know which object this is and where it is” is called maintaining <b>custody</b>.</p>'+
            '<p>Lose custody — go too long without an observation, or confuse two objects that passed close together — and you may have to <b>re-acquire</b> the object: search a patch of sky to find it and re-establish which track is which. This is a core task of <b>Space Domain Awareness (SDA)</b>.</p>',
-      observe:'custody isn’t a fact you file away once — it’s a chain of fresh observations you have to keep renewing as the orbit drifts.',
       think:[
         'Why can’t you just measure an orbit once, store the elements, and be done with it?',
         'What are two ways you might <i>lose</i> custody of an object?',
@@ -565,10 +523,9 @@ const WORKSHEET = {
       teach:[
         'A telescope or a radar can only stare at a <b>small patch of sky</b> at any one moment — think of peering through a soda straw. Meanwhile there are tens of thousands of objects up there to keep track of. You can’t sweep the whole sky hoping to stumble across the one you want; you’d almost always be pointed at emptiness.',
         'So observations are <b>targeted</b>. You take the object’s known elements, use them to predict exactly <i>where</i> in the sky it should appear and <i>when</i>, and then slew the sensor to that spot at that moment. A good prediction turns an impossible “search everywhere” into a simple “look right here, now.” And this is exactly why custody matters: the prediction is only as good as the elements it’s built from. Thanks to all the perturbations in this module, stale elements point the sensor at empty sky — you have to keep them fresh to keep hitting your target.',
+        'The point: you use the object’s known (and freshly updated) elements to predict where it should be, then point the sensor there at the right moment. A good orbit prediction turns “search the whole sky” into “look right here, now.”',
       ],
       predict:'Before you reason it out: a single telescope sees only a tiny sliver of sky, and there are tens of thousands of objects. Do you think it’s better to sweep the sky at random, or to predict where a specific object will be and point straight there? What would you need in order to do the latter?',
-      do:'Think about a sensor (a telescope or radar) that can only look at a small patch of sky at a time, and tens of thousands of objects to watch. Work out how it should decide where and when to point — and what information that decision depends on.',
-      observe:'you use the object’s known (and freshly updated) elements to predict where it should be, then point the sensor there at the right moment. A good orbit prediction turns “search the whole sky” into “look right here, now.”',
       think:[
         'Why is randomly sweeping the sky a hopeless way to find one particular object?',
         'What piece of information lets you point the sensor at the right place <i>and</i> the right time?',

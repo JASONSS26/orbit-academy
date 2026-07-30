@@ -24,7 +24,9 @@
     background:rgba(4,9,7,.82);box-shadow:0 0 20px rgba(0,0,0,.5)}
   /* NAV MFD sits left of the center thrust cluster (burnPad spans ~45–55%), so it is never obscured */
   #zNav{left:13.5%;top:61%;width:31%;height:19%}
-  #zFuel{left:66%;top:84%;width:15%;height:15%}
+  /* Δv gauge lives bottom-right, where the speed dial used to be (owner: "move delta-v gas
+     gauge over to that position"). Right-anchored to match #ils, which sits directly above it. */
+  #zFuel{right:1.5%;top:77%;width:15.5%;height:21%}
   /* --- burn control cluster (our own controls, styled to look backlit-cockpit) --- */
   #burnPad{position:absolute;left:50%;transform:translateX(-50%);bottom:1%;width:9.4%;height:31.5%;display:flex;flex-direction:column;gap:2.5%;
     background:rgba(6,10,18,.6);border:1px solid #2b3a52;border-radius:8px;padding:0.8% 1%}
@@ -225,6 +227,7 @@
 <button id="gatesBtn" onclick="toggleGates()">▦ GATES ON</button>
 <button id="trainBtn" onclick="startTraining()">🎮 TRAIN</button>
 <button id="modeToggle" onclick="toggleMode()">🗺 PLAN</button>
+<button id="sndToggle" onclick="toggleSound()" style="position:fixed;top:12px;right:392px;z-index:60;background:#123a5c;border:1px solid #2b5686;color:#cfe3ff;font-family:inherit;font-size:15px;padding:9px 12px;border-radius:8px;cursor:pointer" title="engine rumble on/off">🔊</button>
 
 <!-- ===================== END-OF-MISSION DEBRIEF (modal) ===================== -->
 <div id="debrief">
@@ -266,6 +269,8 @@
 <div id="planner">
   <div id="planWrap">
     <div id="planLeft">
+      <button onclick="(function(){var w=window.open('worksheet8.html','worksheet_t8');w&&w.focus();})()"
+        style="background:#1f4a7a;border:1px solid #2b5686;color:#fff;font-family:inherit;font-size:17px;padding:8px 14px;border-radius:7px;cursor:pointer;float:right;margin-left:14px">📋 Back to worksheet</button>
       <h2>🗺 Mission Planner — Flight Computer</h2>
       <p class="sub">Program your burns, watch the predicted path, iterate until the sim shows ✅ success. Then flip to <b>✈ FLY</b> and execute.</p>
       <canvas id="cPred"></canvas>
@@ -365,6 +370,15 @@ function fit(cv){ const r=cv.getBoundingClientRect(), d=Math.min(2,devicePixelRa
    data: URLs from winpix.js at the head of its chain — same-origin by definition, so readable from a
    file, from server.js, or from any static host — and never sets crossOrigin on a local source. */
 const earthTex=OA_TEX.image('earth'), moonTex=OA_TEX.image('moon');
+/* Display-exposure LUTs for the window raytracer — PER BODY, because the maps differ wildly:
+   the Blue Marble is radiometrically dark (oceans ~40-60/255) and needs a strong lift, while the
+   LRO lunar mosaic is already bright (~150/255 mean) — running it through the Earth curve clipped
+   the sunlit Moon to washed-out white ("moon is now washed-out saturated"). Earth gets gain 1.9 /
+   gamma 0.82; the Moon a whisper of contrast (gain 1.08 / gamma 0.95) that cannot saturate. */
+const EXPOSE_EARTH=new Uint8ClampedArray(256), EXPOSE_MOON=new Uint8ClampedArray(256);
+for(let i=0;i<256;i++){
+  EXPOSE_EARTH[i]=Math.round(255*Math.pow(Math.min(1,(i/255)*1.9 ),0.82));
+  EXPOSE_MOON[i] =Math.round(255*Math.pow(Math.min(1,(i/255)*1.08),0.95)); }
 
 /* =====================  WINDOW SCENE  ===================== */
 const winCv=$('cWin'); let winCtx=fit(winCv);
@@ -423,8 +437,18 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
      frame entirely. So pitch down just far enough to bring the limb into the bottom of the window
      (and no further), which keeps the forward sense wherever the body is large. */
   let pitch=PITCH;
-  { const vHalf=Math.atan(Math.tan(HFOV/2)/((winCv.width/winCv.height)||3));
-    const rho=Math.asin(Math.max(0,Math.min(0.999,(CB.R||F7.R_E)/rmag)));
+  /* Limb-chasing is for the MOON ONLY. This block pitches the boresight down as the primary body
+     shrinks, keeping its limb pinned inside the bottom of the frame — indispensable on lunar
+     arrival, where the Moon's small disc sits ~77° off a nose-forward boresight and would never be
+     seen at all. Applied to EARTH it faked the whole departure: the camera silently rotated up to
+     72° nose-down to keep Earth in view, so Earth never dropped out of the window on the climb.
+     The owner called it: after the first burn Earth should sink out of frame, and from GEO you
+     simply don't see Earth out the FRONT window (nadir is 90° off the velocity; the disc is ±8.7°).
+     With the fixed pitch the geometry now tells the truth — including the subtle drop-then-rise of
+     the horizon direction from the flight-path angle as you climb and then flatten out at apogee. */
+  if(CB.name==='Moon'){
+    const vHalf=Math.atan(Math.tan(HFOV/2)/((winCv.width/winCv.height)||3));
+    const rho=Math.asin(Math.max(0,Math.min(0.999,(CB.R||F7.R_M)/rmag)));
     const need=(Math.PI/2-rho-vHalf)+0.45*vHalf;      // limb a little inside the bottom edge
     if(need>pitch) pitch=Math.min(1.25, need); }      // cap ~72°: never quite straight down
   // Boresight F = velocity tilted toward nadir by PITCH (kept in the orbital plane, z=0).
@@ -442,10 +466,17 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
       F=[F[0]*(1-k)+td[0]*k, F[1]*(1-k)+td[1]*k, 0];
       const m=Math.hypot(F[0],F[1])||1; F=[F[0]/m,F[1]/m,0]; }
   } else winAimW=0;
-  // Up = "away from Earth" (rhat) with the along-boresight part removed; Right = F × Up = the plane normal (±z).
-  const rdF=rhat[0]*F[0]+rhat[1]*F[1];
-  let Uc=[rhat[0]-rdF*F[0], rhat[1]-rdF*F[1], 0]; { const m=Math.hypot(Uc[0],Uc[1])||1; Uc=[Uc[0]/m,Uc[1]/m,0]; }
-  const Rr=[F[1]*0-0*Uc[1], 0*Uc[0]-F[0]*0, F[0]*Uc[1]-F[1]*Uc[0]];   // = [0,0,Fx*Uy-Fy*Ux] → pure z
+  /* Camera up. This used to be Gram–Schmidt: rhat minus its along-boresight part. That residual
+     CHANGES SIGN whenever F sweeps across the straight-down axis — and the GEO target-aim blending
+     makes F do exactly that while phasing past the target, so the whole window somersaulted: Earth
+     at the bottom one moment, at the top the next ("the view of the Earth flips back and forth").
+     Define up directly instead: Uc = F × ẑ = (Fy, −Fx). For any in-plane boresight this is
+     continuous — no residual, no sign to flip — and it equals the old up in the normal belly-down
+     attitude, so nothing else changes. Right = F × Uc = −ẑ, a CONSTANT: the camera can no longer
+     turn upside down by construction. (Consequence worth knowing: screen-right is −z, i.e. SOUTH;
+     celestial north is off the LEFT edge. The HUD's north tag lives on the left for this reason.) */
+  const Uc=[F[1],-F[0],0];
+  const Rr=[0,0,-1];
   const fStar=(w/2)/Math.tan(HFOV/2);
   // stars first (behind everything): project each inertial direction through the camera basis
   g.fillStyle='#cfe0ff';
@@ -478,8 +509,8 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
   const orbAng=Math.atan2(P[1],P[0]);
   const earthSpin=(flying&&fs)? -(orbAng-(2*Math.PI/86164)*fsT) : t*0.00006;   // ground rolls with our motion
   // Spheres to raytrace this frame (nearest hit wins per pixel).
-  const bodies=[{C:[0,0,0],R:F7.R_E,pix:getPix(earthTex),spin:earthSpin}];
-  if(planTarget==='moon') bodies.push({C:[mp[0],mp[1],0],R:F7.R_M,pix:getPix(moonTex),spin:t*0.00001});
+  const bodies=[{C:[0,0,0],R:F7.R_E,pix:getPix(earthTex),spin:earthSpin,expose:EXPOSE_EARTH}];
+  if(planTarget==='moon') bodies.push({C:[mp[0],mp[1],0],R:F7.R_M,pix:getPix(moonTex),spin:t*0.00001,expose:EXPOSE_MOON});
   // ---- raytrace into a reused low-res buffer, then scale up over the stars ----
   /* ADAPTIVE BUFFER RESOLUTION.
      The window is a software raytracer that renders into a small offscreen buffer and then scales it
@@ -535,10 +566,22 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
              keeps the limb from vanishing into the sky);
            • soften the first few degrees either side of the terminator, where a hard cutoff is the
              most obvious give-away of a toy renderer. */
-      const sh=lit<=0 ? 0.05 : (0.05 + 0.95*Math.pow(lit,0.85));
-      od[o]  =(D[i00]  *w00+D[i10]  *w10+D[i01]  *w01+D[i11]  *w11)*sh;
-      od[o+1]=(D[i00+1]*w00+D[i10+1]*w10+D[i01+1]*w01+D[i11+1]*w11)*sh;
-      od[o+2]=(D[i00+2]*w00+D[i10+2]*w10+D[i01+2]*w01+D[i11+2]*w11)*sh;
+      /* EXPOSURE. Two attempts are recorded here because the diagnosis moved:
+           1. "pathetically dim" → a flat 1.5× gain. Not enough, and the second report explained
+              why: "Earth is dark when sun is overhead. It's really bright in other sims."
+           2. The real cause is the MAP, not the light: the other modules use the punchy
+              earth_atmos texture, but this window samples the NASA Blue Marble — radiometrically
+              honest, oceans at ~40-60/255 because oceans really do absorb sunlight. Fully lit
+              dark pixels are still dark pixels; no Lambert term can fix that.
+         So expose like a camera instead: gain 1.9 + gamma 0.82 through a 256-entry LUT (built
+         once — cheaper per-pixel than the multiply+clamp it replaces). Ocean 55→139, land 90→185,
+         cloud 200→255: a sunlit read that matches the other sims, with highlights rolling off
+         instead of clipping. Shading multiplies BEFORE the LUT, so the terminator stays dark. */
+      const sh=(lit<=0 ? 0.05 : (0.05 + 0.95*Math.pow(lit,0.85)));
+      const LUT=hit.expose;                          // per-body curve — see the LUT note above
+      od[o]  =LUT[(D[i00]  *w00+D[i10]  *w10+D[i01]  *w01+D[i11]  *w11)*sh|0];
+      od[o+1]=LUT[(D[i00+1]*w00+D[i10+1]*w10+D[i01+1]*w01+D[i11+1]*w11)*sh|0];
+      od[o+2]=LUT[(D[i00+2]*w00+D[i10+2]*w10+D[i01+2]*w01+D[i11+2]*w11)*sh|0];
       od[o+3]=255;
   } }
   bg.putImageData(img,0,0);
@@ -550,7 +593,7 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
      collapse the resolution, and stepped by ratio so it converges in a few frames either way. */
   { const dt=performance.now()-_rtT0;
     window._rtAvg = window._rtAvg===undefined ? dt : window._rtAvg*0.9+dt*0.1;
-    const avg=window._rtAvg, TARGET=5.0;
+    const avg=window._rtAvg, TARGET=firing?3.5:5.0;   // mid-burn, trade resolution for cadence
     if(avg>TARGET*1.6 && window._winBufW>340)      window._winBufW=Math.max(340,  Math.round(window._winBufW*0.85));
     else if(avg<TARGET*0.55 && window._winBufW<1100) window._winBufW=Math.min(1100, Math.round(window._winBufW*1.10));
   }
@@ -561,6 +604,27 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
     const zf=wx*F[0]+wy*F[1]; if(zf<=1) return null;                 // behind camera / on plane of lens
     const rx=wz*Rr[2], uy=wx*Uc[0]+wy*Uc[1];
     return {x:w/2+rx/zf*fMain, y:h/2-uy/zf*fMain, z:zf}; }
+
+  /* ---- ☀ SUN INDICATOR -------------------------------------------------------------------
+     A pilot flagged Earth's lighting as wrong ("solar illumination seems from wrong angle") when
+     it was exactly right: in this sim your orbit plane IS the ecliptic, north is screen-RIGHT, and
+     the terminator always crosses the disc pole-to-pole — i.e. horizontally, which reads as "the
+     Sun is over the pole". Correct physics that looks broken needs a legend, so mark where the Sun
+     actually is. The Sun lies in the orbit plane (no screen-x component by construction): on the
+     window's vertical centerline when ahead, or flagged as behind. */
+  { const sy=sun3[0]*Uc[0]+sun3[1]*Uc[1], sz=sun3[0]*F[0]+sun3[1]*F[1];
+    g.font='bold '+(h*0.045)+'px monospace'; g.textAlign='center';
+    if(sz>0.02){ const yS=Math.max(h*0.07, Math.min(h*0.93, h/2 - sy/sz*fMain));
+      const on=(yS>h*0.07&&yS<h*0.93);
+      g.fillStyle='rgba(255,220,120,.95)';
+      g.fillText('☀', w*0.5, yS);
+      g.font=(h*0.032)+'px monospace'; g.fillStyle='rgba(255,220,120,.65)';
+      g.fillText(on?'sun':'sun ('+(yS<h*0.5?'above':'below')+' view)', w*0.5, yS+h*0.045); }
+    else { g.fillStyle='rgba(255,220,120,.65)'; g.font=(h*0.034)+'px monospace';
+      g.fillText('☀ sun behind you'+(sy>0.3?' · above':sy<-0.3?' · below':''), w*0.5, h*0.945); }
+    // and the axis that makes the terminator make sense: with Rr = −ẑ, north is off the LEFT edge
+    g.fillStyle='rgba(159,182,216,.5)'; g.font=(h*0.030)+'px monospace'; g.textAlign='left';
+    g.fillText('← N', w*0.015, h*0.5); }
   // ---- GEO belt as a projected ring (the highway) — GEO mission, once we're high enough ----
   if(planTarget==='geo'){
     const R_GEO=42164, beltFade=Math.max(geoCloseness, Math.min(1,Math.max(0,(re-30000)/6000)));
@@ -981,6 +1045,41 @@ function drawTrajMap(cv,ctx,mode,title){ const w=cv.width,h=cv.height,g=ctx; g.c
   // firing: the orbit (and the whole cockpit) keeps updating live as the Δv goes in
   if(firing&&flying){ g.fillStyle='#5fd0ff'; g.font='bold '+(hT*0.07)+'px monospace'; g.textAlign='center';
     g.fillText('◈ BURNING — ORBIT UPDATING LIVE', w*0.5, h*0.96); g.textAlign='left'; }
+
+  /* LEGEND. A pilot asked what the dashed gold lines near the Moon and Earth meant — the three
+     trace styles were explained only in the one-time cockpit tour, so anyone who skipped or forgot
+     it was reading an unlabeled chart. Three lines, bottom-left, only on the BIG panel (mode
+     'zoom'), only when there is something to label. Flying the mission well = making the green
+     line sit on top of the amber one; the legend is what makes that goal visible. */
+  if(mode==='zoom' && flying){
+    const lx=w*0.03; let ly=h*0.985-hT*0.19; g.font=(hT*0.036)+'px monospace'; g.textAlign='left';
+    const row=(color,dash,label)=>{ g.strokeStyle=color; g.lineWidth=2;
+      g.setLineDash(dash); g.beginPath(); g.moveTo(lx,ly-hT*0.012); g.lineTo(lx+hT*0.10,ly-hT*0.012); g.stroke(); g.setLineDash([]);
+      g.fillStyle=color; g.fillText(label, lx+hT*0.125, ly); ly+=hT*0.055; };
+    if(actualPath.length>1)      row('#39d353',[],        'actual — flown so far');
+    if(plannedPath)              row('rgba(255,200,90,.9)',[5,4],'plan — the flight computer\u2019s reference');
+    if(livePred&&livePred.length)row('rgba(95,208,255,.9)',[4,4],'predicted — where the current orbit heads');
+  }
+
+  /* ---- ☀ SUN DIRECTION VECTOR --------------------------------------------------------------
+     Companion to the window's sun indicator: the same sun, on the map. Drawn by transforming a
+     point far along the inertial sun direction through toDisp(), the SAME transform every plotted
+     object uses — so the arrow is automatically correct in all three display frames (ECI: ~fixed;
+     belt-fixed: sweeps once per day; Earth–Moon co-rotating: sweeps once per month, which is what
+     makes the terminators drift as you fly). One sun, one transform, no way to disagree. */
+  { const sA=F7.sunAngleInertial(tAbs);
+    const sp=toDisp(Math.cos(sA)*1e7, Math.sin(sA)*1e7, tAbs);
+    const sm=Math.hypot(sp[0],sp[1])||1, ux=sp[0]/sm, uy=sp[1]/sm;
+    const L=Math.min(w,h)*0.10, ex=cx+ux*L, ey=cy-uy*L;   // from Earth (map centre), map's own Y-flip
+    g.strokeStyle='rgba(255,220,120,.85)'; g.lineWidth=Math.max(1.5,hT*0.006);
+    g.beginPath(); g.moveTo(cx,cy); g.lineTo(ex,ey); g.stroke();
+    const aa=Math.atan2(ey-cy,ex-cx), AH=Math.max(5,hT*0.02);
+    g.beginPath(); g.moveTo(ex,ey);
+    g.lineTo(ex-AH*Math.cos(aa-0.45), ey-AH*Math.sin(aa-0.45));
+    g.lineTo(ex-AH*Math.cos(aa+0.45), ey-AH*Math.sin(aa+0.45));
+    g.closePath(); g.fillStyle='rgba(255,220,120,.85)'; g.fill();
+    g.fillStyle='rgba(255,220,120,.9)'; g.font=(hT*0.036)+'px monospace';
+    g.fillText('☀ sun', ex+AH*0.8, ey+hT*0.012); }
 }
 /* The panels are SWAPPED from earlier versions: the trajectory map — the thing you actually fly
    by, especially on the lunar transfer — now owns the BIG left panel (drawSide), and the small
@@ -1063,7 +1162,7 @@ let fuelDoomT=0, fuelDoomFlash=0;
 let training=false;                             // TRAIN mode: free flight, huge fuel, no scored outcome
 /* ---- CAPCOM: a rolling ground-station message log (top-left panel) ---- */
 let capcomLog=[];                               // [{txt, t}] newest last; drawn wrapped, capped
-function capcom(txt){ capcomLog.push({txt, t:performance.now()}); if(capcomLog.length>6) capcomLog.shift(); }
+function capcom(txt){ capcomLog.push({txt, t:performance.now()}); if(capcomLog.length>6) capcomLog.shift();  }
 const capcomSaid={};                            // fire each one-shot contextual message only once
 function capcomOnce(key, txt){ if(capcomSaid[key]) return; capcomSaid[key]=true; capcom(txt); }
 let actualPath=[];                              // co-rotating trail of where we've actually been
@@ -1155,7 +1254,7 @@ const TOUR=[
   {sel:'#zSideNav', t:'Mission NAV', b:'The big map of your flight in the co-rotating frame: the <b>planned path</b> (ghost) vs. where you <b>actually</b> are. On the lunar flight it auto-zooms through departure → cruise → arrival, with a cyan dashed line showing where your current orbit is headed. Status readout top-right; CAPCOM calls appear on the small MFD below the window.'},
   {sel:'#cFuel',   t:'Δv budget', b:'Your fuel. Every burn spends it — the whole mission is won or lost on spending it wisely. GEO servicing gets 6,500 m/s; the lunar flight a forgiving 9,500. The planned burns are only about 60% of that — the rest is yours for phasing to the target, trims and station-keeping.'},
   {sel:'#burnMeter', t:'THIS BURN Δv', b:'The <b>net</b> Δv of the burn you’re flying, against a marker at the target. <b>Pulse</b> to sneak up on it — and if you overshoot, a tap the other way walks the number back <i>down</i>. It holds ~5 s after your last input so you can tap, read, tap again. Note the ⛽ fuel gauge does NOT come back: a correction costs propellant just like the overshoot did. ⟲ resets the meter.'},
-  {sel:'#ils',     t:'Track & speed → approach director', b:'On the way up: top needle = left/right of the planned track, dial = your speed vs. circular (green = on speed). Once the planned burns are flown on the GEO run it becomes the <b>◎ RENDEZVOUS DIRECTOR</b>: range, closing rate, degrees along the belt, altitude error, drift rate — and a plain-language instruction. The key counter-intuition it teaches: to <b>catch</b> a satellite ahead of you, go <b>LOWER</b> (shorter period); to let it catch you, go <b>HIGHER</b>.'},
+  {sel:'#ils',     t:'Track & speed → approach director', b:'On the way up: top needle = left/right of the planned track, with a speed call-out underneath (vs. circular — or vs. the target once you are chasing it). Once the planned burns are flown on the GEO run it becomes the <b>◎ RENDEZVOUS DIRECTOR</b>: range, closing rate, degrees along the belt, altitude error, drift rate — and a plain-language instruction. The key counter-intuition it teaches: to <b>catch</b> a satellite ahead of you, go <b>LOWER</b> (shorter period); to let it catch you, go <b>HIGHER</b>.'},
   {sel:'#burnNow', t:'Burn countdown & cue', b:'An amber <b>⏳ BURN IN m:ss</b> countdown arms as you approach a planned burn point, then flips to the flashing red <b>🔴 BURN NOW</b> order — with exactly what to fly: the Δv and the direction, like <b>2,400 m/s FORWARD</b>. Miss it and it re-alerts one orbit later.', force:true},
   {sel:'#burnPad', t:'Thrust — hold to fire', b:'Press &amp; hold FORWARD/REVERSE (speed up / slow down) or UPWARD/DOWNWARD (radial out / in) — or keys <b>A D W S</b>. During an ordered burn the throttle is <b>closed-loop</b>: fast far from the target Δv, auto-tapering as you close in. <b>⚙ FINE ×0.1</b> (or Shift) for delicate trims. Overwhelmed? <b>🤖 AUTO FLY</b> hands the burns to the flight computer — it fires at each cue and releases on the number (including the lunar brake and final trim). Watch it fly one, then take the stick.'},
 ];
@@ -1463,7 +1562,12 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
      orbit and 0.006% of a GEO one, far below the trims the pilot is already making. So: don't
      return — fall through and integrate, with the substep clamped small so thrust and motion stay
      properly interleaved. */
-  if(firing) simDtCap=0.6;
+  /* While thrusting, cap the step so thrust and motion interleave — but 0.6 s/frame STOPPED THE
+     WORLD: over a 5 s hold the sim advanced ~36 s and every display looked frozen ("the timing on
+     module 8 is really bad… it basically freezes during burns"). 3 s/frame keeps steps small
+     enough for clean interleave and advances a hold ~3 sim-minutes — about what a real 2,400 m/s
+     stage takes, so the Moon, belt and orbit all keep visibly moving under you. */
+  if(firing) simDtCap=3.0;
   let simDt=dtReal*warp;
   if(simDtCap) simDt=Math.min(simDt, simDtCap);        // mid-burn: keep steps tiny (see above)
   // autopilot: never overstep the scheduled burn time — land the clock EXACTLY on it, so the
@@ -1696,7 +1800,8 @@ function updateWindowPhase(re,rm){
    satellite's speed during the GEO rendezvous, otherwise circular speed at the current radius. Green
    centre band, red arcs either side. The reference is labelled under the dial. */
 const ilsCv=$('ilsCv'); let ilsCtx=null;
-function sizeIls(){ const d=Math.min(2,devicePixelRatio||1); ilsCv.width=ilsCv.clientWidth*d; ilsCv.height=ilsCv.clientWidth*1.15*d; ilsCtx=ilsCv.getContext('2d'); }
+function sizeIls(f){ const d=Math.min(2,devicePixelRatio||1); f=f||0.62;
+  ilsCv.width=ilsCv.clientWidth*d; ilsCv.height=ilsCv.clientWidth*f*d; ilsCtx=ilsCv.getContext('2d'); }
 /* ===================== RENDEZVOUS DIRECTOR (GEO final approach) =====================
    Once the planned burns are done the ILS cluster becomes an approach director. The hard part of
    this mission is no longer a big burn — it is the counter-intuitive proximity work: to catch a
@@ -1808,9 +1913,12 @@ function drawRvzDirector(){ const w=ilsCv.width,h=ilsCv.height,g=ilsCtx; g.clear
   $('ilsHint').textContent='approach director · lower = catch up · higher = fall back';
 }
 function drawIls(){ if(!flying||!fs){ $('ils').classList.remove('on'); return; }
-  $('ils').classList.add('on'); if(!ilsCtx) sizeIls();
-  // GEO: once the planned burns are flown, the panel becomes the approach director
-  if(planTarget==='geo' && !training && planBurns.length && nextBurn>=planBurns.length){ drawRvzDirector(); return; }
+  $('ils').classList.add('on');
+  // GEO: once the planned burns are flown, the panel becomes the approach director (tall layout)
+  if(planTarget==='geo' && !training && planBurns.length && nextBurn>=planBurns.length){
+    if(!ilsCtx || ilsCv.height<ilsCv.width) sizeIls(1.15);
+    drawRvzDirector(); return; }
+  if(!ilsCtx || ilsCv.height>=ilsCv.width) sizeIls(0.62);
   const w=ilsCv.width,h=ilsCv.height,g=ilsCtx; g.clearRect(0,0,w,h);
   g.fillStyle='rgba(6,12,22,.5)'; g.fillRect(0,0,w,h);
   // ---- LOCALIZER (top third): horizontal scale, needle = cross-track offset from planned path ----
@@ -1828,20 +1936,10 @@ function drawIls(){ if(!flying||!fs){ $('ils').classList.remove('on'); return; }
   const locX=cx+Math.max(-1,Math.min(1,ctErr/12000))*w*0.36;
   g.fillStyle=Math.abs(ctErr)<3000?'#39d353':'#ffb03a'; g.beginPath(); g.moveTo(locX,locY-h*0.05); g.lineTo(locX-w*0.03,locY+h*0.02); g.lineTo(locX+w*0.03,locY+h*0.02); g.closePath(); g.fill();
   g.fillStyle='#9fb6d8'; g.font=(h*0.05)+'px monospace'; g.textAlign='center'; g.fillText('◀ LEFT   track   RIGHT ▶',cx,h*0.30);
-  // ---- SPEED DIAL (bottom two-thirds): needle = actual speed vs the TARGET speed here ----
-  const dcx=cx, dcy=h*0.72, R=w*0.34;
-  /* WHAT THIS DIAL COMPARES AGAINST — two bugs were fixed here.
-     It used to read  v = |v_inertial|  against  sqrt(MU_E / r_from_Earth), i.e. always Earth-relative
-     circular speed. That is wrong twice over:
-       1. IN LUNAR ORBIT it is meaningless. Once inside the Moon's sphere of influence the quantity a
-          pilot is flying is speed about the MOON; an Earth-referenced number there is nonsense, and
-          the dial was pegged for the whole arrival. (Same class of bug as the CAPCOM "ESCAPE" readout
-          that was fixed by making the telemetry body-aware.)
-       2. DURING THE GEO RENDEZVOUS it is not the useful comparison. Once the planned burns are done
-          the pilot is trimming speed AGAINST THE TARGET SATELLITE — that is the number they actually
-          modify. Circular-speed-at-my-radius answers a question they are no longer asking.
-     So: use the primary body's own frame, and switch the reference to the target's speed once the
-     rendezvous phase begins. The label under the dial always says which one is shown. */
+  /* ---- SPEED READOUT (owner call: "the dial indicator … we can just omit").
+     The round dial is gone; its POSITION now holds the Δv gauge. What was worth keeping is the
+     part that took two bug-fixes to get right — the body-aware comparison and the phase-aware
+     order — so that survives as a plain text readout under the localizer. */
   const B=primaryBody();
   const rLoc=Math.hypot(fs[0]-B.cx, fs[1]-B.cy);
   const v=Math.hypot(fs[2]-B.vx, fs[3]-B.vy);           // speed in the PRIMARY body's frame
@@ -1850,16 +1948,7 @@ function drawIls(){ if(!flying||!fs){ $('ils').classList.remove('on'); return; }
   const vTarget = rendezvous ? Math.sqrt(F7.MU_E/42164) : Math.sqrt(B.mu/rLoc);
   const refLabel = rendezvous ? 'vs TARGET speed'
                  : (B.name==='Moon' ? 'vs circular about the MOON' : 'vs circular at this altitude');
-  // map ratio v/vTarget in [0.85..1.15] to angle over a 240° arc
-  const ratio=v/vTarget, a0=Math.PI*0.85, a1=Math.PI*2.15;   // sweep
-  const toA=r=>a0+(Math.max(0.85,Math.min(1.15,r))-0.85)/0.3*(a1-a0);
-  // red slow (left), green center, red fast (right)
-  g.lineWidth=h*0.05; g.lineCap='butt';
-  g.strokeStyle='#7a2020'; g.beginPath(); g.arc(dcx,dcy,R,toA(0.85),toA(0.96)); g.stroke();
-  g.strokeStyle='#1f7a3a'; g.beginPath(); g.arc(dcx,dcy,R,toA(0.96),toA(1.04)); g.stroke();
-  g.strokeStyle='#7a2020'; g.beginPath(); g.arc(dcx,dcy,R,toA(1.04),toA(1.15)); g.stroke();
-  const na=toA(ratio); g.strokeStyle='#fff'; g.lineWidth=2; g.beginPath(); g.moveTo(dcx,dcy); g.lineTo(dcx+Math.cos(na)*R,dcy+Math.sin(na)*R); g.stroke();
-  g.fillStyle='#fff'; g.beginPath(); g.arc(dcx,dcy,h*0.02,0,7); g.fill();
+  const ratio=v/vTarget;
   /* In the rendezvous phase the ORDER inverts, and this is the counter-intuitive heart of the
      mission: to CATCH a satellite ahead of you, you burn REVERSE — dropping into a lower, shorter
      orbit so you gain on it. Telling a closing pilot "TOO SLOW — burn FORWARD" would send them the
@@ -1869,10 +1958,12 @@ function drawIls(){ if(!flying||!fs){ $('ils').classList.remove('on'); return; }
     ? (Math.abs(dv)<=8 ? 'SPEED MATCHED ✓' : (dv<0 ? (-dv)+' m/s SLOWER than target' : dv+' m/s FASTER than target'))
     : (ratio<0.96?'TOO SLOW — burn FORWARD':ratio>1.04?'TOO FAST — burn REVERSE':'ON SPEED ✓');
   const good = rendezvous ? Math.abs(dv)<=8 : (ratio>=0.96 && ratio<=1.04);
-  g.fillStyle=good?'#9fe0af':'#ff9b90'; g.font='bold '+(h*0.05)+'px monospace'; g.fillText(status,dcx,dcy+R+h*0.09);
-  g.fillStyle='#7f97b5'; g.font=(h*0.038)+'px monospace'; g.fillText(refLabel,dcx,dcy+R+h*0.155);
+  g.textAlign='center';
+  g.fillStyle=good?'#9fe0af':'#ff9b90'; g.font='bold '+(h*0.115)+'px monospace';
+  g.fillText(status, cx, h*0.60);
+  g.fillStyle='#7f97b5'; g.font=(h*0.085)+'px monospace'; g.fillText(refLabel, cx, h*0.78);
   g.textAlign='left';
-  $('ilsHint').textContent='localizer: on-track? · dial: '+refLabel;
+  $('ilsHint').textContent='needle: on the planned track? · speed '+refLabel;
 }
 const fuelCv=$('cFuel'); let fuelCtx=fit(fuelCv);
 function drawFuel(){ const w=fuelCv.width,h=fuelCv.height,g=fuelCtx; g.clearRect(0,0,w,h);
@@ -1910,6 +2001,15 @@ const THRUST_RATE=500;         // m/s per second of holding. Burns are impulsive
    ⚙ FINE button on the pad, or just hold Shift while thrusting. */
 let fineThrust=false, shiftFine=false;
 let userWarp=1;   // pilot's manual time-warp trim: ',' halves, '.' doubles (multiplies the auto warp)
+/* Trim range and readout, both widened on a pilot report ("range of time warps seems way lower"):
+   ×16 was the ceiling, which on the GEO mission (auto ~900×) topped out at 14,400× while modules 5
+   and 6 climb to 30 days/s — module 8 genuinely had the narrowest clock in the course. ×64 both
+   ways fixes the range; quoting the RESULTING absolute rate (not just "×16 of auto") makes the
+   readout comparable with the other sims' day-per-second displays. */
+function warpTrimMsg(){ const eff=Math.round(warp*userWarp);
+  const abs = eff>=86400? (eff/86400).toFixed(1)+' d/s' : eff>=3600? (eff/3600).toFixed(1)+' h/s' : eff+'×';
+  const um = userWarp<1? '1/'+Math.round(1/userWarp) : '×'+userWarp;
+  return '⏱ time warp '+um+' of auto ≈ '+abs; }
 /* PILOT CLOCK. Engaged once the lunar insertion has actually worked — confirmation orbit, victory lap
    or loiter. From then on ',' / '.' set an ABSOLUTE rate rather than a multiplier on an automatic one,
    because there is no longer any schedule for the sim to be helpful about. 60x starts slow enough to
@@ -1970,6 +2070,49 @@ function applyBurnPad(s, dvF, dvR){ const f=padFrame();
   const rx=s[0]-f.cx, ry=s[1]-f.cy;
   if(nx*rx+ny*ry<0){ nx=-nx; ny=-ny; }                            // orient it radial-OUT
   return [s[0], s[1], s[2]+dvF*ux+dvR*nx, s[3]+dvF*uy+dvR*ny]; }
+/* =====================  COCKPIT AUDIO (synthesized — no assets, no network)  ==================
+   ONE sound, built from raw WebAudio nodes so the air-gap posture holds:
+     • RUMBLE — a looped brown-noise buffer through a 90 Hz lowpass. Engine-off is gain 0; thrust
+       ramps it up in ~60 ms and lets it die over ~250 ms, with a touch of slow wobble so it reads
+       as combustion rather than a test tone. FINE thrust rumbles quieter.
+   (A CAPCOM radio squelch+beep shipped briefly and was cut on the owner's call: "i certainly
+   don't want the beeps. Just the rumbles please.")
+   Browsers refuse audio before a user gesture, so the context is created lazily inside the burn
+   handlers and key presses (all gestures) and resume() is called each time. 🔈 toggles all of it;
+   the choice persists per browser. Guarded so the node test harness (no AudioContext) never sees it. */
+let AU=null, auMuted=false;
+try{ auMuted = (typeof localStorage!=='undefined' && localStorage.getItem('oa_sound')==='off'); }catch(e){}
+function auInit(){
+  if(AU) { if(AU.ctx.state==='suspended') AU.ctx.resume(); return; }
+  const Ctx=(typeof window!=='undefined')&&(window.AudioContext||window.webkitAudioContext);
+  if(!Ctx) return;
+  try{
+    const ctx=new Ctx();
+    const master=ctx.createGain(); master.gain.value=auMuted?0:0.8; master.connect(ctx.destination);
+    // brown-ish noise loop for the rumble bed
+    const L=2*ctx.sampleRate, buf=ctx.createBuffer(1,L,ctx.sampleRate), d=buf.getChannelData(0);
+    let lpv=0; for(let i=0;i<L;i++){ lpv=0.985*lpv+0.015*(Math.random()*2-1); d[i]=lpv*4.2; }
+    const src=ctx.createBufferSource(); src.buffer=buf; src.loop=true;
+    const filt=ctx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=90; filt.Q.value=0.8;
+    const wob=ctx.createOscillator(); wob.frequency.value=1.7;             // slow amplitude wobble
+    const wobG=ctx.createGain(); wobG.gain.value=8; wob.connect(wobG).connect(filt.frequency); wob.start();
+    const rumble=ctx.createGain(); rumble.gain.value=0;
+    src.connect(filt); filt.connect(rumble); rumble.connect(master); src.start();
+    AU={ctx,master,rumble};
+    if(ctx.state==='suspended') ctx.resume();
+  }catch(e){ AU=null; }
+}
+function auRumble(on){ if(!AU) return; const t=AU.ctx.currentTime, fine=(typeof fineThrust!=='undefined'&&fineThrust);
+  AU.rumble.gain.cancelScheduledValues(t);
+  AU.rumble.gain.setTargetAtTime(on?(fine?0.22:0.55):0, t, on?0.06:0.25); }
+function toggleSound(){ auMuted=!auMuted;
+  try{ localStorage.setItem('oa_sound',auMuted?'off':'on'); }catch(e){}
+  if(AU) AU.master.gain.value=auMuted?0:0.8;
+  const b=$('sndToggle'); if(b) b.textContent=auMuted?'🔇':'🔊';
+  if(!auMuted) auInit(); }
+window.toggleSound=toggleSound;
+if(auMuted){ const _sb=setInterval(()=>{ const b2=$('sndToggle'); if(b2){ b2.textContent='🔇'; clearInterval(_sb); } },250); }
+
 function startBurn(dir,btn){
   if(DEV) console.log('[thrust] press '+dir+' → flying='+flying+' firing='+firing+' dvSpent='+Math.round(dvSpent));
   if(!flying){ missionMsg='⚠ Not flying yet — press 🎮 TRAIN or plan a mission and load it.'; return; }
@@ -2001,9 +2144,10 @@ function startBurn(dir,btn){
      (LOI freezes to the planned value — no clean live residual at a 3-body arrival.) */
   { const b=planBurns[nextBurn]; if(b && burnWindow){ const gd=burnGuidance(nextBurn,b);
       b.frozen={dv:gd.dv, dir:gd.dir, live:gd.live, tgt: gd.live? burnDv+gd.dv : Math.max(gd.dv,b.dvTarget)}; } }
-  btn&&btn.classList.add('firing'); }
+  btn&&btn.classList.add('firing');
+  auInit(); auRumble(true); }
 let flushing=false;
-function stopBurn(){ const wasFiring=!!firing;
+function stopBurn(){ const wasFiring=!!firing; if(wasFiring) auRumble(false);
   /* Flush the final slice of thrust before letting go. A quick CLICK can begin and end inside the
      same inter-frame gap, in which case stepBurn never ran while firing and the click delivered
      exactly nothing — the meter looked stuck at 0 no matter how many times you clicked. */
@@ -2156,11 +2300,11 @@ addEventListener('keydown',e=>{ if(planMode) return;
   if(e.key==='f'||e.key==='F'){ cycleGeoFrame(); return; }
   if(e.key===','){
     if(pilotClock()){ PILOT_WARP=Math.max(PILOT_WARP_MIN, PILOT_WARP/2); missionMsg='⏱ time warp ×'+Math.round(PILOT_WARP)+' (you have the clock)'; }
-    else { userWarp=Math.max(0.0625, userWarp/2); missionMsg='⏱ time warp ×'+(userWarp<1?userWarp.toFixed(4).replace(/0+$/,'').replace(/\.$/,''):userWarp)+' of auto'; }
+    else { userWarp=Math.max(1/64, userWarp/2); missionMsg=warpTrimMsg(); }
     return; }
   if(e.key==='.'){
     if(pilotClock()){ PILOT_WARP=Math.min(PILOT_WARP_MAX, PILOT_WARP*2); missionMsg='⏱ time warp ×'+Math.round(PILOT_WARP)+' (you have the clock)'; }
-    else { userWarp=Math.min(16, userWarp*2); missionMsg='⏱ time warp ×'+userWarp+' of auto'; }
+    else { userWarp=Math.min(64, userWarp*2); missionMsg=warpTrimMsg(); }
     return; }
   const dir=KEYDIR[e.key.toLowerCase()]; if(dir&&!e.repeat){ e.preventDefault();
   const btn=document.querySelector('#burnPad .bbtn.'+dir); startBurn(dir,btn); } });
@@ -2174,7 +2318,7 @@ addEventListener('keyup',e=>{ const dir=KEYDIR[e.key.toLowerCase()]; if(dir){ e.
    burns — the final circular trim at the current radius (the "third burn" that makes the lunar
    mission so hard by hand). The pilot can toggle it any time; hand-flying overrides it. */
 let autoOn=false, autoDir=null, autoTrimRem=null, autoPhasing=null;
-function toggleAuto(){ autoOn=!autoOn;
+function toggleAuto(){ auInit(); autoOn=!autoOn;
   const b=$('autoBtn'); if(b){ b.textContent='🤖 AUTO FLY '+(autoOn?'ON':'OFF'); b.classList.toggle('on',autoOn); }
   if(!autoOn && autoDir){ autoDir=null; autoTrimRem=null; stopBurn(); }
   autoPhasing=null;                                        // re-assess the phasing plan on re-engage
@@ -2781,7 +2925,11 @@ function loop(ts){ requestAnimationFrame(loop);
   updateBurnMeter();   // meter target + full-scale track the live guidance EVERY frame (it used to
                        // render only on thruster events, so a new flight showed the old run's target)
   computeLivePred();   // lunar NAV: keep the dashed where-am-I-headed line current (cheap, cached)
-  drawWindow(t); drawNav(); drawFuel(); drawSide(); drawIls();
+  drawWindow(t);
+  /* Mid-burn frame budget: the raytraced window keeps every frame (it is what the pilot flies by);
+     the four secondary panels update at 10 Hz while thrust is on. They are text/2-D maps — at 10 Hz
+     they still read as live, and the freed budget goes to the window and the physics. */
+  if(!firing || t-(window._panT||0)>100){ window._panT=t; drawNav(); drawFuel(); drawSide(); drawIls(); }
   if(DEV){ $('calHud').style.display='block'; $('calHud').textContent=
     'flying='+flying+' training='+training+' firing='+firing+' tourOn='+tourOn+' planMode='+planMode+
     ' burnWin='+burnWindow+' nextBurn='+nextBurn+'/'+planBurns.length+' warp='+Math.round(warp)+

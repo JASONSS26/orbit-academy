@@ -10,7 +10,11 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
     font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
-  #app{display:grid;grid-template-columns:450px minmax(0,1fr) 370px;height:100vh;gap:8px;padding:8px}
+  /* Side columns yield to the viewport. Fixed-px columns pinned 700-900px of width to the panels
+     before the VISUALIZATION got a pixel — on a 1366px Windows laptop at 125-150% display scaling
+     the center canvas was left a slot a few hundred px wide ("panels are oversized"). clamp() keeps
+     the designed width on big monitors and hands space back to the stage on small ones. */
+  #app{display:grid;grid-template-columns:clamp(300px,23vw,450px) minmax(0,1fr) clamp(260px,19vw,370px);height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:13px 15px;line-height:1.5}
   #left h2{margin:0 0 6px;font-size:24px;color:#fff}
@@ -278,9 +282,19 @@ function rebuild(){
   $('rPeriA').textContent=Math.round(rp-Re).toLocaleString()+' km';
   const altP=rp-Re;
   $('rReg').textContent = rp<Re+10?'⚠ hits Earth!' : altP<2000?'LEO' : altP<35000?'MEO' : altP<37000?'GEO-ish' : 'high / xGEO';
-  $('hint').textContent = rp<Re+100 ? '⚠ perigee is below the surface — this orbit would re-enter!' :
+  /* The reviewer cranked eccentricity, watched the satellite dive inside the Earth, and asked
+     "BUG?" — the warning below already existed but sat in the dim hint bar where nobody looks.
+     An orbit through the planet deserves alarm styling, not a footnote. */
+  const below = rp<Re+100;
+  const hint=$('hint');
+  hint.textContent = below ? '⚠ PERIGEE BELOW THE SURFACE — a real satellite on this orbit re-enters and burns up on its first pass!' :
     'stars are fixed behind the orbit — RAAN swivels the plane against them; argument of perigee twists the ellipse within the plane.';
-  $('rPeriA').style.color = rp<Re+100 ? '#ff5a52' : '#fff';
+  hint.style.color      = below ? '#ff8a80' : '';
+  hint.style.fontWeight = below ? 'bold' : '';
+  hint.style.border     = below ? '1px solid #ff5a52' : '';
+  hint.style.background = below ? 'rgba(80,10,10,.85)' : '';
+  $('rPeriA').style.color = below ? '#ff5a52' : '#fff';
+  $('rPeriA').style.fontWeight = below ? 'bold' : '';
   // labels for value spans
   $('aV').textContent=a; $('eV').textContent=e.toFixed(2); $('iV').textContent=+$('i').value;
   $('raanV').textContent=+$('raan').value; $('argpV').textContent=+$('argp').value; $('nuV').textContent=+$('nu').value;

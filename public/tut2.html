@@ -10,7 +10,11 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:#000407;color:var(--fg);
     font-family:'SF Mono',ui-monospace,Menlo,Consolas,monospace;overflow:hidden;font-size:19px}
-  #app{display:grid;grid-template-columns:354px minmax(0,1fr) minmax(0,1fr);height:100vh;gap:8px;padding:8px}
+  /* Side columns yield to the viewport. Fixed-px columns pinned 700-900px of width to the panels
+     before the VISUALIZATION got a pixel — on a 1366px Windows laptop at 125-150% display scaling
+     the center canvas was left a slot a few hundred px wide ("panels are oversized"). clamp() keeps
+     the designed width on big monitors and hands space back to the stage on small ones. */
+  #app{display:grid;grid-template-columns:clamp(270px,20vw,354px) minmax(0,1fr) minmax(0,1fr);height:100vh;gap:8px;padding:8px}
   .col{overflow:auto;display:flex;flex-direction:column;gap:10px}
   .panel{background:rgba(6,12,24,.85);border:1px solid #1d3350;border-radius:9px;padding:15px 17px;font-size:18px;line-height:1.55}
   #left h2{margin:0 0 6px;font-size:24px;color:#fff}
@@ -237,7 +241,13 @@ sc3.add(new THREE.AmbientLight(0x334455,0.6));
 const sunSprite=(function(){const cv=document.createElement('canvas');cv.width=cv.height=64;
   const g=cv.getContext('2d').createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'#fff');g.addColorStop(.4,'#ffe38a');g.addColorStop(1,'rgba(255,200,80,0)');
   const cx=cv.getContext('2d');cx.fillStyle=g;cx.fillRect(0,0,64,64);
-  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.set(6,6,1);sc3.add(s);return s;})();
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.set(6,6,1);
+  /* Position it NOW, not on the first animation tick. A fresh sprite sits at (0,0,0) — the exact
+     center of the GEO ring — and stays there until the loop's first frame moves it. Any delay
+     (texture decode, a backgrounded tab) showed a sun glowing INSIDE the belt, which a reviewer
+     duly reported as a bug. Same position the first frame computes at simT=0: yr=0 → +x. */
+  s.position.set(40,0,0);
+  sc3.add(s);return s;})();
 const SUN_DIST=40;
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
 const earth=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),earthMat); sc3.add(earth);
@@ -274,7 +284,7 @@ let eclipticRing, eclipticDisk;
 
 // real GEO satellites (from tut2.data.js): placed at their longitude slot on the belt
 const satMeshes=[];
-GEO_SATS.forEach(([name,lonDeg])=>{const m=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),new THREE.MeshBasicMaterial({color:0x9fd0ff}));
+GEO_SATS.forEach(([name,lonDeg])=>{const m=new THREE.Mesh(new THREE.SphereGeometry(0.05,8,6),new THREE.MeshBasicMaterial({color:0x9fd0ff,transparent:true}));
   sc3.add(m); satMeshes.push({mesh:m,lon0:lonDeg*Math.PI/180,name});});
 // Dead sats boosted to the GRAVEYARD orbit: a ring ~300 km ABOVE GEO. They slowly drift in
 // longitude (they no longer hold a slot) and have small random inclinations from years adrift.
@@ -282,7 +292,7 @@ GEO_SATS.forEach(([name,lonDeg])=>{const m=new THREE.Mesh(new THREE.SphereGeomet
 // gap here (like the body-size exaggeration) purely so you can see it as a distinct outer ring.
 const GRAVE_R=GEO_R*1.14;
 const junkMeshes=[];
-for(let i=0;i<40;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.03,6,5),new THREE.MeshBasicMaterial({color:0x99aabb}));
+for(let i=0;i<40;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.03,6,5),new THREE.MeshBasicMaterial({color:0x99aabb,transparent:true}));
   m.visible=false; sc3.add(m);
   // inc = orbital inclination (N–S bob amplitude); drift = SLOW longitude drift rate (decoupled);
   // bobPh = phase of the ~daily N–S oscillation; bobFac ~0.98 so the bob is slightly desynced from a day.
@@ -300,16 +310,33 @@ function injectObj(type,incDeg){
   if(type==='geostat'){inc=0;} else if(type==='polar'){a=(Re+800); inc=Math.PI/2; period=2*Math.PI*Math.sqrt(a*a*a/MU); col=0xff8ac0;}
   else if(type==='leo'){a=(Re+600); inc=incDeg*Math.PI/180; period=2*Math.PI*Math.sqrt(a*a*a/MU); col=0xa0ff60;}
   const rad=toScene(a);
-  const m=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8),new THREE.MeshBasicMaterial({color:col})); sc3.add(m);
-  // ground track path (faint)
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.06,10,8),new THREE.MeshBasicMaterial({color:col,transparent:true})); sc3.add(m);
+  // orbit ring (faint, inertial)
   const pts=[];for(let k=0;k<=128;k++){const u=k/128*6.283;pts.push(planeVec(rad,u,inc,0));}
   const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.5})); sc3.add(line);
-  injected.push({mesh:m,line,rad,inc,period,col,type});
+  /* GROUND TRACK — the reviewer (twice) went looking for the figure-8 the text promises and could
+     not find it, because the sim only ever drew the tilted orbit RING. The figure-8 is not a shape
+     in space; it is the path the sub-satellite point paints on the SPINNING GROUND. So the trail is
+     a child of the Earth mesh — it lives in the Earth-fixed frame, rotates with the globe, and an
+     inclined geosynchronous orbit closes it into a daily analemma right on the map. */
+  const track={pts:[], lastA:-9,
+    line:new THREE.Line(new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.95}))};
+  track.line.frustumCulled=false; earth.add(track.line);
+  injected.push({mesh:m,line,rad,inc,period,col,type,track});
+}
+/* Sub-satellite point in the EARTH-FIXED frame: take the satellite's inertial direction, undo the
+   globe's current spin (a child of `earth` is rendered through R_y(belt)), and pin it just above
+   the surface so the trail doesn't z-fight the map. */
+function trackPoint(o,belt){
+  const d=o.mesh.position.clone().normalize().multiplyScalar(1.012);
+  const c=Math.cos(-belt), sN=Math.sin(-belt);
+  return new THREE.Vector3(d.x*c+d.z*sN, d.y, -d.x*sN+d.z*c);
 }
 function planeVec(rad,a,inc,raan){let x=rad*Math.cos(a),y=0,z=-rad*Math.sin(a);
   let y2=y*Math.cos(inc)-z*Math.sin(inc),z2=y*Math.sin(inc)+z*Math.cos(inc);y=y2;z=z2;
   let x3=x*Math.cos(raan)+z*Math.sin(raan),z3=-x*Math.sin(raan)+z*Math.cos(raan);return new THREE.Vector3(x3,y,z3);}
-function clearInjected(){injected.forEach(o=>{sc3.remove(o.mesh,o.line);});injected.length=0;}
+function clearInjected(){injected.forEach(o=>{sc3.remove(o.mesh,o.line); earth.remove(o.track.line);});injected.length=0;}
 
 /* ---------------- RIGHT: telescope view (2-D canvas) ---------------- */
 const scopeC=$('cScope'), sx=scopeC.getContext('2d');
@@ -411,7 +438,11 @@ function loop(){requestAnimationFrame(loop);
     const x=GRAVE_R*Math.cos(lon), z=-GRAVE_R*Math.sin(lon), y=GRAVE_R*Math.sin(bob);
     s.mesh.position.set(x,y,z);
   });
-  for(const o of injected){const a=sky*(SIDEREAL/o.period); o.mesh.position.copy(planeVec(o.rad,a,o.inc,0)); o.line.rotation.y=0;}
+  for(const o of injected){const a=sky*(SIDEREAL/o.period); o.mesh.position.copy(planeVec(o.rad,a,o.inc,0)); o.line.rotation.y=0;
+    // ground track: sample every ~0.02 rad of spin (≈314 pts/day), keep ~2 days, redraw
+    if(Math.abs(sky-o.track.lastA)>0.02){ o.track.lastA=sky;
+      o.track.pts.push(trackPoint(o,belt)); if(o.track.pts.length>700) o.track.pts.shift();
+      if(o.track.pts.length>1) o.track.line.geometry.setFromPoints(o.track.pts); } }
   // The Sun travels the ECLIPTIC: a great circle tilted 23.5° from the equatorial plane. We move it
   // slowly along that circle (a compressed "year") so you can SEE it follow the inclined line, while
   // Earth spins fast (a day). Light comes FROM the Sun, so Earth's terminator stays perpendicular to
@@ -423,6 +454,29 @@ function loop(){requestAnimationFrame(loop);
   const sunV=new THREE.Vector3(ex, -ez*Math.sin(TILT), ez*Math.cos(TILT)).normalize();  // −y: correct tilt sense
   sunSprite.position.copy(sunV.clone().multiplyScalar(SUN_DIST));
   sunLight.position.copy(sunV.clone().multiplyScalar(SUN_DIST)); sunLight.target.position.set(0,0,0);
+  /* ---- SATELLITE BRIGHTNESS: phase × eclipse (owner-corrected model).
+     A satellite shines by reflected sunlight, and what you SEE is the sunlit fraction of it that
+     faces YOU — exactly the Moon's phases. So brightness follows the PHASE ANGLE α between the
+     Sun direction and the camera direction as seen from the satellite: full when the Sun is
+     behind you (α=0), a thin dark crescent when you look sunward past it (α→180°). The
+     illuminated visible fraction is (1+cos α)/2. On top of that, a satellite inside EARTH'S
+     SHADOW is dark from every direction — modelled as the anti-sun cylinder of one Earth radius
+     with a smoothstep penumbra. Both terms are driven by the SAME sunV that lights the globe, so
+     satellite phases stay in lockstep with Earth's terminator; the star field is untouched
+     (stars make their own light — they have no phases). */
+  const camDir=new THREE.Vector3();
+  const satBrightness=(pos)=>{
+    // phase term: sunlit fraction facing the camera
+    camDir.copy(cam3.position).sub(pos).normalize();
+    const phase=(1+sunV.dot(camDir))/2;                      // 1 = full, 0 = new
+    // eclipse term: dark inside Earth's shadow regardless of viewing angle
+    let ecl=1; const along=pos.dot(sunV);
+    if(along<0){ const perp=Math.sqrt(Math.max(0,pos.lengthSq()-along*along));
+      const t=Math.max(0,Math.min(1,(perp-0.85)/0.3)); ecl=t*t*(3-2*t); }
+    return 0.12+0.88*phase*ecl; };                           // floor: never fully invisible
+  for(const grp of [satMeshes,junkMeshes]) for(const sSat of grp)
+    sSat.mesh.material.opacity=satBrightness(sSat.mesh.position);
+  for(const o of injected) o.mesh.material.opacity=satBrightness(o.mesh.position);
   // ride-along: sit ON a GEO satellite and look DOWN at Earth (nadir). As the sat orbits once/day
   // the lit Earth (and its tilted terminator) rotates through the view once per day.
   if(G.ride){
