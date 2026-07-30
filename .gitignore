@@ -34,3 +34,7 @@ START-HERE.html.bak
 # stray test scratch stores (tests now use the OS temp dir; this catches old ones)
 _twomode_test_data.json*
 _multi_test*.json*
+
+# optional NASA LRO lunar upgrade — fetched per-machine by tools/fetch-moon-hires.sh, several MB,
+# and converted locally so the bytes are not reproducible. Provenance: public/vendor/NOTICE.md
+public/vendor/textures/moon_hires.jpg

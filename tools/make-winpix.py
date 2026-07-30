@@ -11,9 +11,12 @@ A data: URL is same-origin by definition, so it does NOT taint the canvas. Bakin
 therefore makes the window work identically from a file, from our server, or from any static host, with
 no CORS involved anywhere.
 
-The size cost is small because the raytracer never needs much: it renders into a buffer at most 340 px
-wide and samples an equirectangular map capped at 1024x512. 512x256 is already more detail than the
-window can show.
+RESOLUTION — don't be tempted to shrink these. It is easy to reason that the raytracer renders into a
+buffer only ~340 px wide and conclude a small map is plenty. That is wrong, and it shipped once as
+visibly blocky planets: the buffer width is the whole FIELD OF VIEW, and up close a body fills the
+window, so only a small PATCH of the map gets stretched across those pixels. In a low lunar orbit you
+might see a tenth of the map across the full width. Bake at the source resolution and let the sampler
+downscale when the body is distant.
 
 Regenerate after changing the source maps:   python3 tools/make-winpix.py
 """
@@ -25,26 +28,38 @@ TEX  = ROOT / 'public' / 'vendor' / 'textures'
 OUT  = ROOT / 'public' / 'winpix.js'
 
 # (key, preferred source, fallback source, width, height)
+# (key, preferred source, fallback source, width, height) — native size of each source map.
+# Keep in step with the sampler cap in tut8.html (getPix: cw/ch), or the extra detail is discarded.
+# (key, [sources in preference order], width, height) — bake at the sampler's cap, no larger.
+# tut8's getPix caps at 2048x1024, so baking above that is discarded; the vendored files still carry
+# full resolution for the 3-D globes, which have no such cap.
 JOBS = [
-    ('earth', 'earth_atmos_2048.jpg', 'earth_schematic.jpg', 512, 256),
-    ('moon',  'moon_1024.jpg',        'moon_schematic.jpg',   512, 256),
+    ('earth', ['earth_atmos_2048.jpg', 'earth_schematic.jpg'], 2048, 1024),
+    ('moon',  ['moon_hires.jpg', 'moon_1024.jpg', 'moon_schematic.jpg'], 2048, 1024),
 ]
 
 parts, report = {}, []
-for key, primary, fallback, w, h in JOBS:
-    src = TEX / primary
-    used = primary
-    if not src.exists():
-        src, used = TEX / fallback, fallback
-    if not src.exists():
-        sys.exit(f'ERROR: neither {primary} nor {fallback} found in {TEX}')
-    im = Image.open(src).convert('RGB').resize((w, h), Image.LANCZOS)
+for key, sources, w, h in JOBS:
+    src = used = None
+    for cand in sources:
+        if (TEX / cand).exists():
+            src, used = TEX / cand, cand
+            break
+    if src is None:
+        sys.exit(f'ERROR: none of {sources} found in {TEX}')
+    Image.MAX_IMAGE_PIXELS = None
+    im = Image.open(src).convert('RGB')
+    native = im.size
+    # Never UPSCALE: enlarging a small map adds bytes and no detail. Only downscale to the cap.
+    tw, th = min(w, native[0]), min(h, native[1])
+    if im.size != (tw, th):
+        im = im.resize((tw, th), Image.LANCZOS)
     buf = io.BytesIO()
-    # quality 72 is indistinguishable at the size the window renders, and keeps the file small
-    im.save(buf, 'JPEG', quality=72, optimize=True)
+    # 88 keeps JPEG ringing off the terminator and the limb, where it is most visible
+    im.save(buf, 'JPEG', quality=88, optimize=True)
     raw = buf.getvalue()
     parts[key] = 'data:image/jpeg;base64,' + base64.b64encode(raw).decode('ascii')
-    report.append(f'  {key:6s} {used:24s} -> {w}x{h}, {len(raw)/1024:5.1f} KB jpeg')
+    report.append(f'  {key:6s} {used:22s} native {native[0]}x{native[1]} -> baked {im.size[0]}x{im.size[1]}, {len(raw)/1024:6.1f} KB jpeg')
 
 body = ',\n'.join(f"  {k}: '{v}'" for k, v in parts.items())
 OUT.write_text(
@@ -58,9 +73,12 @@ OUT.write_text(
  "   disk used to lose the planet surfaces. A data: URL is same-origin by definition, so the window\n"
  "   now works identically from a file, from server.js, or from any static host.\n"
  "\n"
- "   512x256 is deliberate: the window renders into a buffer at most 340 px wide, so more detail\n"
- "   could not be seen. The full-resolution maps in vendor/textures/ are still what the 3-D globes\n"
- "   in every module use. */\n"
+ "   Baked at the SOURCE resolution on purpose. Shrinking them looks safe -- the window renders into\n"
+ "   a buffer only ~340 px wide -- but that width is the whole field of view, so up close a body fills\n"
+ "   the window and a small patch of the map is stretched across it. A 512x256 map was visibly blocky\n"
+ "   in low lunar orbit. The sampler downscales when the body is far away.\n"
+ "\n"
+ "   The same maps in vendor/textures/ are what the 3-D globes in every module use. */\n"
  "'use strict';\n"
  "window.OA_WINPIX = {\n" + body + "\n};\n", encoding='utf-8')
 

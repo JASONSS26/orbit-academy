@@ -88,6 +88,11 @@ if [ "${1:-}" = "--check" ]; then
 $MANIFEST
 EOF
   echo
+  # The optional NASA lunar upgrade is converted locally from a TIFF, so its exact JPEG bytes depend
+  # on the Pillow version — it cannot be hash-pinned. Report it, do not verify it.
+  if [ -s "$TEX/moon_hires.jpg" ]; then
+    say "extra    textures/moon_hires.jpg  ($(wc -c <"$TEX/moon_hires.jpg" | tr -d ' ') bytes, NASA LRO upgrade, not hash-pinned)"
+  fi
   say "textures.js ALLOW_CDN: $(grep -o 'ALLOW_CDN = [a-z]*' $PUB/textures.js | head -1 | awk '{print $3}')"
   echo
   echo "Remaining outbound references in public/ (excluding <a href> reading links):"

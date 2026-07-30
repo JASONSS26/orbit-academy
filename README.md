@@ -159,6 +159,28 @@ Expected: `PASS — every vendored asset matches public/vendor/NOTICE.md.`
 </details>
 
 <details>
+<summary><b>Sharper Moon (optional NASA upgrade)</b></summary>
+
+The Moon map that ships with the course is 1024&times;512 for the whole body — a quarter of Earth's
+pixel count — and Module 8 flies you within a few hundred kilometres of it. One command, once, with
+network:
+
+```bash
+bash tools/fetch-moon-hires.sh          # NASA LRO mosaic, 4096x2048 (12.5 MB download)
+bash tools/fetch-moon-hires.sh --8k     # 8192x4096 (48 MB)
+bash tools/fetch-moon-hires.sh --small  # 2048x1024 (0.4 MB, no conversion needed)
+bash tools/fetch-moon-hires.sh --revert # undo
+```
+
+Source: NASA Scientific Visualization Studio, [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720) — the
+LROC Wide Angle Camera natural-colour mosaic. Public domain; please credit NASA's SVS. The file is
+gitignored (large, and converted locally so the bytes are not reproducible) but **is** carried into
+any bundle you build, so one person can fetch it and everyone downstream gets the sharp Moon.
+Provenance: [`public/vendor/NOTICE.md`](public/vendor/NOTICE.md).
+
+</details>
+
+<details>
 <summary><b>Releasing a new version (maintainers)</b></summary>
 
 One command does the whole thing — test, build, commit, push, publish:

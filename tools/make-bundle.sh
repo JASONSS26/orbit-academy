@@ -52,6 +52,11 @@ echo "Orbit Academy v$VER — building $OUT"
 
 # --- the course itself: identical in both bundles ---
 cp -R public "$DEST/"
+# moon_hires.jpg is gitignored but travels in a bundle if the machine building it has fetched the
+# NASA upgrade — that is the point: one person fetches it, everyone downstream gets the sharp Moon.
+if [ -s public/vendor/textures/moon_hires.jpg ]; then
+  echo "  including the NASA LRO lunar upgrade ($(du -h public/vendor/textures/moon_hires.jpg | cut -f1))"
+fi
 cp START-HERE.html "$DEST/"
 
 if [ "$VANILLA" = "1" ]; then

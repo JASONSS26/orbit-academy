@@ -63,6 +63,7 @@
   <div class="h">Offline &amp; troubleshooting</div>
   <a href="#airgap">Air-gapped machines</a>
   <a href="#blank">A simulator is blank</a>
+  <a href="#moonres">Sharpening the Moon</a>
   <a href="#flat">Module 8's window looks flat</a>
   <a href="#backup">Backups</a>
 </nav>
@@ -254,6 +255,22 @@ not survive the copy or the unzip.</p>
   <li>Run <code>bash tools/fetch-vendor.sh --check</code>; in a git clone,
       <code>git checkout -- public/vendor</code> restores the originals.</li>
 </ul>
+
+<h3 id="moonres">The Moon looks fuzzy up close. Can I sharpen it?</h3>
+<p>Yes — one command, once, on a machine with internet:</p>
+<pre><code>bash tools/fetch-moon-hires.sh</code></pre>
+<p>The lunar map that ships with the course is <b>1024&times;512 for the entire Moon</b> — a quarter of
+Earth's pixel count — and Module 8 flies you within a few hundred kilometres of the surface, which
+magnifies it hard. The command fetches NASA's <a href="https://svs.gsfc.nasa.gov/4720"
+target="_blank" rel="noopener">LRO/LROC colour mosaic</a> at 4096&times;2048 (a 12.5&nbsp;MB download,
+public domain), converts it, and the simulators pick it up on the next reload. Add <code>--8k</code>
+for 8192&times;4096, or <code>--small</code> for a 0.4&nbsp;MB version that needs no conversion.</p>
+<div class="ok">For an <b>air-gapped</b> site, run it on a networked machine and copy the folder
+across — or build a bundle with <code>bash tools/make-bundle.sh</code> and the sharper Moon travels
+inside it. The course still never downloads anything at run time.</div>
+<p>It needs Python with Pillow for the TIFF conversion (<code>pip3 install --user Pillow</code>), or
+use <code>--small</code> to skip that. Undo with <code>bash tools/fetch-moon-hires.sh --revert</code>.
+Please credit NASA's Scientific Visualization Studio if you publish screenshots.</p>
 
 <h3 id="flat">Module 8's forward window shows plain spheres, not continents.</h3>
 <p>Expected in <b>bare mode</b>, and it says so on screen. Browsers refuse to let a page opened from

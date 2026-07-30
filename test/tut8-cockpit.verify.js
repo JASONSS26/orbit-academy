@@ -57,6 +57,10 @@ const el = (id) => ({
   addEventListener: noop, removeEventListener: noop,
   getBoundingClientRect: () => ({ left: 0, top: 0, width: 40, height: 20, right: 40, bottom: 20 }),
   appendChild: noop, setAttribute: noop, getAttribute: () => null, remove: noop,
+  /* removeAttribute matters: textures.js strips `crossorigin` before loading a LOCAL or data:
+     source, because three.js r128 defaults crossOrigin='anonymous' and that stops a file://
+     image loading at all. A stub without it throws and the whole cockpit fails to boot. */
+  removeAttribute: noop,
   getContext: () => ctxStub(),
   width: 40, height: 20, clientWidth: 40, clientHeight: 20, offsetWidth: 340, offsetHeight: 200,
   textContent: '', innerHTML: '', value: '0', checked: false, complete: true, naturalWidth: 0 });

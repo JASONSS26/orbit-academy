@@ -60,21 +60,73 @@ const ALLOW_CDN = false;     // DEFAULT: fully local, no outbound attempt. `tool
   var CDN = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/';
   var SRC = {
     earth: ['vendor/textures/earth_atmos_2048.jpg', CDN + 'earth_atmos_2048.jpg', 'vendor/textures/earth_schematic.jpg'],
-    moon:  ['vendor/textures/moon_1024.jpg',        CDN + 'moon_1024.jpg',        'vendor/textures/moon_schematic.jpg']
+    /* moon_hires.jpg is the NASA LRO mosaic, added by tools/fetch-moon-hires.sh. It is optional and
+       absent by default, so it leads the chain and the 1024x512 three.js map stays as the fallback. */
+    moon:  ['vendor/textures/moon_hires.jpg', 'vendor/textures/moon_1024.jpg', CDN + 'moon_1024.jpg', 'vendor/textures/moon_schematic.jpg']
   };
+  /* Read winpix.js lazily rather than at load time, so the script order of the two tags does not
+     matter. When present, the baked data: URL goes FIRST — see the crossOrigin note below for why
+     that is what makes an offline install look right. */
+  function baked(which) {
+    var w = window.OA_WINPIX;
+    return (w && w[which]) ? w[which] : null;
+  }
   function chain(which) {
-    var c = SRC[which] || [];
-    return ALLOW_CDN ? c : c.filter(function (u) { return u.indexOf('http') !== 0; });
+    var c = (SRC[which] || []).slice();
+    if (!ALLOW_CDN) c = c.filter(function (u) { return u.indexOf('http') !== 0; });
+    var b = baked(which);
+    return b ? [b].concat(c) : c;
   }
 
-  var loader = new THREE.TextureLoader();
+  /* ---- WHY WE DO NOT USE THREE.TextureLoader FOR LOCAL FILES ----------------------------------
+     three.js r128 defaults `crossOrigin = 'anonymous'`, so TextureLoader requests every image in
+     CORS mode. On a page opened from a file:// URL an <img> with crossOrigin set FAILS TO LOAD AT
+     ALL — and even if it loaded, uploading a file:// image into a WebGL texture is a security error
+     because each local file is its own opaque origin. The result was that opening the course off
+     disk silently lost the photographic Earth and Moon on EVERY module's 3-D globe, fell through the
+     whole chain, and left flat coloured spheres. It looked like the maps had been downgraded.
+
+     Setting `loader.crossOrigin = ''` does NOT fix it: in HTML, crossorigin="" means *anonymous*.
+     The attribute has to be absent entirely, so we build the Image ourselves for anything that is
+     not an http(s) URL, and keep TextureLoader only for the CDN case, which genuinely needs CORS. */
+  /* ANISOTROPIC FILTERING. three.js defaults a texture's anisotropy to 1, which is the worst case
+     for a planet: at the grazing angles you get from low orbit, one screen pixel covers a long thin
+     streak of the map, and with anisotropy 1 the GPU picks a single blurry mip level for it. The
+     surface goes soft exactly when you are closest and most want detail — which is why the Moon read
+     as "fuzzy" in the lunar module while Earth, viewed from further out, looked fine.
+     16 is safe to ask for unconditionally: three.js clamps it to the hardware maximum
+     (WebGLTextures uses Math.min(texture.anisotropy, capabilities.getMaxAnisotropy())). */
+  function tune(t) {
+    t.anisotropy = 16;
+    t.generateMipmaps = true;
+    t.minFilter = THREE.LinearMipmapLinearFilter || THREE.LinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    return t;
+  }
+
+  var loader = new THREE.TextureLoader();          // http(s) only — needs crossOrigin
+  function loadLocal(url, onLoad, onErr) {
+    var im = new Image();                          // deliberately NO crossOrigin attribute
+    im.onload = function () {
+      var t = new THREE.Texture(im);
+      tune(t);
+      t.needsUpdate = true;
+      onLoad(t);
+    };
+    im.onerror = function () { onErr && onErr(); };
+    im.src = url;
+  }
+  function loadOne(url, onLoad, onErr) {
+    if (/^https?:/i.test(url)) loader.load(url, function (t) { tune(t); onLoad(t); }, undefined, onErr);
+    else loadLocal(url, onLoad, onErr);
+  }
 
   /* load('earth', onLoad[, onFail]) — try each source in turn; onLoad(texture) on the first hit. */
   function load(which, onLoad, onFail) {
     var urls = chain(which);
     (function next(i) {
       if (i >= urls.length) { if (onFail) onFail(); return; }
-      loader.load(urls[i], function (t) { onLoad(t, urls[i]); }, undefined, function () { next(i + 1); });
+      loadOne(urls[i], function (t) { onLoad(t, urls[i]); }, function () { next(i + 1); });
     })(0);
   }
 
@@ -86,12 +138,18 @@ const ALLOW_CDN = false;     // DEFAULT: fully local, no outbound attempt. `tool
   }
 
   /* image('earth') — a plain HTMLImageElement, for code that samples raw pixels through a canvas
-     (tut8's window raytracer). crossOrigin is set so the CDN copy stays canvas-readable. */
+     (tut8's window raytracer). crossOrigin is set ONLY for an http(s) source, where it is what keeps
+     the canvas readable; setting it on a local or data: URL would break the load outright (and a
+     data: URL is same-origin anyway, so the canvas stays readable without it). */
   function image(which) {
     var urls = chain(which), i = 0, im = new Image();
-    im.crossOrigin = 'anonymous';
-    im.onerror = function () { if (++i < urls.length) im.src = urls[i]; };
-    if (urls.length) im.src = urls[0];
+    function put(u) {
+      if (/^https?:/i.test(u)) im.crossOrigin = 'anonymous';
+      else im.removeAttribute('crossorigin');
+      im.src = u;
+    }
+    im.onerror = function () { if (++i < urls.length) put(urls[i]); };
+    if (urls.length) put(urls[0]);
     return im;
   }
 

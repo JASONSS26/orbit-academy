@@ -58,6 +58,27 @@ guidelines permit reuse, which is why these are the maps the three.js examples t
 them. Delete both files and the course keeps working: `textures.js` resolves each map through a
 chain and falls through to the schematic maps below, which we drew ourselves. Nothing else changes.
 
+## Optional: the high-resolution NASA lunar mosaic
+
+`textures/moon_hires.jpg` is **not** in the repository — it is an optional upgrade fetched by
+`bash tools/fetch-moon-hires.sh`. When present it leads the Moon texture chain; when absent the
+committed 1024x512 map is used and nothing else changes.
+
+| | |
+|---|---|
+| **Source** | NASA Scientific Visualization Studio, *CGI Moon Kit*, SVS id 4720 — <https://svs.gsfc.nasa.gov/4720> |
+| **Data** | LROC Wide Angle Camera natural-colour mosaic, Hapke-normalised, assembled from 100,000+ WAC images; polar gaps filled from LOLA albedo |
+| **Sizes** | 2048x1024 (JPEG, 0.4 MB) · 4096x2048 (16-bit TIFF, 12.5 MB) · 8192x4096 (48 MB) |
+| **Licence** | NASA imagery is not subject to copyright in the United States. NASA asks for credit. |
+| **Credit** | *NASA's Scientific Visualization Studio* — visualizer Ernie Wright (USRA), scientist Noah Petro (NASA/GSFC) |
+
+Why it is optional rather than committed: it is a large binary that most users will not need, and the
+course must stay useful with nothing but what we can redistribute freely. It is also **not
+hash-pinned** in `fetch-vendor.sh`, because the file is converted locally from a TIFF and the exact
+JPEG bytes depend on the Pillow version doing the conversion.
+
+To remove it: `bash tools/fetch-moon-hires.sh --revert`.
+
 ## The schematic maps — ours
 
 `earth_schematic.jpg` and `moon_schematic.jpg` are generated procedurally by
