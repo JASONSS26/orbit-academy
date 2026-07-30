@@ -229,7 +229,7 @@ const sunSprite=(function(){const cv=document.createElement('canvas');cv.width=c
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),blending:THREE.AdditiveBlending,depthWrite:false}));s.scale.set(6,6,1);sc3.add(s);return s;})();
 const SUN_DIST=40;
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
-const earth=new THREE.Mesh(new THREE.SphereGeometry(1,48,32),earthMat); sc3.add(earth);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),earthMat); sc3.add(earth);
 OA_TEX.onto('earth', earthMat, 0x2b6fb5);   // local photo → pinned CDN → schematic
 
 // GEO belt ring + 1-degree slot ticks

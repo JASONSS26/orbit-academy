@@ -228,13 +228,13 @@ const sunLight=new THREE.DirectionalLight(0xffffff,1.6); sunLight.position.set(6
 scene.add(new THREE.AmbientLight(0x516079,0.42));   // modest fill so the night side reads as dark
 // Earth (textured, like Module 3)
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1,metalness:0});
-const earth=new THREE.Mesh(new THREE.SphereGeometry(1,64,48),earthMat); scene.add(earth);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),earthMat); scene.add(earth);
 OA_TEX.onto('earth', earthMat, 0x2b6fb5);   // local photo → pinned CDN → schematic
 // fuzzy atmosphere: inner haze shell + outer additive limb glow
-const haze=new THREE.Mesh(new THREE.SphereGeometry(1.03,48,32),
+const haze=new THREE.Mesh(new THREE.SphereGeometry(1.03,96,64),
   new THREE.MeshBasicMaterial({color:0x6db0ff,transparent:true,opacity:0.14,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending}));
 scene.add(haze);
-const glow=new THREE.Mesh(new THREE.SphereGeometry(1.09,48,32),
+const glow=new THREE.Mesh(new THREE.SphereGeometry(1.09,96,64),
   new THREE.MeshBasicMaterial({color:0x4a86d6,transparent:true,opacity:0.10,side:THREE.BackSide,depthWrite:false,blending:THREE.AdditiveBlending}));
 scene.add(glow);
 // equatorial plane hint

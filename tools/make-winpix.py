@@ -34,7 +34,7 @@ OUT  = ROOT / 'public' / 'winpix.js'
 # tut8's getPix caps at 2048x1024, so baking above that is discarded; the vendored files still carry
 # full resolution for the 3-D globes, which have no such cap.
 JOBS = [
-    ('earth', ['earth_atmos_2048.jpg', 'earth_schematic.jpg'], 2048, 1024),
+    ('earth', ['earth_hires.jpg', 'earth_atmos_2048.jpg', 'earth_schematic.jpg'], 2048, 1024),
     ('moon',  ['moon_hires.jpg', 'moon_1024.jpg', 'moon_schematic.jpg'], 2048, 1024),
 ]
 

@@ -184,7 +184,7 @@ scene.add(new THREE.AmbientLight(0x223344,0.6));
 
 // Earth (real texture, exact radius = 1 unit)
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
-const earth=new THREE.Mesh(new THREE.SphereGeometry(1,64,48),earthMat); scene.add(earth);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(1,96,64),earthMat); scene.add(earth);
 OA_TEX.onto('earth', earthMat, 0x2b6fb5);   // local photo → pinned CDN → schematic
 // Ground station on the equator (child of Earth, so it rotates WITH the surface).
 // Its longitude is +x at t=0, matching the GEO demo satellite's start — so if GEO is
@@ -199,7 +199,7 @@ const groundStation=new THREE.Mesh(new THREE.ConeGeometry(0.03,0.09,8),
 groundStation.position.copy(coLocal);
 groundStation.lookAt(coLocal.clone().multiplyScalar(2)); groundStation.rotateX(Math.PI/2); // point outward
 earth.add(groundStation);
-earth.add(new THREE.Mesh(new THREE.SphereGeometry(1.03,48,32),
+earth.add(new THREE.Mesh(new THREE.SphereGeometry(1.03,96,64),
   new THREE.MeshBasicMaterial({color:0x3a86ff,transparent:true,opacity:0.12,side:THREE.BackSide})));
 
 /* ---- global time base: real orbital seconds per unit simT ----

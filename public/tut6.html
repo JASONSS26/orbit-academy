@@ -234,10 +234,10 @@ const starField=new THREE.Group(); scene.add(starField);
 
 const tl=new THREE.TextureLoader();
 const earthMat=new THREE.MeshStandardMaterial({color:0x2b6fb5,roughness:1});
-const earth=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH,48,32),earthMat); scene.add(earth);
+const earth=new THREE.Mesh(new THREE.SphereGeometry(R_EARTH,96,64),earthMat); scene.add(earth);
 OA_TEX.onto('earth', earthMat, 0x2b6fb5);
 const moonMat=new THREE.MeshStandardMaterial({color:0xd8d2c4,roughness:1});
-const moon=new THREE.Mesh(new THREE.SphereGeometry(R_MOON*2.2,40,28),moonMat); scene.add(moon);  // slightly enlarged to read at this scale
+const moon=new THREE.Mesh(new THREE.SphereGeometry(R_MOON*2.2,96,64),moonMat); scene.add(moon);  // slightly enlarged to read at this scale
 OA_TEX.onto('moon', moonMat, 0xd8d2c4);
 
 // helper: y-up orbit point (flat orbit in x-z plane); Moon modelled flat like Module 5

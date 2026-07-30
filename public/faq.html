@@ -258,13 +258,14 @@ not survive the copy or the unzip.</p>
 
 <h3 id="moonres">The Moon looks fuzzy up close. Can I sharpen it?</h3>
 <p>Yes — one command, once, on a machine with internet:</p>
-<pre><code>bash tools/fetch-moon-hires.sh</code></pre>
+<pre><code>bash tools/fetch-hires.sh</code></pre>
 <p>The lunar map that ships with the course is <b>1024&times;512 for the entire Moon</b> — a quarter of
 Earth's pixel count — and Module 8 flies you within a few hundred kilometres of the surface, which
 magnifies it hard. The command fetches NASA's <a href="https://svs.gsfc.nasa.gov/4720"
 target="_blank" rel="noopener">LRO/LROC colour mosaic</a> at 4096&times;2048 (a 12.5&nbsp;MB download,
-public domain), converts it, and the simulators pick it up on the next reload. Add <code>--8k</code>
-for 8192&times;4096, or <code>--small</code> for a 0.4&nbsp;MB version that needs no conversion.</p>
+public domain), converts it, and the simulators pick it up on the next reload. It does the same for Earth, replacing the 2048&times;1024 map with NASA's Blue Marble at
+5400&times;2700. Add <code>--big</code> for the largest practical sizes, or name one body:
+<code>moon</code> / <code>earth</code>.</p>
 <div class="ok">For an <b>air-gapped</b> site, run it on a networked machine and copy the folder
 across — or build a bundle with <code>bash tools/make-bundle.sh</code> and the sharper Moon travels
 inside it. The course still never downloads anything at run time.</div>

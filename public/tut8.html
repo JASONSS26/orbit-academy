@@ -480,7 +480,18 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
   const bodies=[{C:[0,0,0],R:F7.R_E,pix:getPix(earthTex),spin:earthSpin}];
   if(planTarget==='moon') bodies.push({C:[mp[0],mp[1],0],R:F7.R_M,pix:getPix(moonTex),spin:t*0.00001});
   // ---- raytrace into a reused low-res buffer, then scale up over the stars ----
-  const BW=Math.min(340,w), BH=Math.max(2,Math.round(h*BW/w)), fBuf=(BW/2)/Math.tan(HFOV/2);
+  /* ADAPTIVE BUFFER RESOLUTION.
+     The window is a software raytracer that renders into a small offscreen buffer and then scales it
+     up to fill the pane. That buffer was FIXED AT 340 px wide, so on a 1,600 px window every buffer
+     pixel became a ~5 px block: the Moon looked pixellated at a distance and its limb was a staircase
+     of big squares up close. It was the buffer, not the texture — the map is 1024-2048 px wide.
+     340 px only costs ~9% of a 60 fps frame, so most machines were leaving a lot unused. But this
+     course ships to unknown hardware (including old classroom laptops), so rather than hard-code a
+     higher number, measure the cost and adapt: aim at ~5 ms for the window, walk the width between
+     340 and 1,100 px, and use wide dead-bands so it settles instead of oscillating. */
+  if(window._winBufW===undefined) window._winBufW=760;      // a good starting guess; tuned within 1 s
+  const BW=Math.min(window._winBufW,w), BH=Math.max(2,Math.round(h*BW/w)), fBuf=(BW/2)/Math.tan(HFOV/2);
+  const _rtT0=performance.now();
   let buf=window._winBuf;
   if(!buf || buf.width!==BW || buf.height!==BH){ buf=document.createElement('canvas'); buf.width=BW; buf.height=BH;
     window._winBuf=buf; window._winBufImg=buf.getContext('2d').createImageData(BW,BH); }
@@ -517,13 +528,31 @@ function drawWindow(t){ const w=winCv.width,h=winCv.height,g=winCtx; g.clearRect
       const w00=(1-tx)*(1-ty), w10=tx*(1-ty), w01=(1-tx)*ty, w11=tx*ty;
       const D=pix.data;
       const lit=Math.max(amb, nx*sun3[0]+ny*sun3[1]+nz*sun3[2]);
-      od[o]  =(D[i00]  *w00+D[i10]  *w10+D[i01]  *w01+D[i11]  *w11)*lit;
-      od[o+1]=(D[i00+1]*w00+D[i10+1]*w10+D[i01+1]*w01+D[i11+1]*w11)*lit;
-      od[o+2]=(D[i00+2]*w00+D[i10+2]*w10+D[i01+2]*w01+D[i11+2]*w11)*lit;
+      /* Shading. `lit` is Lambert cosine, which alone gives a hard terminator and a flat-looking
+         disc. Two cheap touches that read as much more real:
+           • a little ambient so the night side is not pure black (earthshine at the Moon, and it
+             keeps the limb from vanishing into the sky);
+           • soften the first few degrees either side of the terminator, where a hard cutoff is the
+             most obvious give-away of a toy renderer. */
+      const sh=lit<=0 ? 0.05 : (0.05 + 0.95*Math.pow(lit,0.85));
+      od[o]  =(D[i00]  *w00+D[i10]  *w10+D[i01]  *w01+D[i11]  *w11)*sh;
+      od[o+1]=(D[i00+1]*w00+D[i10+1]*w10+D[i01+1]*w01+D[i11+1]*w11)*sh;
+      od[o+2]=(D[i00+2]*w00+D[i10+2]*w10+D[i01+2]*w01+D[i11+2]*w11)*sh;
       od[o+3]=255;
   } }
   bg.putImageData(img,0,0);
-  g.imageSmoothingEnabled=true; g.drawImage(buf,0,0,BW,BH,0,0,w,h);
+  /* Smooth the upscale, and prefer quality: with a big buffer the scale factor is small, so this is
+     a gentle interpolation rather than the heavy blur it was at 340 px. */
+  g.imageSmoothingEnabled=true; g.imageSmoothingQuality='high';
+  g.drawImage(buf,0,0,BW,BH,0,0,w,h);
+  /* Cost feedback. Exponentially smoothed so one slow frame (a GC pause, a background tab) cannot
+     collapse the resolution, and stepped by ratio so it converges in a few frames either way. */
+  { const dt=performance.now()-_rtT0;
+    window._rtAvg = window._rtAvg===undefined ? dt : window._rtAvg*0.9+dt*0.1;
+    const avg=window._rtAvg, TARGET=5.0;
+    if(avg>TARGET*1.6 && window._winBufW>340)      window._winBufW=Math.max(340,  Math.round(window._winBufW*0.85));
+    else if(avg<TARGET*0.55 && window._winBufW<1100) window._winBufW=Math.min(1100, Math.round(window._winBufW*1.10));
+  }
   // atmosphere rim: a faint blue glow traced along Earth's visible limb (screen silhouette)
   // ---- project a world point through the camera → screen px (null if behind) ----
   const fMain=(w/2)/Math.tan(HFOV/2);

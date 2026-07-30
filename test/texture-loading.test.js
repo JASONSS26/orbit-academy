@@ -83,7 +83,13 @@ function boot({ withBaked, failLocal }) {
 {
   const { api, asked } = boot({ withBaked: false, failLocal: false });
   const chain = api.chain('earth');
-  ok('without winpix.js the local file leads', /vendor\/textures\/earth_atmos_2048\.jpg$/.test(chain[0]), chain[0]);
+  /* The optional NASA upgrade leads the chain whether or not the file is present — chain() lists
+     candidates, and load() walks them until one actually resolves. So assert the ORDER, and that the
+     shipped map is still reachable behind it. */
+  ok('without winpix.js the NASA upgrade is tried first', /earth_hires\.jpg$/.test(chain[0]), chain[0]);
+  ok('the shipped map is still in the chain behind it',
+     chain.some(u => /earth_atmos_2048\.jpg$/.test(u)) &&
+     chain.findIndex(u => /earth_atmos_2048\.jpg$/.test(u)) > 0);
   api.image('earth');
   ok('a LOCAL source is requested without crossOrigin (the file:// killer)',
      asked[0].crossOrigin === undefined, 'crossOrigin=' + String(asked[0].crossOrigin));

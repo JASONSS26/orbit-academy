@@ -59,7 +59,9 @@ const ALLOW_CDN = false;     // DEFAULT: fully local, no outbound attempt. `tool
 
   var CDN = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/';
   var SRC = {
-    earth: ['vendor/textures/earth_atmos_2048.jpg', CDN + 'earth_atmos_2048.jpg', 'vendor/textures/earth_schematic.jpg'],
+    /* *_hires.jpg are the NASA originals added by tools/fetch-hires.sh — optional and absent by
+       default, so they lead the chain and the shipped maps stay as fallbacks. */
+    earth: ['vendor/textures/earth_hires.jpg', 'vendor/textures/earth_atmos_2048.jpg', CDN + 'earth_atmos_2048.jpg', 'vendor/textures/earth_schematic.jpg'],
     /* moon_hires.jpg is the NASA LRO mosaic, added by tools/fetch-moon-hires.sh. It is optional and
        absent by default, so it leads the chain and the 1024x512 three.js map stays as the fallback. */
     moon:  ['vendor/textures/moon_hires.jpg', 'vendor/textures/moon_1024.jpg', CDN + 'moon_1024.jpg', 'vendor/textures/moon_schematic.jpg']
