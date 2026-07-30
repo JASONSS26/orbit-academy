@@ -107,7 +107,7 @@ const src = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].map((m) =
 }).join('\n;\n');
 const EXPORTS = ';Object.assign(globalThis,{setMission,solvePlan,toggleMode,loadIntoCockpit,toggleAuto,'
   + 'getState:()=>({flying,fsT,warp,nextBurn,nBurns:planBurns.length,dvSpent,dvTotal,autoOn,'
-  + 'mode:geoDispMode(),hold:holdStartT,msg:missionMsg,loiter:loiter})});';
+  + 'mode:geoDispMode(),hold:holdStartT,msg:missionMsg,loiter:loiter,pilotClock:pilotClock(),pilotWarp:PILOT_WARP})});';
 try { new Function(src + EXPORTS)(); }
 catch (e) { console.error('FAIL: tut8 inline script did not execute —', e.message); process.exit(1); }
 
@@ -121,12 +121,17 @@ function fly(mission, maxFrames) {
   const errs = [];
   const realErr = console.error;
   console.error = (...a) => errs.push(a.join(' '));
-  let f = 0, modes = new Set(), loiterAt = 0;
+  let f = 0, modes = new Set(), loiterAt = 0, spedUp = 0;
   for (; f < maxFrames && rafCb; f++) {
     const cb = rafCb; rafCb = null; global.CLK += 16;
     try { cb(global.CLK); } catch (e) { errs.push('THROW frame ' + f + ': ' + e.message); break; }
     const st = getState();
     modes.add(st.mode);
+    /* Once the insertion succeeds the sim HANDS THE CLOCK TO THE PILOT at a deliberately slow 60x, so
+       a real pilot would press '.' to get through the confirmation orbit and victory lap. Do the same,
+       once, or this harness simply runs out of frames watching a lap in near-real time — which is the
+       new behaviour working, not a failure. */
+    if (st.pilotClock && spedUp < 6) { spedUp++; fire('keydown', { key: '.' }); }
     if (st.loiter) {                       // mission won: the pilot may loiter indefinitely
       if (!loiterAt) loiterAt = f;
       if (f - loiterAt > 1200) fire('keydown', { key: 'e' });   // ~20 s of loitering, then debrief

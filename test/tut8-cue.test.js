@@ -50,35 +50,48 @@ ok('ramp ends ABOVE every cruise rung (no jump)', capAt(9)>12000, Math.round(cap
 ok('flightStartWall stamped on both entry points',
    (src.match(/flightStartWall=performance\.now\(\)/g)||[]).length>=2);
 
-/* ---------------------------------------------------------------- LOITER WARP
-   Owner-reported: "module 8 jumps to a fast time warp partway through. I'm trying to fly back to
-   Earth and it's not helpful."
+/* ------------------------------------------------- PILOT OWNS THE CLOCK AFTER INSERTION
+   Two owner reports, same root cause:
+     "module 8 jumps to a fast time warp partway through. I'm trying to fly back to Earth"
+     "lunar insertion exercise still speeds way up when orbit circularized"
 
-   Cause: the warp ladder had NO rung for the loiter state. Loiter begins with every burn retired, so
-   `planBurns[nextBurn]` is undefined and every conditional above fell through to COAST_WARP() —
-   12,000x on the lunar mission. The clock slammed to cruise the moment the mission was won, which
-   makes hand-flying anywhere impossible.
+   The warp ladder is scheduling help for a mission that still has burns to fly. Once the insertion
+   works there is no schedule left, so an automatic rate stops being help and becomes interference.
+   Two separate ways it went wrong:
 
-   Loiter is the one state where the pilot is definitely flying by hand and definitely not on a
-   schedule, so it should be the SLOWEST rung near anything interesting. Graded on height above the
-   nearest surface — Moon or Earth — so it is watchable at both ends of a return trip and brisk across
-   the empty middle. The ',' / '.' trim still multiplies on top. */
-ok('loiter has its own rung in the ladder', /: loiter \? \(function\(\)\{/.test(src));
-ok('loiter measures height above the NEAREST surface',
-   /const hM = rmNow - F7\.R_M/.test(src) && /const hE = Math\.hypot\(fs\[0\],fs\[1\]\) - F7\.R_E/.test(src)
-   && /Math\.min\(hM, hE\)/.test(src));
+     1. NO LOITER RUNG. With every burn retired the ladder fell through to COAST_WARP() — 12,000x on
+        the lunar mission — so hand-flying anywhere was impossible.
+     2. THE RANGE CAP EXCLUDED THE POST-CAPTURE STATES. The cap pinned the arrival to 120x because the
+        Moon was close, but its guard skipped holdStartT / victoryUntil / loiter — exactly the states
+        circularization produces. So the clock jumped 5x to 600x at the precise moment the pilot most
+        wants to watch the orbit they just made.
 
-const loiterWarp = d => d<2000 ? 120 : d<8000 ? 300 : d<20000 ? 600 : d<45000 ? 2000 : 6000;
-ok('low lunar orbit is watchable',        loiterWarp(100)===120,   loiterWarp(100)+'x at 100 km');
-ok('low Earth orbit is watchable',        loiterWarp(400)===120,   loiterWarp(400)+'x at 400 km');
-ok('the empty middle is brisk',           loiterWarp(200000)===6000, loiterWarp(200000)+'x mid-transit');
-ok('never reaches the old 12000x',        [100,400,5000,15000,30000,200000,384400].every(d=>loiterWarp(d)<=6000));
-ok('monotonic — never speeds up on approach', (()=>{
-     const ds=[384400,200000,45000,30000,20000,8000,2000,400,100];
-     const ws=ds.map(loiterWarp);
-     return ws.every((w,i)=>i===0||w<=ws[i-1]);
-   })(), [384400,200000,30000,8000,400].map(d=>loiterWarp(d)+'x').join(' -> '));
-ok('a hand-flown return is feasible', 4*86400/6000 < 120, (4*86400/6000).toFixed(0)+' s for a 4-day transit');
+   Fixed by handing over rather than by picking a different automatic number: from capture onward
+   pilotClock() is true, the ladder and the cap both step aside, and ',' / '.' set an ABSOLUTE rate
+   from a slow default. */
+ok('a pilot-clock state exists', /function pilotClock\(\)\{ return !!\(holdStartT \|\| victoryUntil \|\| loiter\); \}/.test(src));
+ok('it overrides the ladder outright', /if\(pilotClock\(\) && !firing\) warp = PILOT_WARP;/.test(src));
+ok('the range cap stands aside for it', /!firing && !pilotClock\(\)/.test(src));
+ok('the old loiter rung is gone (superseded)', !/return d<2000 \? 120 : d<8000/.test(src));
+ok('starts slow enough to watch a fresh orbit', /PILOT_WARP_DEFAULT=60/.test(src));
+ok('reaches high enough to fly home', /PILOT_WARP_MAX=20000/.test(src));
+ok('never runs backwards or stops', /PILOT_WARP_MIN=1/.test(src));
+ok('reset per flight', /PILOT_WARP=PILOT_WARP_DEFAULT; pilotClockAnnounced=false;/.test(src));
+ok('the handover is announced once', /pilotClockAnnounced=true;/.test(src) && /YOU HAVE THE CLOCK/.test(src));
+ok("',' and '.' set an absolute rate once handed over",
+   /if\(pilotClock\(\)\)\{ PILOT_WARP=Math\.max\(PILOT_WARP_MIN, PILOT_WARP\/2\)/.test(src) &&
+   /if\(pilotClock\(\)\)\{ PILOT_WARP=Math\.min\(PILOT_WARP_MAX, PILOT_WARP\*2\)/.test(src));
 
-console.log(bad?'\n'+bad+' FAILED':'\nBURN CUE + WARP EASE-IN + LOITER VERIFIED');
+// the reachable range, by doubling from the default
+{
+  const lo=[], hi=[];
+  let w=60; while(w>1){ w=Math.max(1,w/2); lo.push(w); }
+  w=60; while(w<20000){ w=Math.min(20000,w*2); hi.push(w); }
+  ok('a few presses span slow to fast', lo.length<=6 && hi.length<=9,
+     'down in '+lo.length+' presses, up in '+hi.length);
+  const T=2*Math.PI*Math.sqrt(Math.pow(1999,3)/4902.8);      // a 1,999 km lunar orbit
+  ok('default is watchable', T/60 > 100, (T/60).toFixed(0)+' s per lunar orbit at 60x');
+  ok('max makes a 4-day return practical', 4*86400/20000 < 30, (4*86400/20000).toFixed(0)+' s for a 4-day transit');
+}
+console.log(bad?'\n'+bad+' FAILED':'\nBURN CUE + WARP EASE-IN + PILOT CLOCK VERIFIED');
 process.exit(bad?1:0);

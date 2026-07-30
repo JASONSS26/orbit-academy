@@ -1093,6 +1093,7 @@ function startFlight(){ loadPlanFromStore();
   victoryUntil=0; victoryMsg=''; loiter=false;            // fresh victory-lap / loiter state per flight
   approachGates=null; gatePrevAng=null; collPrev=null;   // fresh ILS gates + collision tracking per flight
   userWarp=1;                                             // fresh time-warp trim per flight
+  PILOT_WARP=PILOT_WARP_DEFAULT; pilotClockAnnounced=false;  // and a fresh pilot clock
   livePred=null; livePredAt=0; livePredMin=null;          // fresh live-prediction cache per flight
   $('debrief').classList.remove('show');
   autoDir=null; autoTrimRem=null; autoPhasing=null;       // autopilot releases the stick between flights
@@ -1382,12 +1383,9 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
           Grade it on distance to the NEAREST SURFACE instead, so it is slow where there is something
           to see and quick across the empty middle. The pilot's ',' / '.' trim still multiplies on top
           (×1/16 … ×16), so a 4-day transit at 6,000× is ~9 minutes, or ~35 s with '.' held. */
-       : loiter ? (function(){
-           const hM = rmNow - F7.R_M;                        // height above the lunar surface
-           const hE = Math.hypot(fs[0],fs[1]) - F7.R_E;       // …and above Earth's
-           const d  = Math.min(hM, hE);
-           return d<2000 ? 120 : d<8000 ? 300 : d<20000 ? 600 : d<45000 ? 2000 : 6000;
-         })()
+       /* loiter / hold / victory are handled by the PILOT CLOCK below, which overrides this whole
+          ladder — see pilotClock(). Nothing to compute here. */
+       : pilotClock() ? PILOT_WARP
        : (planTarget==='geo' && nextBurn>=planBurns.length && planBurns.length) ? 2600   // phasing leg: the ~1-day drift to the target plays in ~30 s
        /* Run-up ladder, tuned so the wait is ~10 s of wall clock rather than a minute of patience:
           cruise → T-CUE_LEAD: full approach warp · T-900 s → T-45 s: 240× (~3.6 s)
@@ -1408,7 +1406,7 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
   // …but only on the way IN. Once you are captured, the confirmation orbit, the victory lap and the
   // loiter pick their own (already watchable) rates — capping those by range dragged a two-lap victory
   // out to eight minutes of wall clock.
-  if(planTarget==='moon' && !firing && !holdStartT && !victoryUntil && !loiter){
+  if(planTarget==='moon' && !firing && !pilotClock()){
     const cap = rmNow<6000? 120 : rmNow<10000? 300 : rmNow<20000? 600 : rmNow<45000? 2000 : Infinity;
     if(warp>cap) warp=cap;
   }
@@ -1424,7 +1422,16 @@ function stepFlight(dtReal){ if(!flying||!fs||tourOn) return;   // tour pauses t
     if(el<9){ const cap=60*Math.pow(2, el); if(warp>cap) warp=cap; }
     else flightStartWall=0;                            // done easing; stop paying for the check
   }
-  if(!firing) warp=Math.max(0.0625, warp*userWarp);   // ',' / '.' pilot trim on top of the auto warp (×1/16..×16)
+  /* ONCE THE INSERTION WORKS, THE PILOT OWNS THE CLOCK.
+     Everything above is scheduling help for a mission with burns still to fly. The moment capture is
+     confirmed there is no schedule left, so an automatic rate is no longer help — it is interference.
+     The old behaviour pinned the arrival to 120x and then jumped to 600x the instant burn 3 completed,
+     speeding up sharply at the exact moment the pilot most wants to watch the orbit they just made.
+     So: hand over. The ladder and the range cap both step aside, and ',' / '.' set the rate outright
+     from a slow, watchable default. Range awareness is not needed here — the pilot can see where they
+     are and choose. */
+  if(pilotClock() && !firing) warp = PILOT_WARP;
+  else if(!firing) warp=Math.max(0.0625, warp*userWarp);   // ',' / '.' trim on top of the auto warp
   // MISSED a burn window? The correct orbital phase (perigee for a raise, apogee for a circularize)
   // comes back one ORBITAL PERIOD later — so reschedule this same burn forward by one period and let
   // BURN NOW re-alert then, instead of abandoning it. (Cap the retries so a hopeless orbit still ends.)
@@ -1901,6 +1908,13 @@ const THRUST_RATE=500;         // m/s per second of holding. Burns are impulsive
    ⚙ FINE button on the pad, or just hold Shift while thrusting. */
 let fineThrust=false, shiftFine=false;
 let userWarp=1;   // pilot's manual time-warp trim: ',' halves, '.' doubles (multiplies the auto warp)
+/* PILOT CLOCK. Engaged once the lunar insertion has actually worked — confirmation orbit, victory lap
+   or loiter. From then on ',' / '.' set an ABSOLUTE rate rather than a multiplier on an automatic one,
+   because there is no longer any schedule for the sim to be helpful about. 60x starts slow enough to
+   watch a fresh orbit; the range runs to 20,000x so a hand-flown return to Earth is practical. */
+const PILOT_WARP_MIN=1, PILOT_WARP_MAX=20000, PILOT_WARP_DEFAULT=60;
+let PILOT_WARP=PILOT_WARP_DEFAULT, pilotClockAnnounced=false;
+function pilotClock(){ return !!(holdStartT || victoryUntil || loiter); }
 function toggleFine(){ fineThrust=!fineThrust;
   const b=$('fineBtn'); if(b){ b.textContent='⚙ FINE ×0.1 '+(fineThrust?'ON':'OFF'); b.classList.toggle('on',fineThrust); } }
 window.toggleFine=toggleFine;
@@ -2127,8 +2141,14 @@ addEventListener('keydown',e=>{ if(planMode) return;
   // ',' / '.' — the course-wide time-warp keys work in the cockpit too (they scale the auto warp)
   if((e.key==='e'||e.key==='E') && loiter){ loiter=false; endFlight(victoryMsg||'✅ Mission accomplished.', true); return; }
   if(e.key==='f'||e.key==='F'){ cycleGeoFrame(); return; }
-  if(e.key===','){ userWarp=Math.max(0.0625, userWarp/2); missionMsg='⏱ time warp ×'+(userWarp<1?userWarp.toFixed(4).replace(/0+$/,'').replace(/\.$/,''):userWarp)+' of auto'; return; }
-  if(e.key==='.'){ userWarp=Math.min(16, userWarp*2); missionMsg='⏱ time warp ×'+userWarp+' of auto'; return; }
+  if(e.key===','){
+    if(pilotClock()){ PILOT_WARP=Math.max(PILOT_WARP_MIN, PILOT_WARP/2); missionMsg='⏱ time warp ×'+Math.round(PILOT_WARP)+' (you have the clock)'; }
+    else { userWarp=Math.max(0.0625, userWarp/2); missionMsg='⏱ time warp ×'+(userWarp<1?userWarp.toFixed(4).replace(/0+$/,'').replace(/\.$/,''):userWarp)+' of auto'; }
+    return; }
+  if(e.key==='.'){
+    if(pilotClock()){ PILOT_WARP=Math.min(PILOT_WARP_MAX, PILOT_WARP*2); missionMsg='⏱ time warp ×'+Math.round(PILOT_WARP)+' (you have the clock)'; }
+    else { userWarp=Math.min(16, userWarp*2); missionMsg='⏱ time warp ×'+userWarp+' of auto'; }
+    return; }
   const dir=KEYDIR[e.key.toLowerCase()]; if(dir&&!e.repeat){ e.preventDefault();
   const btn=document.querySelector('#burnPad .bbtn.'+dir); startBurn(dir,btn); } });
 addEventListener('keyup',e=>{ const dir=KEYDIR[e.key.toLowerCase()]; if(dir){ e.preventDefault(); stopBurn(); } });
@@ -2611,6 +2631,10 @@ function loop(ts){ requestAnimationFrame(loop);
   stepBurn(ts);                 // apply held thrust to the flight state
   if(flying) stepFlight(dtReal); // advance the mission clock (warp coast / real-time near burns)
   if(flying) autopilotTick();    // 🤖 AUTO FLY: time the burns / release on the number
+  if(flying && pilotClock() && !pilotClockAnnounced){
+    pilotClockAnnounced=true;
+    missionMsg='⏱ YOU HAVE THE CLOCK — time warp is yours now: “,” slower, “.” faster (×1 … ×20,000)';
+  }
   if(flying) capcomElems();      // periodic TLE-style telemetry read-back (a, e, peri, apo)
   else phase = (Math.floor(t/6000)%3===0)?'leo':(Math.floor(t/6000)%3===1)?'cruise':'arrival'; // idle demo
   // BURN annunciator follows the schedule in two stages: an amber ⏳ COUNTDOWN arms through the
