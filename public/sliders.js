@@ -118,6 +118,41 @@
   else upgradeAll();
 
   // Modules that build controls later can re-run this; it skips anything already done.
+
+  /* ------------------------------------------------------------------ ZOOM DAMPING
+     Reviewer, twice: "Make the mousepad adjustments to zooming in and out less trigger-happy. Once
+     you are zoomed in and want small adjustments, make that easy to do." / "Mousepad interactions
+     for user are jerky and frustrating."
+
+     THE CAUSE was the same expression in every simulator:
+
+         camR *= 1 + Math.sign(e.deltaY) * 0.1
+
+     Math.sign() DISCARDS THE MAGNITUDE. A feather-light two-finger nudge and a hard flick both
+     produce an identical 10% jump, so fine control was impossible by construction — the input was
+     being thrown away before it was used.
+
+     This replaces it with a proportional response:
+       • deltaY is normalised across deltaMode (0 = pixels, 1 = lines, 2 = pages), because a mouse
+         wheel and a trackpad report in completely different units;
+       • the response is exponential in the (clamped) delta, so zooming feels the same at every
+         scale — one "notch" is always the same RATIO, never the same number of km;
+       • Shift gives quarter-speed for the last bit of precision;
+       • the clamp stops one violent flick from crossing the whole range.
+
+     Typical results: a gentle trackpad event (|delta| ≈ 4) moves ~0.6%; a mouse notch (|delta| ≈ 100)
+     moves ~16%; the hardest possible flick is capped at 42%. */
+  function zoomFactor(e, opts) {
+    let d = e.deltaY;
+    if (e.deltaMode === 1) d *= 16;          // lines  -> approx pixels
+    else if (e.deltaMode === 2) d *= 100;    // pages  -> approx pixels
+    let k = d * 0.0015 * ((opts && opts.gain) || 1);
+    if (e.shiftKey) k *= 0.25;               // fine trim
+    k = Math.max(-0.35, Math.min(0.35, k));  // one flick can never cross the range
+    return Math.exp(k);
+  }
+  window.OA_ZOOM = { factor: zoomFactor };
+
   window.OA_SLIDERS = { upgradeAll: upgradeAll,
     /* for tests and teardown: stop the shared poll */
     _stop: function () { if (poll) { clearInterval(poll); poll = null; } } };

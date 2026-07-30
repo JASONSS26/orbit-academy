@@ -65,6 +65,12 @@ function makeDom() {
     return n;
   };
   const doc = {
+    /* NOTE — this stub AUTO-CREATES an element for any id, so under it every element exists at
+       every moment. That is convenient for driving quiz interactions (what this file tests), but it
+       means "element used before it was created" is UNREPRESENTABLE here — and that class of bug
+       once shipped: boot() reached for #offlineBadge before renderAll() made it, hanging every
+       worksheet at "loading…" on file://. Existence/ordering is covered by worksheet-boot.test.js,
+       which uses a strict DOM that returns null. Do not add existence assertions to this file. */
     getElementById: (id) => store[id] || (store[id] = mk(id)),
     querySelector: () => mk('q'), querySelectorAll: () => [],
     createElement: (t) => mk(t), addEventListener() {}, body: mk('body')

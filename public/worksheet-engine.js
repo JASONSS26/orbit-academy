@@ -36,13 +36,19 @@ async function boot(){
     const tasks=((ME.progress[TUT]||{}).tasks)||{};
     allTaskIds().forEach(id=>{ state[id]=!!(tasks[id]&&tasks[id].done); });
   } else {
-    // standalone mode (e.g. GitHub Pages): no server → localStorage
-    OFFLINE=true; $('offlineBadge').style.display='inline-block';
+    /* Standalone mode (bare HTML off disk, or GitHub Pages): no server → localStorage.
+       NOTE: do NOT touch #offlineBadge here. It does not exist yet — renderHeaderButtons()
+       creates it, and that runs inside renderAll(), below. Setting the flag is enough; the
+       renderer reads it. (This ordering bug hung the page at "loading…" on file://.) */
+    OFFLINE=true;
     $('who').innerHTML='<b>Guest</b><br>standalone';
     const saved=lsLoad(); allTaskIds().forEach(id=>{ state[id]=!!saved[id]; });
   }
   renderAll(); updateRail();
 }
+/* Show the standalone badge if it has been rendered yet. Null-guarded because the mid-session
+   fallback in save() can flip us offline at any moment, including before the first render. */
+function showOfflineBadge(){ const b=$('offlineBadge'); if(b) b.style.display='inline-block'; }
 function allTaskIds(){ const ids=(WORKSHEET.tasks||[]).map(t=>t.id);
   (WORKSHEET.exam||[]).forEach((_,i)=>ids.push('exam'+i)); return ids; }
 function totalCount(){ return allTaskIds().length; }
@@ -58,7 +64,7 @@ async function save(tid){
     if(r.ok){ const d=await r.json(); ME.progress=d.progress; flashSaved(); }
     else $('status').innerHTML='save failed (are you signed in?)';
   }catch(e){ // server vanished mid-session → fall back to localStorage
-    OFFLINE=true; $('offlineBadge').style.display='inline-block'; const o=lsLoad(); o[tid]=true; lsSave(o); flashSaved(); }
+    OFFLINE=true; showOfflineBadge(); const o=lsLoad(); o[tid]=true; lsSave(o); flashSaved(); }
 }
 /* Report an INCORRECT answer so instructors can see where the cohort struggled. Deliberately
    fire-and-forget: the student's experience must not depend on it, and in standalone mode there is
@@ -78,6 +84,7 @@ function renderAll(){ renderHeaderButtons(); renderObjectives(); renderTutorial(
 
 function renderHeaderButtons(){
   $('who').insertAdjacentHTML('beforebegin','<span id="offlineBadge">● standalone (saved in this browser)</span>');
+  if(OFFLINE) showOfflineBadge();   // the badge is born hidden; it is ours to reveal
 }
 
 function renderObjectives(){
@@ -97,13 +104,17 @@ function renderTutorial(){
   $('tutorial').innerHTML='<div class="card tutorial"><h2>Quick-start tutorial</h2>'+blocks+'</div>';
 }
 function renderElemTable(){
-  if(!WORKSHEET.elements){ $('elemTable').innerHTML=''; return; }
+  /* The element table is OPTIONAL — worksheets 7 and 8 have no #elemTable div at all, because they
+     teach no orbital-element table. Reaching for it unconditionally threw on those two pages and
+     took the whole boot with it. Absent host + absent content are both simply "nothing to do". */
+  const host=$('elemTable'); if(!host) return;
+  if(!WORKSHEET.elements){ host.innerHTML=''; return; }
   const E=WORKSHEET.elements;
   let html='<div class="card"><h2>'+esc(E.title)+'</h2><p>'+E.blurb+'</p>';
   html+='<table class="elem"><tr><th>'+(E.cols?E.cols[0]:'What it sets')+'</th><th>'+(E.cols?E.cols[1]:'Plain-language meaning')+'</th><th>'+(E.cols?E.cols[2]:'In the tool')+'</th></tr>';
   E.rows.forEach(r=>{ html+='<tr><td>'+r.name+'</td><td>'+r.meaning+'</td><td>'+r.tool+'</td></tr>'; });
   html+='</table>'+(E.foot?'<p style="color:var(--dim);font-size:15px">'+E.foot+'</p>':'')+'</div>';
-  $('elemTable').innerHTML=html;
+  host.innerHTML=html;
 }
 function renderTasks(){
   const host=$('tasks'); host.innerHTML=''; let n=0;
@@ -223,4 +234,17 @@ function updateRail(){ const total=totalCount(), done=doneCount();
 function maybeFinish(){ if(totalCount()>0 && doneCount()===totalCount()) showDone(); }
 function showDone(){ const d=$('done'); if(d) d.style.display='block'; }
 
-boot();
+/* boot() is async, so an exception inside it becomes a REJECTED PROMISE, not a visible error: the
+   page simply sits at "loading…" forever with nothing in the console but an unhandled rejection.
+   That is exactly how the offlineBadge ordering bug reached a user. A worksheet is mostly static
+   content, so failing to reach the server must never cost the student the text — if boot() dies we
+   render anyway, in standalone mode, and say so. */
+boot().catch(e=>{
+  try{
+    console.error('worksheet boot failed:', e);
+    OFFLINE=true;
+    const saved=lsLoad(); allTaskIds().forEach(id=>{ state[id]=!!saved[id]; });
+    renderAll(); updateRail(); showOfflineBadge();
+    $('status').innerHTML='<b>standalone</b> — progress saved in this browser';
+  }catch(e2){ const s=$('status'); if(s) s.textContent='This worksheet failed to load: '+(e&&e.message||e); }
+});

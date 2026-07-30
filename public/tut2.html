@@ -200,6 +200,7 @@
 <script src="vendor/three.min.js"></script>
 <script src="winpix.js"></script>
 <script src="textures.js"></script>
+<script src="sliders.js"></script>
 <script src="tut2.data.js"></script>
 <script>
 "use strict";
@@ -378,7 +379,7 @@ addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clie
     const up=new THREE.Vector3().setFromMatrixColumn(cam3.matrix,1);
     const k=camR*0.0016; panPivot.addScaledVector(right,-dx*k); panPivot.addScaledVector(up,dy*k);
   }});
-$('c3d').addEventListener('wheel',e=>{camR=Math.max(2,Math.min(30,camR*(1+Math.sign(e.deltaY)*0.1)));e.preventDefault();},{passive:false});
+$('c3d').addEventListener('wheel',e=>{camR=Math.max(2,Math.min(30,camR*OA_ZOOM.factor(e)));e.preventDefault();},{passive:false});
 
 /* ---------------- resize ---------------- */
 function resize(){const st=$('stage3d'),w=st.clientWidth,h=st.clientHeight;r3d.setSize(w,h,false);cam3.aspect=w/h;cam3.updateProjectionMatrix();
@@ -609,6 +610,5 @@ function drawFrame(x0,y0,S,caption){
 
 resize(); requestAnimationFrame(loop);
 </script>
-<script src="sliders.js"></script>
 </body>
 </html>

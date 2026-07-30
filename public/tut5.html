@@ -113,7 +113,7 @@
     <div class="sec warp">
       <span style="font-size:16px;color:var(--dim)">time&nbsp;</span>
       <button onclick="warpDown()">−</button>
-      <span id="warpV" style="font-size:17px;color:#fff;min-width:64px;text-align:center">1×</span>
+      <span id="warpV" style="font-size:17px;color:#fff;min-width:64px;text-align:center">12h/s</span>
       <button onclick="warpUp()">+</button>
       <button onclick="togglePause()" id="pauseBtn" style="width:auto;flex:1">⏸</button>
     </div>
@@ -155,6 +155,7 @@
 <script src="vendor/three.min.js"></script>
 <script src="winpix.js"></script>
 <script src="textures.js"></script>
+<script src="sliders.js"></script>
 <script>
 "use strict";
 /* ============================================================================
@@ -183,7 +184,9 @@ const MOON_ECL_INC=5.14*Math.PI/180;
 const T_MOON=27.32;         // sidereal month (days)
 const MOON_E=0.0549;
 
-let scale='moon', frame='eci', simT=0, warp=60, paused=false;
+/* warp is the sim-seconds-per-wall-second clock rate. The real initial value comes from
+   SCALE_WARP via setScale() during init; this is just a sane pre-init placeholder. */
+let scale='moon', frame='eci', simT=0, warp=43200, paused=false;
 let last=performance.now();
 
 /* ------------------------------- renderer -------------------------------- */
@@ -392,7 +395,7 @@ canvas.addEventListener('mousedown',e=>{drag=2;lx=e.clientX;ly=e.clientY;dragFra
 addEventListener('mouseup',()=>drag=0);
 addEventListener('mousemove',e=>{ if(!drag)return; const v=views[dragFrame]; const dx=e.clientX-lx,dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
   v.th-=dx*0.005; v.ph=Math.max(0.05,Math.min(Math.PI-0.05,v.ph-dy*0.005)); });
-canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*1.3,Math.min(L1_ES*3,v.R*(1+Math.sign(e.deltaY)*0.12)));},{passive:false});
+canvas.addEventListener('wheel',e=>{e.preventDefault(); const v=views[activeFrame(e.clientX,e.clientY)]; v.R=Math.max(R_MOON*1.3,Math.min(L1_ES*3,v.R*OA_ZOOM.factor(e)));},{passive:false});
 canvas.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=1;lx=e.touches[0].clientX;ly=e.touches[0].clientY;dragFrame=activeFrame(lx,ly);}else if(e.touches.length===2){drag=0;pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
 canvas.addEventListener('touchmove',e=>{e.preventDefault(); const v=views[dragFrame]; if(e.touches.length===1&&drag){const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;
     v.th-=dx*0.005; v.ph=Math.max(0.05,Math.min(Math.PI-0.05,v.ph-dy*0.005));   // touch-drag rotates too (no panning — origins stay on the bodies)
@@ -407,9 +410,24 @@ addEventListener('keydown',e=>{ keys[e.key]=true;
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault(); });
 
 /* ------------------------------ warp ------------------------------------- */
-const WARPS=[1,10,60,300,1800,7200,43200,172800,864000,2592000];  // fine low end → 30 days/s
-function warpUp(){ let i=WARPS.indexOf(warp); if(i<WARPS.length-1) warp=WARPS[++i]; showWarp(); }
-function warpDown(){ let i=WARPS.indexOf(warp); if(i>0) warp=WARPS[--i]; showWarp(); }
+/* The rungs of the time ladder. 21600 (6h/s) and 86400 (1 d/s) MUST be on this list: the release
+   and TLI exercises jump the clock straight to those values, and a warp that is not a rung makes
+   WARPS.indexOf() return −1 — after which "+" fell through to WARPS[0] and dumped you from 1 d/s to
+   1×, while "−" did nothing at all. The time controls were dead until you changed scale. */
+const WARPS=[1,10,60,300,1800,7200,21600,43200,86400,172800,864000,2592000];
+
+/* Has the student set the rate deliberately? If so, changing scale must not overrule them. */
+let warpTouched=false;
+
+/* If the clock is sitting between rungs, step from the nearest one rather than giving up. */
+function warpIndex(){
+  const i=WARPS.indexOf(warp); if(i>=0) return i;
+  let best=0; for(let k=1;k<WARPS.length;k++)
+    if(Math.abs(Math.log(WARPS[k]/warp))<Math.abs(Math.log(WARPS[best]/warp))) best=k;
+  return best;
+}
+function warpUp(){ let i=warpIndex(); if(i<WARPS.length-1) warp=WARPS[i+1]; warpTouched=true; showWarp(); }
+function warpDown(){ let i=warpIndex(); if(i>0) warp=WARPS[i-1]; warpTouched=true; showWarp(); }
 function showWarp(){ const s=warp; $('warpV').textContent = s<3600? s+'×' : s<86400? (s/3600).toFixed(0)+'h/s' : (s/86400).toFixed(0)+'d/s'; }
 function togglePause(){ paused=!paused; $('pauseBtn').textContent=paused?'▶':'⏸'; }
 
@@ -436,7 +454,27 @@ function releaseOnLine(){
              : 'Released at <b>'+(f*100).toFixed(0)+'%</b> — right on the <b>balance-point knife-edge</b> (~85%); it barely drifts, then tips one way.'); }
 
 /* --------------------------- scale & frame -------------------------------- */
+/* A default clock rate for each scale, chosen so the thing you are looking at completes one cycle
+   in roughly half a minute — fast enough that motion is obvious the instant the view opens, slow
+   enough to follow with your eye.
+
+     moon  7200 (2 h/s)   — the elliptical orbiter that is ON by default (a=19217 km, T=66.4 h
+                            about the Moon's mu, NOT Earth's) laps in ~33 s
+     em   43200 (12 h/s)  — the sidereal month (27.32 d) runs in ~55 s
+     es  864000 (10 d/s)  — Earth's year (365.25 d) runs in ~37 s
+
+   This matters more here than in any other module. Module 5 teaches REFERENCE FRAMES, and a frame
+   is only meaningful when things move: in ECI the Moon sweeps around Earth, in the rotating frame
+   the Moon hangs still and the stars wheel instead. At the old fixed default of 60× the Moon
+   advanced 0.009°/s — a full month took 10.9 HOURS of wall-clock — so the two frames looked
+   identical and the entire lesson was invisible. */
+const SCALE_WARP={moon:7200, em:43200, es:864000};
+
 function setScale(s){ scale=s;
+  // Match the clock to the new scale — unless the student has deliberately set a rate, in which
+  // case theirs stands. (A 12 h/s clock at low-lunar-orbit zoom is an unreadable blur, and 5 min/s
+  // at Sun–Earth zoom is frozen, so leaving one rate across all three scales cannot work.)
+  if(!warpTouched && SCALE_WARP[s]){ warp=SCALE_WARP[s]; showWarp(); }
   document.querySelectorAll('#scaleSeg button').forEach(b=>b.classList.toggle('sel',b.dataset.scale===s));
   const titles={moon:'🌙 Low lunar orbit',em:'🌍🌙 The Earth–Moon system',es:'☀ The Sun–Earth system'};
   $('stitle').textContent=titles[s];
@@ -692,9 +730,11 @@ function loop(ts){
 
 /* -------------------------------- init ------------------------------------
    Start at the Earth–Moon scale in ECI so the very first view shows the whole
-   Earth–Moon line plus the two highly-elliptical orbiters (one around each body). */
+   Earth–Moon line plus the two highly-elliptical orbiters (one around each body).
+   setScale('em') also sets the clock to the Earth–Moon default (12 h/s), so the Moon is visibly
+   moving from the first second — without which the frame comparison this module is built around
+   shows nothing at all. */
 setFrame('eci'); setScale('em'); showWarp(); resize(); requestAnimationFrame(loop);
 </script>
-<script src="sliders.js"></script>
 </body>
 </html>

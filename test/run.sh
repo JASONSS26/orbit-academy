@@ -58,6 +58,12 @@ node test/multi-instructor.test.js; MI=$?
 echo; echo "--- both run modes: server-tracked AND bare gallery, worksheets interactive ---"
 node test/two-run-modes.test.js; M=$?
 
+echo; echo "--- worksheet boot, STRICT DOM (missing element = null, as in a real browser) ---"
+node test/worksheet-boot.test.js; WB=$?
+
+echo; echo "--- simulator boot: every sim runs against the REAL three.js and renders frames ---"
+node test/sim-boot.test.js; SB=$?
+
 echo; echo "--- file:// robustness (the ZIP-and-double-click install path) ---"
 node test/file-protocol.test.js; F2=$?
 
@@ -66,5 +72,5 @@ bash tools/fetch-vendor.sh --check >/tmp/oa-vendor.$$ 2>&1; V=$?
 tail -n 12 /tmp/oa-vendor.$$ | sed 's/^/  /'; rm -f /tmp/oa-vendor.$$
 
 echo
-if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ] && [ $C8 -eq 0 ] && [ $TX -eq 0 ] && [ $WS -eq 0 ] && [ $SD -eq 0 ] && [ $WR -eq 0 ] && [ $QQ -eq 0 ] && [ $SS -eq 0 ] && [ $RV -eq 0 ] && [ $SL -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
-else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI cue=$C8 tex=$TX samp=$WS dial=$SD res=$WR quiz=$QQ sso=$SS rv=$RV sliders=$SL)"; exit 1; fi
+if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ] && [ $C8 -eq 0 ] && [ $TX -eq 0 ] && [ $WS -eq 0 ] && [ $SD -eq 0 ] && [ $WR -eq 0 ] && [ $QQ -eq 0 ] && [ $SS -eq 0 ] && [ $RV -eq 0 ] && [ $SL -eq 0 ] && [ $WB -eq 0 ] && [ $SB -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
+else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI cue=$C8 tex=$TX samp=$WS dial=$SD res=$WR quiz=$QQ sso=$SS rv=$RV sliders=$SL wsboot=$WB simboot=$SB)"; exit 1; fi

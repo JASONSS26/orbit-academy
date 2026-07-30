@@ -118,6 +118,7 @@
 <script src="vendor/three.min.js"></script>
 <script src="winpix.js"></script>
 <script src="textures.js"></script>
+<script src="sliders.js"></script>
 <script>
 "use strict";
 /* ============================================================================
@@ -390,7 +391,7 @@ addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clie
     const up=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
     const k=camR*0.0016; panPivot.addScaledVector(right,-dx*k); panPivot.addScaledVector(up,dy*k);
   }});
-$('c').addEventListener('wheel',e=>{camR=Math.max(2.5,Math.min(60,camR*(1+Math.sign(e.deltaY)*0.1)));e.preventDefault();},{passive:false});
+$('c').addEventListener('wheel',e=>{camR=Math.max(2.5,Math.min(60,camR*OA_ZOOM.factor(e)));e.preventDefault();},{passive:false});
 // arrow keys rotate the 3-D view (same camTh/camPh the mouse-drag controls) — not the sliders; R resets the view
 addEventListener('keydown',e=>{ const R=0.08;
   if(e.key==='ArrowLeft'){ camTh+=R; e.preventDefault(); }
@@ -456,6 +457,5 @@ function loop(){requestAnimationFrame(loop);
 }
 resize(); rebuild(); loop();
 </script>
-<script src="sliders.js"></script>
 </body>
 </html>

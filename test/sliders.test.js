@@ -87,5 +87,56 @@ ok('a single shared poll watches all sliders', (src.match(/setInterval/g) || [])
 ok('the poll can be stopped', typeof window.OA_SLIDERS._stop === 'function');
 window.OA_SLIDERS._stop();
 
-console.log(bad ? '\n' + bad + ' FAILED' : '\nSLIDERS: typed values work, module handlers still fire');
+
+/* ------------------------------------------------------------------ ZOOM DAMPING
+   Same reviewer, same session: "Make the mousepad adjustments to zooming in and out less
+   trigger-happy… Mousepad interactions for user are jerky and frustrating."
+
+   The cause was one expression repeated in every simulator:  camR *= 1 + Math.sign(deltaY)*0.1.
+   Math.sign() DISCARDS THE MAGNITUDE, so a feather-light nudge and a hard flick were identical 10%
+   jumps — fine control was impossible by construction, not by tuning. */
+{
+  const f = (d, mode, shift) => {
+    let x = d;
+    if (mode === 1) x *= 16; else if (mode === 2) x *= 100;
+    let k = x * 0.0015; if (shift) k *= 0.25;
+    k = Math.max(-0.35, Math.min(0.35, k));
+    return Math.exp(k);
+  };
+  const zsrc = fs.readFileSync(path.join(ROOT, 'public', 'sliders.js'), 'utf8');
+  ok('OA_ZOOM.factor exists', /window\.OA_ZOOM = \{ factor: zoomFactor \}/.test(zsrc));
+  ok('deltaMode is normalised (mouse vs trackpad units differ)',
+     /deltaMode === 1/.test(zsrc) && /deltaMode === 2/.test(zsrc));
+  ok('no simulator still uses Math.sign for zoom', (() => {
+      for (let n = 1; n <= 8; n++) {
+        const p2 = path.join(ROOT, 'public', 'tut' + n + '.html');
+        if (!fs.existsSync(p2)) continue;
+        if (/camR\*\(1\+Math\.sign\(e\.deltaY\)|v\.R\*\(1\+Math\.sign\(e\.deltaY\)/.test(fs.readFileSync(p2, 'utf8'))) return false;
+      }
+      return true;
+    })());
+  ok('a gentle trackpad nudge is a small change', (f(4, 0) - 1) < 0.02, ((f(4,0)-1)*100).toFixed(1) + '% (was a flat 10%)');
+  ok('a mouse notch still feels like a notch', (f(100, 0) - 1) > 0.10 && (f(100, 0) - 1) < 0.25,
+     ((f(100,0)-1)*100).toFixed(1) + '%');
+  ok('the hardest flick is clamped', (f(100000, 0) - 1) < 0.45, ((f(100000,0)-1)*100).toFixed(1) + '%');
+  ok('Shift gives a much finer step', (f(4, 0, true) - 1) < (f(4, 0) - 1) / 3);
+  ok('zoom in then out returns EXACTLY where you started', Math.abs(f(100, 0) * f(-100, 0) - 1) < 1e-12,
+     (f(100,0)*f(-100,0)).toFixed(9));
+  ok('response is a ratio, so it feels the same at every scale', /Math\.exp\(k\)/.test(zsrc));
+
+  /* Load order: the wheel handlers reference OA_ZOOM, so sliders.js must be parsed BEFORE the module
+     script. It happened to work when loaded last (handlers only run on user events), but that is
+     fragile reasoning to leave in the code. */
+  for (let n = 1; n <= 6; n++) {
+    const p2 = path.join(ROOT, 'public', 'tut' + n + '.html');
+    if (!fs.existsSync(p2)) continue;
+    const src2 = fs.readFileSync(p2, 'utf8');
+    const at = src2.indexOf('<script src="sliders.js">');
+    const use = src2.indexOf('OA_ZOOM.factor');
+    if (use < 0) continue;
+    ok('tut' + n + ': sliders.js is parsed before OA_ZOOM is used', at >= 0 && at < use);
+  }
+}
+
+console.log(bad ? '\n' + bad + ' FAILED' : '\nSLIDERS + ZOOM: typed values work, zoom is proportional');
 process.exit(bad ? 1 : 0);

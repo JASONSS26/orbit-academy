@@ -149,6 +149,7 @@
 <script src="vendor/three.min.js"></script>
 <script src="winpix.js"></script>
 <script src="textures.js"></script>
+<script src="sliders.js"></script>
 <script>
 "use strict";
 /* ============================================================================
@@ -307,7 +308,7 @@ addEventListener('mousemove',e=>{ if(!drag) return; const dx=e.clientX-lx, dy=e.
     const k=camR*0.0016; camTarget.addScaledVector(right,-dx*k); camTarget.addScaledVector(up,dy*k); } });
 canvas.addEventListener('wheel',e=>{ e.preventDefault();
   const wheelMouse=e.deltaMode!==0||(e.deltaX===0&&Math.abs(e.deltaY)>=50);
-  if(e.ctrlKey||wheelMouse){ camR=Math.max(1.15,Math.min(200,camR*(1+(e.ctrlKey?e.deltaY*0.01:Math.sign(e.deltaY)*0.1)))); }
+  if(e.ctrlKey||wheelMouse){ camR=Math.max(1.15,Math.min(200,camR*OA_ZOOM.factor(e))); }   /* proportional: see OA_ZOOM */
   else{ const right=new THREE.Vector3().setFromMatrixColumn(cam.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(cam.matrix,1);
     const k=camR*0.0012; camTarget.addScaledVector(right,e.deltaX*k); camTarget.addScaledVector(up,e.deltaY*k); } },{passive:false});
 // touch: 1 finger pan, 2 finger pinch-zoom
@@ -529,6 +530,5 @@ function loop(ts){
 }
 resize(); showWarp(); bcLabel(); scenario('drag'); requestAnimationFrame(loop);
 </script>
-<script src="sliders.js"></script>
 </body>
 </html>
