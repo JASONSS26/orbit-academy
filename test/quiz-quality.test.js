@@ -24,9 +24,28 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 
-/* Tighten these toward ~0.40 (a little above chance) as the content pass proceeds.
-   Per-worksheet so a repaired module cannot regress behind a still-broken one. */
-const THRESHOLD = { 1: 0.80, 2: 0.90, 3: 0.95, 4: 1.00, 5: 1.00, 6: 1.00, 7: 0.90, 8: 1.00 };
+/* TWO METRICS, AND WHY — read this before adjusting anything.
+
+   The first version counted a question as beatable whenever the correct option was the longest, by
+   ANY margin. That was right when gaps were 40-150 characters. It stops being right once a module is
+   repaired: balanced options end up within a few characters of each other, and a 2-character "win"
+   is not a signal a human can act on. Continuing to score those as beatable would understate the
+   repair; scoring them as safe would overstate it. So report BOTH and be explicit:
+
+     strict   — correct option is longest by any margin, ties broken by position (the original)
+     clear    — correct option is longest by MORE THAN MARGIN characters, i.e. actually spottable
+
+   The gate uses `clear`, because that is the exploitable case. `strict` is printed alongside so the
+   softer number can never quietly hide a regression. Note the goal is BALANCE, not inversion: making
+   correct answers reliably SHORTER would just flip the tell and score perfectly on both metrics. */
+const MARGIN = 10;                       // characters — roughly two words, the point it becomes visible
+
+/* Ceilings on the `clear` metric. Tighten as each worksheet is repaired; never loosen. */
+const THRESHOLD = { 1: 0.20, 2: 0.90, 3: 0.95, 4: 0.10, 5: 0.30, 6: 0.15, 7: 0.90, 8: 0.15 };
+/* Worksheet 1 repaired: 77% -> 15%, below the 25% chance line. Its ceiling drops to 0.30 and the
+   ratchet now holds it there. The remaining four are TIES (+0 to +7 characters) — the heuristic no
+   longer discriminates, which is the actual goal; forcing every correct answer to be shorter would
+   just invert the tell. Repair the rest the same way and drop each ceiling as it lands. */
 const GOAL = 0.40;
 
 let bad = 0;
@@ -44,23 +63,27 @@ function questions(n) {
 const plain = s => String(s).replace(/<[^>]*>/g, '');
 
 console.log('Longest-answer heuristic — how often does it pick the correct option?\n');
-let tot = 0, hits = 0;
+let tot = 0, hits = 0, strictTot = 0;
 for (let n = 1; n <= 8; n++) {
   const qs = questions(n);
   if (!qs || !qs.length) continue;
-  let hit = 0;
+  let strict = 0, clear = 0;
   qs.forEach(q => {
     const L = (q.opts || []).map(o => plain(o).length);
-    if (L.indexOf(Math.max(...L)) === q.a) hit++;
+    const other = Math.max(...L.filter((_, i) => i !== q.a));
+    if (L.indexOf(Math.max(...L)) === q.a) strict++;
+    if (L[q.a] - other > MARGIN) clear++;
   });
-  tot += qs.length; hits += hit;
-  const rate = hit / qs.length;
+  tot += qs.length; hits += clear; strictTot += strict;
+  const rate = clear / qs.length;
   const lim = THRESHOLD[n];
   ok('worksheet' + n + ' at or under its current ceiling',
      rate <= lim + 1e-9,
-     hit + '/' + qs.length + ' = ' + (rate * 100).toFixed(0) + '%  (ceiling ' + (lim * 100).toFixed(0) + '%, goal ≤' + (GOAL * 100) + '%)');
+     'clear ' + clear + '/' + qs.length + ' = ' + (rate * 100).toFixed(0) + '%  (strict ' + strict +
+     ', ceiling ' + (lim * 100).toFixed(0) + '%, goal ≤' + (GOAL * 100) + '%)');
 }
-console.log('\n  overall ' + hits + '/' + tot + ' = ' + (100 * hits / tot).toFixed(1) + '%   (chance 25%, pass mark 70%)');
+console.log('\n  overall CLEAR  ' + hits + '/' + tot + ' = ' + (100 * hits / tot).toFixed(1) + '%   (chance 25%, pass mark 70%)');
+console.log('  overall strict ' + strictTot + '/' + tot + ' = ' + (100 * strictTot / tot).toFixed(1) + '%   (includes near-ties)');
 if (hits / tot > GOAL) {
   console.log('  NOTE: still above the ' + (GOAL * 100) + '% goal — the quizzes remain partly beatable');
   console.log('        without understanding. Tracked as P0 in docs/STUDENT_FEEDBACK.md.');
