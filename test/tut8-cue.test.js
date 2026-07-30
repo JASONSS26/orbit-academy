@@ -69,7 +69,23 @@ ok('flightStartWall stamped on both entry points',
    Fixed by handing over rather than by picking a different automatic number: from capture onward
    pilotClock() is true, the ladder and the cap both step aside, and ',' / '.' set an ABSOLUTE rate
    from a slow default. */
-ok('a pilot-clock state exists', /function pilotClock\(\)\{ return !!\(holdStartT \|\| victoryUntil \|\| loiter\); \}/.test(src));
+ok('a pilot-clock state exists', /function pilotClock\(\)\{/.test(src));
+/* SCOPE. First version handed the clock over on ANY holdStartT — but the GEO mission sets that the
+   moment you enter the rendezvous box, and its hold runs a full 24 h orbit. At the 60x handover rate
+   that became 24 MINUTES of wall clock watching a stationary belt, reported as "when it gets close to
+   satellite it seems to freeze". Loiter always; hold/victory only at the Moon. */
+ok('loiter always hands over', /if\(loiter\) return true;/.test(src));
+ok('hold/victory hand over ONLY on the lunar mission',
+   /return planTarget==='moon' && !!\(holdStartT \|\| victoryUntil\);/.test(src));
+ok('the GEO 24 h confirmation hold keeps its automatic rate',
+   /planTarget==='geo' && nextBurn>=planBurns\.length && planBurns\.length\) \? 2600/.test(src));
+{ // the arithmetic that made it look like a hang
+  const geoPeriod=86164;                       // one sidereal day, the GEO hold duration
+  ok('a 24 h hold at the 60x handover rate is ~24 min of wall clock (the bug)',
+     Math.abs(geoPeriod/60/60 - 23.9) < 1.5, (geoPeriod/60/60).toFixed(1)+' minutes');
+  ok('…and ~33 s at the automatic 2600x (the fix)',
+     geoPeriod/2600 < 40, (geoPeriod/2600).toFixed(0)+' seconds');
+}
 ok('it overrides the ladder outright', /if\(pilotClock\(\) && !firing\) warp = PILOT_WARP;/.test(src));
 ok('the range cap stands aside for it', /!firing && !pilotClock\(\)/.test(src));
 ok('the old loiter rung is gone (superseded)', !/return d<2000 \? 120 : d<8000/.test(src));

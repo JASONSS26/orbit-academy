@@ -317,7 +317,7 @@ const WORKSHEET = {
     // ================= PART D =================
     { id:'d1', title:'Before you fly: the frame you are flying in',
       teach:[
-        'You fly this mission in <b>Earth Centered Inertial (ECI)</b> — a non-rotating frame centred on Earth — and the NAV panel says so. Because it does not rotate, orbits appear in their true shapes: circle, transfer ellipse, circle. Angles and distances read straight off the map.',
+        'You fly this mission in <b>Earth Centered Inertial (ECI)</b> — a non-rotating frame centered on Earth — and the NAV panel says so. Because it does not rotate, orbits appear in their true shapes: circle, transfer ellipse, circle. Angles and distances read straight off the map.',
         'Press <b>F</b> and you can borrow the <b>belt-fixed</b> view, which co-rotates with GEO (once per sidereal day, 86,164 s). There the belt and the target <b>stand still</b> and a correct geostationary orbit simply parks — the only picture in which "geostationary" is visible. It is a great thing to look at <i>once</i>, on station at the end.',
         'It is a bad frame to fly the transfer in, though, and knowing why is the lesson: spinning 360° per day, it curls your 5¼-hour transfer through ~80° and skews your 92-minute parking lap ~23°, turning an ordinary ellipse into a spiral. If a path ever looks bizarre, check the frame label before you doubt your flying.',
       ],

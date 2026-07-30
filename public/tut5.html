@@ -68,9 +68,9 @@
       <div class="big">🎥 Reference frame</div>
       <div class="q">What are we holding still? (This is the big idea of the module.)</div>
       <div class="seg" id="frameSeg">
-        <button data-frame="eci"   onclick="setFrame('eci')">Earth-centred inertial (ECI) — Moon orbits Earth</button>
+        <button data-frame="eci"   onclick="setFrame('eci')">Earth-centered inertial (ECI) — Moon orbits Earth</button>
         <button data-frame="emrot" onclick="setFrame('emrot')">Earth–Moon rotating (synodic) — line fixed</button>
-        <button data-frame="mci"   onclick="setFrame('mci')">Moon-centred inertial (MCI) — Earth orbits Moon</button>
+        <button data-frame="mci"   onclick="setFrame('mci')">Moon-centered inertial (MCI) — Earth orbits Moon</button>
         <button data-frame="embr" onclick="setFrame('embr')">ECL-EMBR — barycentric rotating (Lagrange frame)</button>
       </div>
       <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames at once (2×2)</button>
@@ -127,7 +127,7 @@
     <canvas id="c"></canvas>
     <div id="quadDivH"></div><div id="quadDivV"></div>
     <div class="stitle" id="stitle">🌙 Low lunar orbit</div>
-    <div id="frameTag">frame: Earth-centred inertial (ECI)</div>
+    <div id="frameTag">frame: Earth-centered inertial (ECI)</div>
     <div id="banner"></div>
     <div id="hint"></div>
   </div>
@@ -163,7 +163,7 @@
    system, and define xGEO. Motion is analytic/Keplerian (no live propagation),
    so there is zero integration drift. Three zoom scales (lunar surface,
    Earth–Moon, Sun–Earth) × four frames (ECI fixed-stars, Earth–Moon rotating
-   synodic, Moon-centred inertial MCI, ECL-EMBR barycentric rotating),
+   synodic, Moon-centered inertial MCI, ECL-EMBR barycentric rotating),
    toggleable lunar orbiters & xGEO objects,
    the Moon's Hill-sphere boundary, Moon phases, and a "lead the Moon" transfer.
    (Lagrange points & the effective-potential surface are deferred to Module 6.)
@@ -192,7 +192,7 @@ const r3=new THREE.WebGLRenderer({canvas,antialias:true}); r3.setPixelRatio(Math
 const scene=new THREE.Scene();
 const sunLight=new THREE.DirectionalLight(0xffffff,1.5); scene.add(sunLight);
 scene.add(new THREE.AmbientLight(0x55627a,0.5));
-// Starfield on a UNIT sphere; re-scaled and re-centred on each camera every frame so it always
+// Starfield on a UNIT sphere; re-scaled and re-centered on each camera every frame so it always
 // sits just inside the far plane — a proper distant backdrop at every zoom scale and in every frame.
 // Randomized unit-sphere directions (the old golden-angle pattern drew visible spiral bands),
 // with a realistic brightness spread (many dim + a few bright, two pixel sizes) + subtle tint.
@@ -365,7 +365,7 @@ function buildToggles(){ const host=$('toggles'); host.innerHTML='';
    in 2×2 compare mode all four can be aimed independently. They share ONE scene
    and ONE simulation clock, so the same dynamics play in every panel. */
 const FRAMES=['eci','emrot','mci','embr'];
-const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',embr:'ECL-EMBR — barycentric rotating'};
+const FRAME_NAMES={eci:'Earth-centered inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centered inertial (MCI)',embr:'ECL-EMBR — barycentric rotating'};
 const views={};
 for(const f of FRAMES){ views[f]={R:R_MOON*5, th:0.7, ph:1.0, target:new THREE.Vector3(0,0,0),
   cam:new THREE.PerspectiveCamera(50,1,0.5,4e9)}; }
@@ -442,7 +442,7 @@ function setScale(s){ scale=s;
   $('stitle').textContent=titles[s];
   // leaving the Earth–Moon view abandons any armed/flown transfer and clears the Moon phase offset
   if(s!=='em' && tli){ tli=null; tliMoonOffset=0; tliLine.visible=false; tliShip.visible=false; $('tliPanel').style.display='none'; }
-  // Per-frame camera distance. The Moon-centred frame (MCI) zooms in tighter so you
+  // Per-frame camera distance. The Moon-centered frame (MCI) zooms in tighter so you
   // genuinely "ride the Moon"; the tighter zoom also shows the big elliptical lunar orbit clearly.
   const base = s==='moon'? R_MOON*6 : s==='em'? D_EM*1.9 : D_ES*0.6;
   for(const f of FRAMES){ views[f].R = (frameCentersMoon(f) && s!=='es') ? Math.min(base, HILL_MOON*1.4) : base; }
@@ -661,7 +661,7 @@ function renderView(f,x,y,w,h){ const v=views[f]; v.cam.aspect=w/h; v.cam.update
   const isEmbr=(f==='embr');
   eclPlane.visible=isEmbr; eqPlane.visible=isEmbr;
   if(isEmbr){ eclPlane.position.copy(org); eqPlane.position.copy(org); }
-  aimCamera(f); placeStars(v);   // star shell re-centred/scaled for THIS view before it renders
+  aimCamera(f); placeStars(v);   // star shell re-centered/scaled for THIS view before it renders
   // three.js viewport/scissor are in CSS pixels here (renderer scales by pixelRatio internally)
   r3.setViewport(x,y,w,h); r3.setScissor(x,y,w,h); r3.setScissorTest(true);
   r3.render(scene,v.cam); }

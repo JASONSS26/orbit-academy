@@ -1048,6 +1048,7 @@ let flightPlan=null, planBurns=[], nextBurn=0, burnWindow=false, missionMsg='', 
 // Success is not declared the instant you touch the target box — you must HOLD it for a full orbit,
 // leaving room to trim. holdStartT = mission-time the box was first satisfied (0 = not currently in it).
 let holdStartT=0, holdAnnounced=false;
+let lastRvPhase=null, lastRvAt=0;   // rendezvous-order throttle (see rendezvousOrder)
 // Lunar VICTORY LAP: after capture is confirmed (hold complete), the mission doesn't cut straight
 // to the debrief — it runs one more lunar orbit at a watchable warp while the NAV zooms in on the
 // new orbit, then debriefs. victoryUntil = mission-time the lap ends (0 = not in a lap).
@@ -1914,7 +1915,18 @@ let userWarp=1;   // pilot's manual time-warp trim: ',' halves, '.' doubles (mul
    watch a fresh orbit; the range runs to 20,000x so a hand-flown return to Earth is practical. */
 const PILOT_WARP_MIN=1, PILOT_WARP_MAX=20000, PILOT_WARP_DEFAULT=60;
 let PILOT_WARP=PILOT_WARP_DEFAULT, pilotClockAnnounced=false;
-function pilotClock(){ return !!(holdStartT || victoryUntil || loiter); }
+function pilotClock(){
+  /* SCOPE MATTERS — getting this wrong looked like a hang.
+     The handover is for the LUNAR insertion: you have arrived, there is no schedule left, and you want
+     to look at the orbit you just made. The GEO mission's holdStartT is a different animal entirely —
+     it is set the moment you enter the rendezvous box and it runs for ONE FULL ORBIT (24 h) as the
+     scored confirmation. Handing the clock over there at 60x turned that into 24 MINUTES of wall clock
+     staring at a stationary belt, which reads exactly like a freeze. (Reported as "when it gets close
+     to satellite it seems to freeze" — and it was this, not the autopilot.)
+     So: loiter always (free flight, mission won), and hold/victory only at the Moon. */
+  if(loiter) return true;
+  return planTarget==='moon' && !!(holdStartT || victoryUntil);
+}
 function toggleFine(){ fineThrust=!fineThrust;
   const b=$('fineBtn'); if(b){ b.textContent='⚙ FINE ×0.1 '+(fineThrust?'ON':'OFF'); b.classList.toggle('on',fineThrust); } }
 window.toggleFine=toggleFine;
@@ -2172,6 +2184,78 @@ window.toggleAuto=toggleAuto;
 // MEAN longitude offset from the GEO target (deg): the co-rotating angle minus the 2e·sin ν
 // equation-of-centre wobble — what a station-keeping controller must steer on, since the raw
 // angle breathes by ±2e once per orbit on any eccentric (phasing) orbit.
+/* =====================  RENDEZVOUS ORDERS (hand-flying)  =====================
+   Owner report: "when flying that mission by hand it's REALLY hard to maneuver into position."
+   True, and not because the pilot is slow — because nothing on the panel told them WHAT to fly. The
+   director stated range and closing rate, which are facts, not orders. Worse, the intuitive action is
+   the wrong one: to catch a satellite AHEAD of you, you must burn REVERSE, dropping into a lower,
+   shorter-period orbit so you gain on it. A pilot reasoning from "it's ahead, so speed up" flies
+   directly away from the solution.
+
+   So compute the actual maneuver and quote the numbers. Three quantities, all standard GEO phasing:
+
+     drift rate     dλ/dt = -1.5 (δa/a) n     n = 360.99 °/day at GEO
+     Δv for a δa    δv = μ δa / (2 a² v)      ≈ 0.0365 m/s per km of δa at GEO
+     time to close  t = |error| / |drift rate|
+
+   A 400 km dip therefore costs ~14.6 m/s and buys ~+5.1°/day of closure — the pair of numbers the
+   autopilot already uses. Handing the pilot the same numbers makes the manual mission the same
+   exercise as the automatic one, which is the point of the module. */
+const GEO_N_DEG_DAY = 360.9856;                       // GEO mean motion, degrees per (solar) day
+function geoDvForDeltaA(daKm){                        // along-track m/s to change the sma by daKm
+  if(!fs) return 0;
+  const v=Math.hypot(fs[2],fs[3]), a=orbElems().a||42164;
+  return F7.MU_E*daKm/(2*a*a*v)*1000;
+}
+function geoDriftDegDay(daKm){                        // closure rate a given sma offset buys
+  return -1.5*(daKm/42164)*GEO_N_DEG_DAY;
+}
+/* Returns a concrete order, or null when there is nothing to say. */
+function rendezvousOrder(){
+  if(!fs || planTarget!=='geo' || !planBurns.length || nextBurn<planBurns.length) return null;
+  const oe=orbElems();
+  if(!oe.bound || Math.abs(oe.a-42164)>4000) return null;   // not on the belt yet — the plan owns it
+  const err=meanSepDeg()-GEO_STANDOFF;                      // + = we are AHEAD of the standoff point
+  const aOff=oe.a-42164;                                    // where our sma actually sits
+  const DIP=400;                                            // the standard phasing offset, km
+
+  /* Already parked. */
+  if(Math.abs(err)<=0.35 && Math.abs(aOff)<60)
+    return {phase:'hold', text:'ON STATION — hold it. Nothing to fly; small trims only if you drift.'};
+
+  /* Riding a phasing orbit: tell them when to stop, and with what. */
+  if(Math.abs(aOff)>120){
+    const rate=geoDriftDegDay(aOff);                        // °/day we are currently closing at
+    const closing=(rate*err<0);                             // is the drift reducing the error?
+    const eta=Math.abs(rate)>0.05? Math.abs(err/rate) : Infinity;
+    const stopDv=-geoDvForDeltaA(aOff);                      // burn to return the sma to the belt
+    if(!closing) return {phase:'wrong-way',
+      text:'DRIFTING THE WRONG WAY — you are '+(aOff>0?'above':'below')+' the belt by '+Math.abs(aOff).toFixed(0)+
+           ' km, which opens the gap at '+Math.abs(rate).toFixed(1)+'°/day. Burn '+(stopDv>=0?'FORWARD':'REVERSE')+
+           ' '+Math.abs(stopDv).toFixed(1)+' m/s to cancel it, then start again the other way.'};
+    return {phase:'drifting',
+      text:'RIDING THE DRIFT — closing '+Math.abs(rate).toFixed(1)+'°/day, '+Math.abs(err).toFixed(2)+
+           '° to go ('+(eta<1? (eta*24).toFixed(1)+' hours' : eta.toFixed(1)+' days')+'). '+
+           'When the gap reaches 0.3°, burn '+(stopDv>=0?'FORWARD':'REVERSE')+' '+Math.abs(stopDv).toFixed(1)+
+           ' m/s to stop the drift and re-circularize at the belt.'};
+  }
+
+  /* On the belt but out of position: start a phasing orbit, and say which way and why. */
+  const dip = err>0 ? +DIP : -DIP;      // AHEAD of the standoff ⇒ go HIGHER to fall back; behind ⇒ lower
+  const dv  = geoDvForDeltaA(dip);
+  const rate= geoDriftDegDay(dip);
+  const eta = Math.abs(err/rate);
+  const dir = dv>=0? 'FORWARD':'REVERSE';
+  const why = err>0
+    ? 'You are '+err.toFixed(2)+'° AHEAD of your station. To fall BACK you must climb: a higher orbit has a longer period, so the target gains on you.'
+    : 'You are '+Math.abs(err).toFixed(2)+'° BEHIND your station. To catch up you must DROP: a lower orbit has a shorter period, so you gain on the target.';
+  return {phase:'start', dv:Math.abs(dv), dir:dir,
+    text:why+' Burn '+dir+' '+Math.abs(dv).toFixed(1)+' m/s — that puts you '+Math.abs(dip)+' km '+
+         (dip>0?'above':'below')+' the belt and closes at '+Math.abs(rate).toFixed(1)+'°/day, about '+
+         (eta<1? (eta*24).toFixed(1)+' hours' : eta.toFixed(1)+' days')+'. Then burn '+
+         (dv>=0?'REVERSE':'FORWARD')+' '+Math.abs(dv).toFixed(1)+' m/s to stop.'};
+}
+
 function meanSepDeg(){ const cr=toCorotF(fs[0],fs[1],fsT+tShiftSec());
   const sep=Math.atan2(cr[1],cr[0]);
   const rm=Math.hypot(fs[0],fs[1]), v2=fs[2]*fs[2]+fs[3]*fs[3], rv=fs[0]*fs[2]+fs[1]*fs[3];
@@ -2631,6 +2715,19 @@ function loop(ts){ requestAnimationFrame(loop);
   stepBurn(ts);                 // apply held thrust to the flight state
   if(flying) stepFlight(dtReal); // advance the mission clock (warp coast / real-time near burns)
   if(flying) autopilotTick();    // 🤖 AUTO FLY: time the burns / release on the number
+  /* RENDEZVOUS ORDERS. Re-issue whenever the required action CHANGES phase, or every ~90 s of wall
+     clock while a phase persists, so a pilot who looks away still finds a live instruction. Keyed on
+     the phase name so it cannot spam the log on every frame. */
+  if(flying && !training && !autoOn){
+    const ro=rendezvousOrder();
+    if(ro){
+      const now=performance.now();
+      if(ro.phase!==lastRvPhase || now-lastRvAt>90000){
+        lastRvPhase=ro.phase; lastRvAt=now;
+        capcom('CAPCOM: '+ro.text);
+      }
+    } else { lastRvPhase=null; }
+  }
   if(flying && pilotClock() && !pilotClockAnnounced){
     pilotClockAnnounced=true;
     missionMsg='⏱ YOU HAVE THE CLOCK — time warp is yours now: “,” slower, “.” faster (×1 … ×20,000)';

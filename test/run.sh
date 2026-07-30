@@ -31,6 +31,12 @@ echo
 echo "### air-gap suite (no server needed)"
 node test/no-external-calls.test.js; N=$?
 
+echo; echo "--- Module 3: sun-synchronous must be reachable ---"
+node test/tut3-sunsync.test.js; SS=$?
+
+echo; echo "--- quiz quality ratchet (longest-answer heuristic) ---"
+node test/quiz-quality.test.js; QQ=$?
+
 echo; echo "--- planet surface sampling + filtering ---"
 node test/window-sampling.test.js; WS=$?
 node test/window-resolution.test.js; WR=$?
@@ -41,6 +47,7 @@ node test/texture-loading.test.js; TX=$?
 echo; echo "--- Module 8 burn cue + warp ease-in ---"
 node test/tut8-cue.test.js; C8=$?
 node test/tut8-speed-dial.test.js; SD=$?
+node test/tut8-rendezvous-orders.test.js; RV=$?
 
 echo; echo "--- multiple instructors (role gates + last-instructor guard) ---"
 node test/multi-instructor.test.js; MI=$?
@@ -56,5 +63,5 @@ bash tools/fetch-vendor.sh --check >/tmp/oa-vendor.$$ 2>&1; V=$?
 tail -n 12 /tmp/oa-vendor.$$ | sed 's/^/  /'; rm -f /tmp/oa-vendor.$$
 
 echo
-if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ] && [ $C8 -eq 0 ] && [ $TX -eq 0 ] && [ $WS -eq 0 ] && [ $SD -eq 0 ] && [ $WR -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
-else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI cue=$C8 tex=$TX samp=$WS dial=$SD res=$WR)"; exit 1; fi
+if [ $F -eq 0 ] && [ $S -eq 0 ] && [ $D -eq 0 ] && [ $N -eq 0 ] && [ $V -eq 0 ] && [ $F2 -eq 0 ] && [ $M -eq 0 ] && [ $MI -eq 0 ] && [ $C8 -eq 0 ] && [ $TX -eq 0 ] && [ $WS -eq 0 ] && [ $SD -eq 0 ] && [ $WR -eq 0 ] && [ $QQ -eq 0 ] && [ $SS -eq 0 ] && [ $RV -eq 0 ]; then echo "ALL SUITES PASSED ✅"; exit 0
+else echo "SUITE FAILURES ❌ (func=$F sec=$S dos=$D airgap=$N vendor=$V file=$F2 modes=$M multi=$MI cue=$C8 tex=$TX samp=$WS dial=$SD res=$WR quiz=$QQ sso=$SS rv=$RV)"; exit 1; fi

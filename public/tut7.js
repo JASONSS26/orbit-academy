@@ -205,7 +205,7 @@ function drawRadarSky(dt){ const cv=$('radarSky'); if(!cv) return; if(!skyCtx) s
       echoes.push({r:T.r, amp:trueRatio, trueRatio, tgt:T, born:perfNow()}); } }
   }
   pulses=pulses.filter(p=>p.r<RADAR.maxR*1.05);
-  // draw returning echoes: LIMITED-ANGLE concentric arcs centred ON the satellite, expanding back
+  // draw returning echoes: LIMITED-ANGLE concentric arcs centered ON the satellite, expanding back
   // toward the radar as the return propagates. Only the satellite re-radiates — not the arc. The
   // wavefront radius tracks the distance actually travelled back, so the leading arc reaches the
   // radar just as the echo lands and the ping paints. Stays bold the whole way in.

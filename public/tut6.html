@@ -96,9 +96,9 @@
       <div class="big">🎥 Reference frame</div>
       <div class="q">Same four frames as Module 5.</div>
       <div class="seg" id="frameSeg">
-        <button data-frame="eci"   onclick="setFrame('eci')">Earth-centred inertial (ECI)</button>
+        <button data-frame="eci"   onclick="setFrame('eci')">Earth-centered inertial (ECI)</button>
         <button data-frame="emrot" onclick="setFrame('emrot')">Earth–Moon rotating (synodic)</button>
-        <button data-frame="mci"   onclick="setFrame('mci')">Moon-centred inertial (MCI)</button>
+        <button data-frame="mci"   onclick="setFrame('mci')">Moon-centered inertial (MCI)</button>
         <button data-frame="embr" onclick="setFrame('embr')">ECL-EMBR — barycentric rotating (Lagrange frame)</button>
       </div>
       <button id="quadBtn" onclick="toggleQuad()" style="margin-top:7px">⊞ Compare all 4 frames (2×2)</button>
@@ -445,7 +445,7 @@ function buildForceDiagram(){
 
 /* ------------------------------ cameras (from Module 5) ------------------- */
 const FRAMES=['eci','emrot','mci','embr'];
-const FRAME_NAMES={eci:'Earth-centred inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centred inertial (MCI)',embr:'ECL-EMBR — barycentric rotating'};
+const FRAME_NAMES={eci:'Earth-centered inertial (ECI)',emrot:'Earth–Moon rotating (synodic)',mci:'Moon-centered inertial (MCI)',embr:'ECL-EMBR — barycentric rotating'};
 const views={};
 for(const f of FRAMES) views[f]={R:D_EM*1.9, th:0.7, ph:1.0, target:new THREE.Vector3(0,0,0), cam:new THREE.PerspectiveCamera(50,1,0.5,4e9)};
 function frameCentersMoon(f){ return f==='mci'; }
@@ -650,7 +650,7 @@ function buildTess(){ const rp=R_EARTH+108000, ra=368390; tessA=(rp+ra)/2; tessE
 let haloPtsLocal=[], haloCum=[], haloTot=1;
 // A near-rectilinear halo orbit (NRHO) — the real Gateway/CAPSTONE shape: a dramatically
 // elongated, nearly-vertical loop that skims LOW over one lunar pole (perilune ~3,000 km) and
-// swings FAR over the other (apolune ~70,000 km). Built in a Moon-centred local frame (offset by
+// swings FAR over the other (apolune ~70,000 km). Built in a Moon-centered local frame (offset by
 // the Moon's along-line distance), oriented mostly out of the orbital plane (the y axis here).
 function buildHalo(){ const moonX=(1-massFrac)*D_EM; haloPtsLocal=[];
   // NRHO geometry, honest to the real shape: the loop WRAPS the Moon. Perilune skims ~3,000 km over
