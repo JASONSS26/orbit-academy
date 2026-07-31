@@ -4,6 +4,15 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v5.4 — audit result: **PASS**
+
+Client-side release (module 6 scenario + view/clock fixes, module 8 legend and exposure, wording,
+tests, docs). No new endpoints, inputs, file reads or auth changes; the `server.js` diff is the
+version header only. Full checklist re-run 2026-07-31: path traversal, unauthenticated access,
+privilege escalation, session forgery, prerequisite bypass, input validation, DoS body-size, XSS,
+secrets in repo (`academy_data.json` gitignored — verified). Static + runtime network monitoring
+unchanged: zero outbound calls. The new audio and halo code add no I/O of any kind.
+
 ## v5.3 — audit result: **PASS**
 
 No change to the attack surface: v5.3 is a client-side release (simulator rendering, worksheet

@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v5.3
+# 🛰 ORBIT ACADEMY — v5.4
 
 An interactive course teaching orbital dynamics to non-specialists — from "what is an orbit?" through
 cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator.
@@ -18,7 +18,7 @@ cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator
 | **Progress saved** | in your browser | per student, any machine |
 | **You get** | all 8 modules, interactive quizzes | + logins, modules unlocking in order, instructor roster, class analytics, worksheet editor |
 | **Use it for** | learning solo · reviewing · a laptop in a vault | teaching a group |
-| **Download** | `orbit-academy-v5.3-standalone.zip` | `orbit-academy-v5.3.zip` |
+| **Download** | `orbit-academy-v5.4-standalone.zip` | `orbit-academy-v5.4.zip` |
 
 No download handy? Click green **`<> Code` → Download ZIP** above; that is the full version.
 
@@ -56,7 +56,7 @@ If you want the exact clicks:
 ### 🐧 Linux
 
 ```
-1. unzip orbit-academy-v5.3.zip && cd academy
+1. unzip orbit-academy-v5.4.zip && cd academy
 2. Just the course:  xdg-open public/gallery.html
    Full course:      install node with your package manager, then
                      bash start-academy.sh
@@ -412,6 +412,29 @@ locally, as above.)
 - `public/quiz.js` — tutorial registry
 - `docs/` — `INSTRUCTOR_GUIDE.md`, `SECURITY.md` (audit log), `CHANGELOG.md`, `TESTING.md`, `MODULE_NOTES.md`
 
+### New in v5.4
+
+- **Module 6 — a live L1 halo and a live NRHO** (fan scenarios → 🎯 L1 halo). Four out-of-plane
+  releases: a true halo orbit found by differential correction against the sim's own dynamics
+  (rides ~3.4 laps / ~41 days before L1's instability wins), two companions released with their
+  speed off by just 5 m/s (gone in ~10 days, one toward the Moon and one toward Earth), and a
+  **Gateway-class NRHO** that is nearly stable and simply keeps going. An instability ladder you
+  can watch: 10 days → 41 days → indefinitely, from geometry alone. Gentle out-of-plane kicks on
+  three DROs turn them into 3-D weaving rings (the robust contrast to L1's knife edge).
+- **Module 8** — nav-map legend (actual / plan / predicted), so the dashed gold flight-plan line is
+  self-explanatory; per-body display exposure (bright Earth, un-clipped Moon); wider time-warp trim
+  (×64 both ways) with an absolute-rate readout.
+- **Module 3** — the Molniya note now explains that 63.4° freezes the *ellipse within the plane*,
+  not the plane itself (~0.15°/day nodal drift is expected and harmless for its mission).
+- **Fixes** — module 6 view state no longer leaks a scenario's zoom into every other scenario; the
+  halo release no longer crashes the clock (a fan mode missing from one lookup table set
+  `warp = undefined`); all student-facing text is jargon-free.
+- **New test suite** `tut6-views` — drives real scenario/mode transitions, runs 240 real frames at
+  top warp asserting nothing goes NaN, and requires every clickable fan mode to be registered in
+  **all five** of its lookup tables (which immediately caught a second half-registered mode).
+- `docs/EASTER_EGGS.md` — a registry of the unadvertised things (live J2 precession, the halo/NRHO
+  release, the engine rumble, satellite phases) so they don't get "cleaned up" by mistake.
+
 ### New in v5.3
 
 - **Module 7 radar rebuilt** — a true A-scope: sweep dot with a live ms clock, echoes land as
@@ -477,12 +500,11 @@ bash tools/fetch-vendor.sh --check      # what is vendored; whether anything can
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v5.3: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v5.4: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. From **v5.0** the client is also verified to
-make **no outbound network calls** (`test/no-external-calls.test.js`, static + runtime), and the
-optional Module 1 "paste your API key" tutor has been removed so no field can carry a credential
-off-box. All modules and the v2.x worksheet engine are
+make **no outbound network calls** (`test/no-external-calls.test.js`, static + runtime).
+All modules and the v2.x worksheet engine are
 static client-side files (no new server surface). For internet-facing use, front it with HTTPS +
 rate-limiting (see SECURITY.md "Accepted").
 

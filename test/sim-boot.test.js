@@ -497,6 +497,34 @@ for (const f of SIMS) {
   check('tut2: the star field is not touched by satellite dimming',
     !/starPts[^\n]*satBrightness|satBrightness[^\n]*star/.test(t2), ''); }
 
+/* ------------------------------------------------------------- tut6 L1 halo (easter egg)
+   A real halo IC, differential-corrected against tut6's exact dynamics. FULL-precision constants
+   are load-bearing: the orbit is unstable, and rounding the IC to whole km cost ~2.7 of its ~4.6
+   uncorrected laps. Guard the numbers and the 3-D character (out-of-plane release). */
+{ const t6 = fs.readFileSync(path.join(ROOT, 'public', 'tut6.html'), 'utf8');
+  check('tut6: halo IC ships at full precision',
+    /HALO_XI=322163\.493292/.test(t6) && /HALO_V=196\.130474/.test(t6) && /HALO_Y=30000/.test(t6), '');
+  check('tut6: halo release is genuinely out-of-plane (y = HALO_Y)',
+    /x=HALO_XI\*ux; z=HALO_XI\*uz; y=HALO_Y/.test(t6), '');
+  check('tut6: halo mode registered in all three mode dictionaries',
+    /halo:'🎯 L1 halo \(off-plane\)'/.test(t6) && /halo:'halo status'/.test(t6) &&
+    /halo:'Four releases/.test(t6), '');
+  check('tut6: ±5 m/s shadows ride the two unstable-manifold branches',
+    /HALO_SET=\[0, 5, -5\]/.test(t6), '');
+  /* Fourth release: a live NRHO (Gateway-class), the nearly-stable end of the halo family.
+     Verified through the shipped fanStep at an arbitrary Moon phase: perilune ~3,460 km,
+     apolune ~72,300 km, rode a 100-day test without departing. Full precision load-bearing. */
+  check('tut6: live NRHO constants ship at full precision',
+    /NRHO_XI=384202\.149284/.test(t6) && /NRHO_V=1652\.310379/.test(t6) && /NRHO_Y=-3463/.test(t6), '');
+  /* Status/banner wording is plain-language by requirement: "i don't know what you mean when you
+     say a shadow just departed". No internal jargon in anything the student reads. */
+  check('tut6: halo status names the objects in plain language',
+    /still there \(1 exact \+ 2 off by 5 m\/s\)/.test(t6) && /NRHO: '\+\(nrho\?'still going':'gone'\)/.test(t6), '');
+  { const ui = [...t6.matchAll(/(?:banner\(|FAN_MODE_NOTE|FAN_MSG)[\s\S]{0,2200}?/g)].map(m=>m[0]).join(' ');
+    check('tut6: no "shadow"/"manifold" jargon in student-facing halo text',
+      !/shadow(s)? (just )?depart|two branches of the unstable manifold/i.test(
+        t6.replace(/\/\*[\s\S]*?\*\//g,'')), 'found jargon outside comments'); } }
+
 console.log('\nresponsive layout');
 for (const f of SIMS) {
   const html = fs.readFileSync(path.join(ROOT, 'public', f), 'utf8');

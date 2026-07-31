@@ -2,6 +2,48 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v5.4 — 2026-07-31 (a live L1 halo and NRHO; module 6 view/clock fixes)
+
+**Module 6 — the halo release (easter egg; not referenced by any worksheet).** A new fan scenario
+releases four objects, none in the orbital plane. One is a REAL halo orbit, found by differential
+correction against this file's own force model (Newton shooting for a perpendicular crossing of the
+symmetry plane): rotating-frame IC ξ₀ = 322,163.493 km, 30,000 km above the plane, 196.130 m/s
+prograde, period 12.0 days. Uncorrected it rides ~3.4 laps (~41 days) before L1's instability peels
+it off. Two companions leave the same point with their speed off by ±5 m/s and depart after ~10
+days — one toward the Moon, one back toward Earth. The fourth is a live **NRHO** (Gateway/CAPSTONE
+class): perilune 3,210 km over the south pole, apolune 73,480 km, ~6.7-day laps, nearly stable —
+it rode a 100+ day test with no station-keeping. Full-precision constants are load-bearing:
+rounding the halo IC to whole km costs ~2.7 laps. Three DROs also get small out-of-plane kicks and
+become 3-D weaving rings — the robust contrast to L1. Release warp is 2 d/s so a lap takes ~6 s.
+
+**Module 6 fixes, both found by flight report.** (1) `resetView()` restored camera angles and target
+but NOT zoom, so the L1-force (R=240,000) and halo (R=170,000) presets leaked into every other
+scenario — "it seems to have broken the coordinate views". View presets are now applied through one
+function after resetView, and resetView owns R. (2) The halo mode was missing from `FAN_WARP`, and
+`releaseFan()` assigns `warp = FAN_WARP[mode]` directly — so the release set warp to undefined and
+the next frame did `simT += NaN`: "the moment I click Release… it dies", "After NaN days". Fixed,
+plus a `?? 86400` fallback, plus a test that derives the mode list from the CLICKABLE BUTTONS and
+requires all five lookup tables to cover it (which immediately caught `FAN_MSG` missing too). An
+interim pacing cap that let the clock and the fan integrator disagree was removed in favour of one
+effective rate read by every consumer.
+
+**Wording.** All student-facing halo text is plain language: "one of the two off-by-5 m/s objects
+has left L1", not "a shadow just departed" — the owner reasonably had no idea what that meant. The
+physics vocabulary stays in code comments, enforced by test.
+
+**Module 8.** Nav maps carry a persistent trace legend (actual / plan / predicted) — the dashed gold
+line is the flight computer's reference trajectory, which nothing on screen had said. Display
+exposure is now PER BODY (the Blue Marble needs a strong lift; the same curve clipped the already
+bright LRO Moon to white). Pilot time-warp trim widened to ×64 both ways with an absolute-rate
+readout, module 8 having had the narrowest clock in the course.
+
+**Module 3.** The Molniya note explains the thing that looks wrong but isn't: 63.4° freezes the
+ellipse WITHIN the plane (apogee stays north), while the plane itself still precesses ~0.15°/day.
+
+**Docs.** `docs/EASTER_EGGS.md` added — a registry of deliberately unadvertised behaviour (live J2
+precession in M3, the halo/NRHO release, the M8 engine rumble, M2 satellite phases and ground
+tracks, `?dev=1`) with provenance and numbers, so none of it gets "tidied away".
+
 ## v5.3 — 2026-07-30 (revision actions: radar rebuild, module 8 window, phase-correct brightness)
 
 **Module 7.** Radar scene rebuilt around its three teaching claims: echoes come back LATER (true

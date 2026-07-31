@@ -133,6 +133,7 @@
         <button data-mode="dro" onclick="setFanMode('dro')">🔄 DRO vs prograde</button>
         <button data-mode="freeret" onclick="setFanMode('freeret')">∞ free return</button>
         <button data-mode="minimoon" onclick="setFanMode('minimoon')">🌒 minimoons</button>
+        <button data-mode="halo" onclick="setFanMode('halo')">🎯 L1 halo</button>
       </div>
       <div class="note" id="fanModeNote"></div>
       <button class="go" id="fanGo" onclick="releaseFan()">▶ release</button>
@@ -525,7 +526,15 @@ addEventListener('keydown',e=>{ keys[e.key]=true;
   else if(e.key===' '){ togglePause(); e.preventDefault(); }
   else if((e.key==='r'||e.key==='R')&&!e.metaKey&&!e.ctrlKey) resetView();
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault(); });
-function resetView(){ for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].target.set(0,0,0); } }
+function resetView(){ for(const f of FRAMES){ views[f].th=0.7; views[f].ph=1.0; views[f].R=D_EM*1.9; views[f].target.set(0,0,0); } }
+/* Scenario view presets, applied AFTER resetView so they stick — and wiped by the next
+   resetView so they cannot leak. (Both bugs shipped briefly: the force preset ran before
+   resetView and lost its target; and resetView didn't touch R, so the force/halo zooms leaked
+   into every other scenario — "it seems to have broken the coordinate views".) */
+function applyViewPreset(){
+  if(scen==='force'){ for(const f of FRAMES){ views[f].target.set((1-massFrac)*D_EM,0,0); views[f].R=240000; } }
+  else if(scen==='fan' && fanMode==='halo'){ for(const f of FRAMES){ views[f].target.set(L1F*D_EM,0,0); views[f].R=170000; views[f].ph=0.62; } }
+}
 /* 📍 SIT AT — park the co-rotating view on a Lagrange point (or body). Targets are frame-local,
    so the camera genuinely SITS there: the point stays centered and motionless while everything
    else swings around it. Sets both co-rotating views (synodic + ECL-EMBR) so the 2×2 matches. */
@@ -565,7 +574,7 @@ const SCEN_NOTE={
   lpts:'The five spots where Earth + Moon together give the <b>27.3-day lunar period</b>, so an object holds station on the rotating Earth–Moon line. Switch to the <b>synodic</b> frame and they stand still. <b>L4/L5</b> (60° ahead/behind the Moon) are stable; <b>L1/L2/L3</b> are not. Surprise: on the gravity landscape L4/L5 are <b>hilltops</b>, not bowls — they’re stable anyway: a nudged object is <i>moving</i>, and under the combined pulls of Earth and Moon its trajectory loops around the summit rather than sliding off. Check the <b>ECI frame</b>: it’s just an ordinary Moon-like orbit, 60° ahead (see the note below).',
   force:'A 1-D look along the Earth–Moon line. At <b>L1</b> the Moon pulls <i>outward</i> (it’s farther out), partially cancelling Earth → a gentler inward pull → matches a 27.3-day loop despite being closer in. At <b>L2</b> both pull <i>inward</i> and add → a stronger pull → also matches 27.3 days despite being farther out.',
   halo:'A <b>near-rectilinear halo orbit (NRHO)</b> — the real path CAPSTONE flew and the Gateway station will use. Because L2 is unstable, the spacecraft can’t sit there; instead it rides this dramatically elongated, near-vertical loop that <b>skims low over one lunar pole</b> (~3,000 km) and <b>swings far out over the other</b> (~70,000 km), nudging its thrusters occasionally. (This close to the Moon it also shows the <b>same illuminated phase as the Moon</b> — same Sun angle.)',
-  tess:'<b>TESS</b> rides a highly elliptical orbit locked in a <b>2:1 resonance</b> with the Moon — it laps the Earth twice for every one lunar orbit, and the Moon’s pull shepherds it so it stays stable for years. Flip through the frames (or the 2×2) to see how differently the same path looks.',
+  tess:'<b>TESS</b> rides a highly elliptical orbit locked in a <b>2:1 resonance</b> with the Moon — it laps the Earth twice for every one lunar orbit, and the Moon’s pull shepherds it so it stays stable for years. You will notice the big ellipse slowly <b>twisting</b> — that precession is the <b>Moon’s</b> doing, not Earth’s equatorial bulge: there is no J2 in this module’s physics (Earth + Moon point masses only). Out at these distances the Moon perturbs orbits far more strongly than J2 ever could, and the 2:1 resonance is exactly what keeps that twisting survivable. Flip through the frames (or the 2×2) to see how differently the same path looks.',
   fan:'Five release experiments, one lesson: in the tangled Earth+Moon field, <b>where you are and how you move decides everything</b>. Slingshots off the Moon, the knife-edge at L1, stable tadpoles at L4, retrograde-vs-prograde parking around the Moon, and the free-return figure-8 — near-identical starts, wildly different fates. That’s <b>chaos</b>, and it’s why long-term cislunar tracking is so hard.',
   zoo:'The <b>family</b> of orbits around L1. Two knobs set the size — <b>A<sub>x</sub></b> (in-plane) and <b>A<sub>z</sub></b> (out-of-plane) — and a <b>frequency ratio</b> sets the pattern. At <b>1:1</b> the path closes into a <b>halo</b>: leave A<sub>z</sub>=0 and it lies flat (a planar <b>Lyapunov</b> loop); raise A<sub>z</sub> and the loop <b>tilts up out of the plane</b> — the ratio A<sub>z</sub>/A<sub>x</sub> <i>is</i> the inclination. Whole-number ratios (2:1, 3:1, 4:1) make closed knots; an <b>irrational</b> ratio never closes and fills a 3-D band. Rotate with the <b>arrow keys</b> to see the out-of-plane structure.',
 };
@@ -581,9 +590,7 @@ function scenario(s){ scen=s;
   $('fanBox').style.display=(s==='fan')?'block':'none';
   $('zooBox').style.display=(s==='zoo')?'block':'none';
   clearFan(); if(s==='fan'){ setFrame('emrot'); }
-  if(s==='force'){ setFrame('emrot');
-    // frame the L1–Moon–L2 corridor: center on the Moon, span ~4× the L1 distance-from-Moon
-    for(const f of FRAMES){ views[f].target.set((1-massFrac)*D_EM,0,0); views[f].R=240000; } }
+  if(s==='force') setFrame('emrot');
   if(s==='tess') buildTess();
   if(s==='halo') buildHalo();
   if(s==='zoo'){ setFrame('emrot'); buildZoo(); setZooRatio(zooRatio); }
@@ -591,7 +598,7 @@ function scenario(s){ scen=s;
   // then fully authoritative — unchecking it hides the ▲ markers in EVERY scenario, no exceptions.
   if(s==='lpts'||s==='force'){ lptsOverlay=true; const cb=$('showLpts'); if(cb) cb.checked=true; }
   applyLptsVis();
-  $('banner').style.display='none'; resetView();
+  $('banner').style.display='none'; resetView(); applyViewPreset();
 }
 // The ▲ markers follow the checkbox alone — global on/off across all visualizations.
 function applyLptsVis(){ lagGroup.visible = lptsOverlay; }
@@ -723,16 +730,19 @@ function buildHalo(){ const moonX=(1-massFrac)*D_EM; haloPtsLocal=[];
   haloLine.geometry.setFromPoints(haloPtsLocal); }
 
 /* --- fan release --- */
-const FAN_MODE_LBL={scatter:'🌙 lunar scatter', l1knife:'⚖ L1 knife-edge', tadpole:'🐸 L4 tadpoles', dro:'🔄 DRO vs prograde', freeret:'∞ free return', minimoon:'🌒 minimoons'};
-const FAN_METRIC_LBL={scatter:'flung away so far', l1knife:'current scatter', tadpole:'current scatter', dro:'stripped from the Moon', freeret:'came home so far', minimoon:'captured right now'};
+const FAN_MODE_LBL={scatter:'🌙 lunar scatter', l1knife:'⚖ L1 knife-edge', tadpole:'🐸 L4 tadpoles', dro:'🔄 DRO vs prograde', freeret:'∞ free return', minimoon:'🌒 minimoons', halo:'🎯 L1 halo (off-plane)'};
+const FAN_METRIC_LBL={scatter:'flung away so far', l1knife:'current scatter', tadpole:'current scatter', dro:'stripped from the Moon', freeret:'came home so far', minimoon:'captured right now', halo:'halo status'};
 const FAN_MODE_NOTE={
+  halo:'Four releases, none in the plane. Three sit <b>30,000 km above the plane</b> near L1, each with a 196 m/s prograde kick. The middle one is a real <b>halo orbit</b> — a 3-D ring around empty space, found by numerical correction against this sim’s own physics — and it rides for <b>~4–5 laps (~8 weeks)</b> before L1’s instability peels it off. The other two are released from the <b>same spot with the speed off by just 5 m/s</b> — and that tiny error decides everything: after ~10 days one drifts away toward the Moon and the other back toward Earth. No in-plane release can ever do this — a halo is an out-of-plane creature. The fourth hugs the <b>Moon</b>: a live <b>NRHO</b> (perilune 3,200 km over the south pole, apolune 73,500 km, ~6.7-day laps) — the near-rectilinear end of the same halo family and the <b>Gateway</b> orbit. It is nearly stable and simply keeps going: departure times 10 d → ~40 d → indefinitely, purely from orbit geometry. Tip: drag to orbit the view; these only read in 3-D.',
   scatter:'7 objects ride one transfer arc up to the Moon, arriving minutes apart — then each gets a different <b>slingshot</b>. Best watched in the <b>Moon-centered inertial</b> panel.',
   l1knife:'All 7 start <b>exactly at L1</b>, riding the rotating Earth–Moon line, kicked by at most 8 m/s — bicycle pace. L1 is a <b>saddle</b>: balanced, but unstable. Watch the <b>synodic</b> panel.',
   tadpole:'Same experiment at <b>L4</b> (60° ahead of the Moon) — the opposite result, because L4 is <b>stable</b>. Kicks up to 30 m/s just make lazy <b>tadpole loops</b>. Watch the <b>synodic</b> panel.',
   dro:'7 satellites parked around the <b>Moon</b>: retrograde vs prograde at matched radii. Earth’s tide strips the far prograde ones; the <b>retrograde (DRO)</b> ones persist. Watch <b>MCI</b> or <b>synodic</b>.',
   freeret:'7 ships leave a 330-km parking orbit for the Moon with speeds differing by <b>~6 m/s total</b>. That whisker decides who comes home. Watch the <b>Earth-centered</b> panel.',
   minimoon:'7 objects arrive from <b>a million km out</b>, none bound to Earth — identical except for <b>which day they show up</b>. A lunar flyby can <b>capture</b> some as temporary <b>minimoons</b> (it really happens: 2006 RH120, 2020 CD3). Watch <b>Earth-centered</b>, zoomed out.'};
-function setFanMode(m){ fanMode=m; $('banner').style.display='none';
+function setFanMode(m){ const wasHalo=(fanMode==='halo'); fanMode=m; $('banner').style.display='none';
+  if(m==='halo'){ setFrame('emrot'); resetView(); applyViewPreset(); }
+  else if(wasHalo){ resetView(); }                 // leaving halo: hand the default view back
   $('fanModeLbl').textContent=FAN_MODE_LBL[m];
   $('scatterLbl').textContent=FAN_METRIC_LBL[m];
   $('fanModeNote').innerHTML=FAN_MODE_NOTE[m];
@@ -771,7 +781,29 @@ const TAD=[[0,50,0],[0,0,0],[5,0,0],[0,10,0],[0,20,0],[0,-20,0],[0,0,30]];
    rotating frame (a DRO), −1 = prograde. Verified over 90 days: prograde is STRIPPED by Earth's
    tide at 40k (day ~11, flung to 2.3 M km) and 55k (day ~5), and IMPACTS from 30k (day ~39);
    every DRO at 30/40/55k stays bound; close-in prograde at 20k also survives (tides only win far out). */
-const DRO_SET=[[40000,-1],[40000,1],[55000,-1],[55000,1],[30000,-1],[30000,1],[20000,-1]];
+/* L1 HALO (easter egg — deliberately not in the worksheet). A REAL halo orbit found by
+   differential correction against THIS file's exact dynamics (shooting for a perpendicular
+   crossing; see tools/find-halo notes in docs/EASTER_EGGS.md):
+     rotating-frame IC  ξ0=322,163 km (Earth-side of L1), 30,000 km ABOVE the plane,
+     196.13 m/s prograde · period 12.0 days.
+   It is genuinely 3-D — no in-plane release can ever become a halo, which is why none of the
+   other fan modes produce one. Uncorrected it rides the halo ~4.6 laps (~55 days) before L1's
+   instability wins — exactly why real halo missions station-keep. The two ±5 m/s along-line
+   shadows depart after ~10 days onto the two branches of the unstable manifold: one falls to
+   the MOON, the other back toward EARTH. */
+const HALO_XI=322163.493292, HALO_Y=30000, HALO_V=196.130474;  // km, km, m/s — FULL precision: the orbit is unstable, so truncated decimals act like a nudge (rounded-km IC lost ~2.7 laps)
+const HALO_SET=[0, 5, -5];                            // m/s along the E–M line: rider, →Moon, →Earth
+/* And the fourth release: a live NRHO — the near-rectilinear end of the same halo family, the
+   Gateway/CAPSTONE orbit. Corrected the same way (perpendicular-crossing shooting), seeded at a
+   perilune skimming the lunar south pole: perilune 3,210 km, apolune 73,480 km, period ~6.7 days.
+   Unlike L1, an NRHO is NEARLY STABLE: it rode a 120-day test without departing — which is the
+   punchline of the whole release set (10 days → 40 days → indefinitely, purely from geometry).
+   The scenario's "Grand finale" NRHO is a drawn curve; this one is the integrator flying it. */
+const NRHO_XI=384202.149284, NRHO_Y=-3463, NRHO_V=1652.310379;   // km, km, m/s (prograde, rotating)
+const DRO_SET=[[40000,-1,40],[40000,1],[55000,-1],[55000,1,60],[30000,-1,25],[30000,1],[20000,-1]];
+/* third element: an out-of-plane kick in m/s. DROs are famously robust, so instead of departing
+   they become gently 3-D rings — tilt the view and three of the seven weave above and below the
+   plane while staying bound. (Contrast with L1, where 5 m/s is a life-or-departure decision.) */
 /* FREE RETURN: 7 ships leave a 330-km-altitude perigee on a translunar ellipse; per-object perigee
    speed factors span 10.810–10.817 km/s (~6.5 m/s TOTAL). Verified: green & cyan thread the
    figure-8 and RE-ENTER (~day 7.8 / 8.3); pale re-enters the long way (~day 13.3); red cuts inside
@@ -801,15 +833,21 @@ const hillRing=(function(){ const pts=[]; for(let k=0;k<=256;k++){ const t=k/256
 // Defaults sit ON the warp ladder so ,/. step cleanly from them. Minimoon runs at 1 d/s — slow
 // enough to READ the capture loops (lopsided week-to-month orbits); step up with '.' for the
 // long haul, down with ',' at each lunar encounter.
-const FAN_WARP={scatter:86400, l1knife:172800, tadpole:432000, dro:172800, freeret:21600, minimoon:86400};
+/* Release warp per fan mode. EVERY mode must appear here: releaseFan() assigns warp=FAN_WARP[mode]
+   directly, so a missing key sets warp=undefined and the very next frame does simT += NaN — which
+   is exactly how the halo mode shipped broken ("the moment I click Release… it dies", "After NaN
+   days"). The `?? 86400` fallback below makes that impossible to repeat, and a test enforces the
+   table stays complete. Halo runs at 2 d/s: a 12-day lap in ~6 s. */
+const FAN_WARP={scatter:86400, l1knife:172800, tadpole:432000, dro:172800, freeret:21600, minimoon:86400, halo:172800};
 const FAN_MSG={
+  halo:'Released <b>4 objects, none in the plane</b>. Three sit 30,000 km above L1 — the middle one is a true <b>halo orbit</b> and rides ~3.4 laps (~41 days) before L1\u2019s instability peels it off; the other two are identical except their speed is off by 5 m/s, and that alone sends them away after ~10 days — one toward the Moon, one toward Earth. The fourth is a live <b>NRHO</b> hugging the Moon (Gateway\u2019s orbit) — nearly stable, it just keeps going. Drag to orbit the view: these only read in 3-D.',
   scatter:'Launched 7 objects on a <b>transfer orbit</b> whose far point just reaches the Moon. They first <b>coast up one clean arc</b> (about 9 days) — then each gets a different <b>gravitational slingshot</b>: closest passes span ~1.2 to ~13 lunar radii. The <b>yellow</b> object skims ~300 km above the surface — Apollo-8 territory — and is flung onto a ~4-million-km orbit, far beyond Earth’s <b>Hill sphere</b> (~1.5 M km), where in reality the Sun’s gravity takes it away for good. The <b>red</b> object whips a tight <b>hairpin around the far side</b> (~1.4 lunar radii) — slow to <kbd>,</kbd> as it closes in and rotate with the <b>arrow keys</b>: the sharp turn is the Moon’s gravity <i>pulling</i> it around, never pushing.',
   l1knife:'7 objects released <b>exactly at L1</b> with kicks of at most 8 m/s — differences you couldn’t feel. For days they hover together: the balance is real. Then the saddle wins: nudged-toward-the-Moon falls to the <b>Moon</b> (~day 8–9), nudged-toward-Earth falls <b>home</b> (~day 11–14), the out-of-plane one holds to ~day 18 — and the un-kicked <b>yellow</b> one hovers ~3 weeks until even <i>numerical round-off</i> pries it loose. Nothing sits at L1 forever without station-keeping. Same place, same speed to within bicycle pace — completely different fates: that is <b>unstable equilibrium</b>.',
   tadpole:'The same kicks that doomed the L1 set (and bigger — up to 30 m/s) just make these objects <b>librate</b>: lazy tadpole loops around L4, weeks per lap, going nowhere. And here’s the resolution of the hilltop puzzle: L4 is a <b>summit</b> of the gravity landscape, yet stable — the landscape only scores positions, while these objects are <i>moving</i>, and motion under the combined Earth + Moon pulls drives exactly these loops instead of a slide-off. Flip to the <b>ECI panel</b>: each “tadpole” is just an ordinary near-circular 27.3-day orbit riding ~60° ahead of the Moon. It’s why Trojan asteroids camp at Jupiter’s L4/L5 for billions of years. Only <b>red</b>, kicked 50 m/s, breaks out of the tadpole and wanders off along the Moon’s orbit: the stable pocket has a finite rim.',
   dro:'Seven satellites parked around the <b>Moon</b>. Prograde at 40k and 55k km are <b>stripped by Earth’s tide</b> within days (one flung 2.3 million km); prograde from 30k spirals in and <b>craters</b> (~day 39). Every <b>retrograde</b> twin — a <b>Distant Retrograde Orbit</b> — persists: DROs are famously stable, which is why <b>Artemis I parked Orion in one</b>. Close-in prograde (20k) also survives — tides only win far out. Backwards is better, out there.',
   freeret:'7 ships leave a 330-km parking orbit with departure speeds spanning just <b>~6 m/s</b>. <b>Green</b> and <b>cyan</b> thread the <b>free-return figure-8</b> — around the far side and home to re-entry (~day 8) with <i>no burn at the Moon</i>, the trajectory Apollo trusted (and that saved Apollo 13). <b>Pale</b> (~day 13) and <b>pink</b> (~day 18) straggle home on longer loops — <b>4 of 7 eventually make it back</b>, but only the true free-returns arrive on Apollo’s schedule; a crew on pink’s route would be out for <i>eighteen days</i>. <b>Red</b> cuts too close and <b>hits the Moon</b> (~day 5). <b>Yellow</b> and <b>purple</b> are slung wide and still haven’t come home after <i>four months</i>. A walking-pace speed difference at Earth decides all of it.',
   minimoon:'7 objects fall in from a <b>million km out</b>, every one slightly <b>hyperbolic</b> — not bound to Earth — with identical speed and aim. The only difference is <b>which day they arrive</b>, i.e. where the Moon happens to be. <b>Be patient: the infall takes ~3 weeks of sim time (about 25 s at the default 1 d/s)</b> — captures start when they reach the Moon’s neighborhood. A <b>green halo ring</b> lights up around any object the moment it becomes gravitationally <b>bound to Earth</b>, and the “captured right now” counter keeps the tally. <b>Yellow</b> and <b>pink</b> keep their halos for over a <i>year</i>; <b>green</b> and <b>purple</b> are minimoons for ~3 weeks before the halo dies and they slip away; <b>pale</b> flickers for days; <b>cyan</b> sails straight through; <b>red</b> arrives at exactly the wrong moment and <b>hits the Moon</b> (~day 14). This is real: asteroid <b>2006 RH120</b> was Earth’s minimoon for ~11 months, <b>2020 CD3</b> for ~2 years — captured and released by exactly this mechanism.'};
-function releaseFan(){
+function releaseFan(){ fan._haloPrev=3;   // (tracks the three L1 releases; the NRHO reports separately)
   $('banner').style.display='none';   // clear any banner left over from the previous run
   fanT0=simT;
   const mp=moonPos(simT); const ux=mp.x/D_EM, uz=mp.z/D_EM;    // unit vector Earth→Moon (in-plane)
@@ -850,6 +888,21 @@ function releaseFan(){
       x=mp.x+r0*ux; z=mp.z+r0*uz;                               // radially outside the Moon on the E–M line
       const mvx=W_MOON*mp.z, mvz=-W_MOON*mp.x;                  // the Moon's own inertial velocity
       vx=mvx - s*vc*wx; vz=mvz - s*vc*wz;                       // +1 = retrograde around the Moon (DRO), −1 = prograde
+      vy=(DRO_SET[i][2]||0)/1000;                               // optional out-of-plane kick → 3-D DRO
+    } else if(fanMode==='halo'){
+      if(i>HALO_SET.length){ p._on=false; p.mesh.visible=false; return; }
+      if(i===HALO_SET.length){                        // the NRHO, hugging the Moon
+        x=NRHO_XI*ux; z=NRHO_XI*uz; y=NRHO_Y;
+        vx=corotVx(x,z) + (NRHO_V*wx)/1000;
+        vz=corotVz(x,z) + (NRHO_V*wz)/1000;
+        vy=0;
+      } else {
+        x=HALO_XI*ux; z=HALO_XI*uz; y=HALO_Y;         // designed at Moon-angle 0, rotated exactly (symmetry)
+        const nud=HALO_SET[i];
+        vx=corotVx(x,z) + (nud*ux + HALO_V*wx)/1000;
+        vz=corotVz(x,z) + (nud*uz + HALO_V*wz)/1000;
+        vy=0;
+      }
     } else if(fanMode==='minimoon'){
       // ICs designed in "Moon at angle 0" axes, then rotated to the CURRENT Moon angle (exact by symmetry)
       const E0=MINI_VINF*MINI_VINF/2, v0=Math.sqrt(2*(E0+MU_E/MINI_R0));
@@ -872,7 +925,7 @@ function releaseFan(){
     p.dead=null; p.deadRelRot=null; p.mesh.material.color.set(p.c); });   // fresh release: un-kill and restore colors
   // minimoons play out over ±2 million km — zoom every panel out far enough to see the whole story
   if(fanMode==='minimoon') for(const f of FRAMES){ if(views[f].R<D_EM*6.5) views[f].R=D_EM*6.5; }
-  fan._blew=false; fan._hit=false; fan._home=false; fan._mini=false; fanActive=true; warp=FAN_WARP[fanMode]; showWarp(); paused=false;
+  fan._blew=false; fan._hit=false; fan._home=false; fan._mini=false; fanActive=true; warp=FAN_WARP[fanMode] ?? 86400; showWarp(); paused=false;
   $('fanMsg').innerHTML=FAN_MSG[fanMode];
 }
 
@@ -906,7 +959,13 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
   const rot=2.0*wall; const vv=views[quad?panelFrameAt(curX,curY):frame];
   if(keys['ArrowLeft'])vv.th+=rot; if(keys['ArrowRight'])vv.th-=rot;
   if(keys['ArrowUp'])vv.ph=Math.max(0.05,vv.ph-rot); if(keys['ArrowDown'])vv.ph=Math.min(Math.PI-0.05,vv.ph+rot);
-  if(!paused) simT += (warp*wall)/86400;
+  /* HALO PACING lives in FAN_WARP (2 d/s → a 12-day lap in ~6 s), not in a special case here: the
+     release sets the rate like every other mode, and the pilot's ,/. keys own it from then on.
+     (An earlier attempt capped the rate HERE and only for the simT increment, while the fan
+     integrator kept reading `warp` — the objects then integrated further than the clock advanced,
+     ran ahead of the Moon and diverged. One rate, read by everyone, is the invariant.) */
+  const wEff = warp;
+  if(!paused) simT += (wEff*wall)/86400;
   syncSun(simT);                        // annual Sun drift — see syncSun (months pass in minutes here)
 
   // Moon + markers
@@ -928,12 +987,12 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
     haloLine.rotation.y=th; }
   if(zooDot.visible){ const th=emAzimuth();
     zooLine.rotation.y=th;                                    // ride the rotating Earth–Moon line
-    zooT += (warp*wall)/86400 * 0.5;                          // advance the time parameter (watchable pace)
+    zooT += (wEff*wall)/86400 * 0.5;                          // advance the time parameter (watchable pace)
     const lp=zooLocal(zooT);                                  // current point in scene coords (pre-rotation)
     zooDot.position.set(lp.x*Math.cos(th)+lp.z*Math.sin(th), lp.y, -lp.x*Math.sin(th)+lp.z*Math.cos(th)); }
 
   // fan: live RK4 (inertial) over this frame's worth of sim time
-  if(fanActive && !paused){ const simDelta=warp*wall, nsteps=Math.min(3000,Math.max(1,Math.round(simDelta/2)));
+  if(fanActive && !paused){ const simDelta=wEff*wall, nsteps=Math.min(3000,Math.max(1,Math.round(simDelta/2)));
     const dtSec=simDelta/nsteps;   // ≈2 s normally; grows past the 3000-step cap at high warp so NO sim time is silently dropped (fan would desync from the Moon)
     /* DENSE TRAIL through lunar encounters: the trail used to record one point per FRAME
        (~1,440 s of sim at scatter warp), but the tightest hairpin of a close flyby — the whole
@@ -944,7 +1003,7 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
        trajectory ENDS at the surface (nothing flies through a planet — same honesty rule as
        Module 1's re-entry arcs). */
     const TRAIL_NEAR=25000, TRAIL_EVERY=Math.max(1,Math.round(150/dtSec));   // sample every ~150 s of SIM time (step size varies with warp)
-    for(let k=0;k<nsteps;k++){ const tAbs=(simT - (warp*wall)/86400) + (k*dtSec)/86400;
+    for(let k=0;k<nsteps;k++){ const tAbs=(simT - (wEff*wall)/86400) + (k*dtSec)/86400;
       const sampleK=(k%TRAIL_EVERY===0);
       for(const p of fan){ if(!p.st||p.dead) continue;
         p.st=fanStep(p.st, tAbs, dtSec);
@@ -996,6 +1055,20 @@ function loop(ts){ requestAnimationFrame(loop); try { const wall=Math.min((ts-la
       fanMode==='scatter'  ? flung+' of '+n+' flung away' :
       fanMode==='dro'      ? stripped+' of '+n+' stripped' :
       fanMode==='freeret'  ? home+' of 7 home' :
+      fanMode==='halo'     ? (function(){ let riding=0; for(const p2 of fan){ if(!p2._on) continue;
+                               const st2=p2.st; if(!st2) continue; const aA=azAt(simT), cA=Math.cos(aA), sA=Math.sin(aA);
+                               const xi2=st2[0]*cA-st2[2]*sA, eta2=-st2[0]*sA-st2[2]*cA;
+                               if(Math.abs(xi2-L1F*D_EM)<90000 && Math.abs(eta2)<90000) riding++; }
+                               let nrho=false; { const p4=fan[3];
+                                 if(p4&&p4._on&&p4.st){ const mp4=moonPos(simT);
+                                   nrho=Math.hypot(p4.st[0]-mp4.x,p4.st[1],p4.st[2]-mp4.z)<120000; } }
+                               const el=(simT-fanT0);
+                               if(riding<fan._haloPrev){ banner(riding===0
+                                 ? '🎯 Day '+el.toFixed(0)+': the halo rider has now left too. Nothing stays at L1 by itself — that is what “unstable” means, and it is why real halo missions spend a few m/s a month on station-keeping.'
+                                 : '🎯 Day '+el.toFixed(0)+': one of the two <b>off-by-5 m/s</b> objects has left L1. Same release point, 5 m/s different — one drifts off toward the Moon, the other back toward Earth. The exactly-right one is still going.',
+                                 '#1a2340','#9fc6ff'); }
+                               fan._haloPrev=riding;
+                               return 'at L1: '+riding+' of 3 still there (1 exact + 2 off by 5 m/s) · NRHO: '+(nrho?'still going':'gone')+' · day '+el.toFixed(0); })() :
       fanMode==='minimoon' ? captured+' of '+n+' bound to Earth' :
                              (scatter/D_EM*100).toFixed(1)+'% of D')
       + (hits && fanMode!=='freeret' ? ' · '+hits+' impacted' : '');
