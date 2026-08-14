@@ -1,0 +1,14 @@
+# geo_peaks target list — one NORAD catalog number per line ('#' comments allowed).
+# Anything after the ID on a line is ignored, so you can annotate freely.
+19548   TDRS 3        (i ~ 12.6 deg — big southern excursion)
+21639   TDRS 5        (i ~ 14.1)
+22314   TDRS 6        (i ~ 14.2)
+23613   TDRS 7        (i ~ 13.3)
+26388   TDRS 8        (i ~ 12.8)
+20253   FLTSATCOM 8   (i ~ 12.4)
+23712   USA 115 / MILSTAR-1 2 (i ~ 14.1)
+26900   INTELSAT 902  (i ~ 6.3)
+27380   INTELSAT 904  (i ~ 7.1)
+27632   NIMIQ 2       (i ~ 9.6)
+28358   INTELSAT 10-02 (i ~ 0.06 — control case: near-zero inclination)
+28935   ECHOSTAR 10    (i ~ 0.06 — control case)
