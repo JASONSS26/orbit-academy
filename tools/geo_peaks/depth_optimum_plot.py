@@ -75,6 +75,10 @@ def main():
                  label=f'fixed τ = {tau:.0f} s')
     ax1.plot(ideg, [I_adaptive(x) for x in ideg], 'k--', lw=2.2,
              label=f'adaptive ladder (τ ≤ {args.taumax:.0f} s)')
+    # NORTHERN-peak variants (measured f = 1.12 vs 1.17 south): ~4% more, at ~2x the airmass
+    F_N = 1.12; scale = args.f/F_N
+    ax1.plot(ideg, [I_fixed(x,10)*scale for x in ideg], color='tab:green', lw=1.2, ls=':',
+             label='τ = 10 s at the NORTHERN peak (f=1.12): +4%, ≈2× airmass')
     ax1.axhline(200, color='gray', ls=':', lw=1.2)
     ax1.text(15.3, 205, '200 s goal', color='gray', fontsize=9, ha='right')
     ax1.set_xlabel('orbital inclination (deg)')

@@ -38,12 +38,16 @@ def main():
     n = 2*math.pi/86164.0905
     k_of = lambda i_deg: args.f*math.radians(i_deg)*n*n*206265.0    # arcsec/s^2
 
+    F_NORTH = 1.12          # measured from live TLEs (observable fleet): vs f_south ≈ 1.17
     ideg = np.linspace(0.3, 15.5, 400)
-    T = 2*args.thresh/np.array([k_of(x) for x in ideg])             # seconds
+    T_s = 2*args.thresh/np.array([k_of(x) for x in ideg])                 # southern peak
+    T_n = T_s*(args.f/F_NORTH)                                            # northern peak
 
     fig, ax = plt.subplots(figsize=(10.5, 6.5))
-    ax.plot(ideg, T/60.0, 'b-', lw=2,
-            label=f'analytic  T = 2·({args.thresh}″/s)/(f·i·n²),  f={args.f}')
+    ax.plot(ideg, T_s/60.0, 'b-', lw=2,
+            label=f'SOUTHERN peak:  T = 2·({args.thresh}″/s)/(f·i·n²),  f={args.f}')
+    ax.plot(ideg, T_n/60.0, 'b--', lw=1.6,
+            label=f'NORTHERN peak:  f={F_NORTH} (measured) — only ~4% longer, at ≈2× the airmass')
 
     # measured points from real TLEs, if provided
     if args.tle_file:
@@ -52,18 +56,22 @@ def main():
         for t in gp.parse_tle_text(open(args.tle_file).read()):
             i_deg = t.incl/gp.DEG
             if i_deg < 1.0:  continue                       # zero-inc: no meaningful peak
-            rec = gp.southern_peak(t, jd0, site, step_s=120)
-            if rec is None or 90-rec['za'] < 15:  continue
-            # walk outward from the peak until |dec rate| exceeds the threshold
-            jd_pk = rec['jd']; span = None
-            for sec in range(30, 7200, 30):
-                d1 = gp.topo_radec_za(t, jd_pk+(sec-15)/86400.0, site)[1]
-                d2 = gp.topo_radec_za(t, jd_pk+(sec+15)/86400.0, site)[1]
-                if abs((d2-d1)*3600.0/30.0) > args.thresh: span = 2*sec; break
-            if span:
-                ax.plot(i_deg, span/60.0, 'ko', ms=6, mfc='orange', zorder=5)
-                ax.annotate(t.name.split('(')[0].strip(), (i_deg, span/60.0),
-                            fontsize=7, textcoords='offset points', xytext=(5,5))
+            for ext, mfc, mk in (('south','orange','o'), ('north','skyblue','^')):
+                rec = gp.southern_peak(t, jd0, site, step_s=120, extreme=ext)
+                if rec is None or 90-rec['za'] < 15:  continue
+                # walk outward from the peak until |dec rate| exceeds the threshold
+                jd_pk = rec['jd']; span = None
+                for sec in range(30, 7200, 30):
+                    d1 = gp.topo_radec_za(t, jd_pk+(sec-15)/86400.0, site)[1]
+                    d2 = gp.topo_radec_za(t, jd_pk+(sec+15)/86400.0, site)[1]
+                    if abs((d2-d1)*3600.0/30.0) > args.thresh: span = 2*sec; break
+                if span:
+                    ax.plot(i_deg, span/60.0, mk, ms=6, mfc=mfc, mec='k', zorder=5)
+                    if ext=='south':
+                        ax.annotate(t.name.split('(')[0].strip(), (i_deg, span/60.0),
+                                    fontsize=7, textcoords='offset points', xytext=(5,5))
+        ax.plot([],[], 'o', mfc='orange', mec='k', label='measured, southern peak')
+        ax.plot([],[], '^', mfc='skyblue', mec='k', label='measured, northern peak')
 
     # reference lines: bare 200-s integration, and 200 s + readouts (10x20s + N R)
     for wall, lbl, c, va in ((200,'200 s integration alone','g','bottom'),

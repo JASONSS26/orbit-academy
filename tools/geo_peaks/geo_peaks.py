@@ -290,9 +290,66 @@ def topo_radec_za(tle, jd, site):
     za = math.degrees(math.acos(np.dot(rho_ecef, up)/np.linalg.norm(rho_ecef)))
     return ra, dec, za, ((sublon+540)%360)-180
 
+# ------------------------- Sun, night thirds, illumination -------------------
+def sun_radec_dist(jd):
+    """Low-precision solar ephemeris: geocentric RA/DEC (deg) + distance (km). ~0.01 deg."""
+    d = jd - 2451545.0
+    L = (280.460 + 0.9856474*d) % 360.0
+    g = math.radians((357.528 + 0.9856003*d) % 360.0)
+    lam = math.radians(L + 1.915*math.sin(g) + 0.020*math.sin(2*g))
+    epsl = math.radians(23.439 - 4e-7*d)
+    ra  = math.degrees(math.atan2(math.cos(epsl)*math.sin(lam), math.cos(lam))) % 360.0
+    dec = math.degrees(math.asin(math.sin(epsl)*math.sin(lam)))
+    dist = (1.00014 - 0.01671*math.cos(g) - 0.00014*math.cos(2*g))*1.495978707e8
+    return ra, dec, dist
+
+def sun_alt(jd, site):
+    ra, dec, _ = sun_radec_dist(jd)
+    ha = lmst_deg(jd, site[1]) - ra
+    return altaz(ha, dec, site[0])[0]
+
+def night_thirds(jd0, site, twilight=-12.0):
+    """Find the night (sun alt < twilight) inside [jd0, jd0+1]; return (start, end, [t1,t2] cuts)."""
+    jds = jd0 + np.arange(0, 1441)/1440.0
+    alts = np.array([sun_alt(j, site) for j in jds])
+    dark = alts < twilight
+    if not dark.any(): return None
+    # first dark run (the window is 24 h, so there is one night; it may start immediately)
+    idx = np.where(dark)[0]
+    # find contiguous run containing the first dark sample after a light one (or the start)
+    start_i = idx[0]
+    end_i = start_i
+    while end_i+1 < len(dark) and dark[end_i+1]: end_i += 1
+    ns, ne = jds[start_i], jds[end_i]
+    return ns, ne, [ns + (ne-ns)/3.0, ns + 2*(ne-ns)/3.0]
+
+def sun_geometry(tle, jd, site):
+    """Solar phase angle (deg, Sun–object–observer) and Earth-shadow (umbra, cylinder) flag."""
+    r_teme = teme_pos_sgp4(tle, jd) if HAVE_SGP4 else teme_pos_kepler(tle, jd)
+    if r_teme is None: return None, None
+    sra, sdec, sdist = sun_radec_dist(jd)
+    # sun unit vector in the same equatorial frame (of-date vs TEME diff is negligible here)
+    sr, sd = sra*DEG, sdec*DEG
+    s_hat = np.array([math.cos(sd)*math.cos(sr), math.cos(sd)*math.sin(sr), math.sin(sd)])
+    sun_vec = s_hat*sdist - r_teme                       # object -> Sun
+    gm = gmst_deg(jd)*DEG
+    oe = observer_ecef(*site)
+    o_teme = np.array([oe[0]*math.cos(gm)-oe[1]*math.sin(gm),
+                       oe[0]*math.sin(gm)+oe[1]*math.cos(gm), oe[2]])
+    obs_vec = o_teme - r_teme                            # object -> observer
+    phase = math.degrees(math.acos(np.dot(sun_vec, obs_vec) /
+                                   (np.linalg.norm(sun_vec)*np.linalg.norm(obs_vec))))
+    # cylindrical umbra: behind Earth (anti-solar side) and within one Earth radius of the axis
+    anti = -s_hat
+    along = np.dot(r_teme, anti)
+    perp  = np.linalg.norm(r_teme - along*anti)
+    eclipsed = (along > 0) and (perp < R_E)
+    return phase, eclipsed
+
 # ------------------------------- core search --------------------------------
-def southern_peak(tle, jd0, site, hours=24.0, step_s=120.0):
-    """Find the southernmost topocentric DEC in [jd0, jd0+hours]; refine; return record."""
+def southern_peak(tle, jd0, site, hours=24.0, step_s=120.0, extreme='south'):
+    """Find the southernmost (or, extreme='north', northernmost) topocentric DEC in
+    [jd0, jd0+hours]; refine; return record."""
     n = int(hours*3600/step_s)+1
     jds  = jd0 + np.arange(n)*step_s/86400.0
     decs = np.full(n, np.nan); ras = np.full(n, np.nan)
@@ -300,7 +357,7 @@ def southern_peak(tle, jd0, site, hours=24.0, step_s=120.0):
         got = topo_radec_za(tle, jd, site)
         if got: ras[k], decs[k] = got[0], got[1]
     if np.all(np.isnan(decs)): return None
-    k = int(np.nanargmin(decs))
+    k = int(np.nanargmin(decs)) if extreme=='south' else int(np.nanargmax(decs))
     # parabolic refinement on the three points around the minimum
     jd_pk = jds[k]
     if 0 < k < n-1 and not (np.isnan(decs[k-1]) or np.isnan(decs[k+1])):
@@ -337,6 +394,8 @@ def main():
     ap.add_argument('--min-alt', type=float, default=20.0, help='drop peaks below this elevation (deg)')
     ap.add_argument('--fov', type=float, default=2.2, help='field-of-view DIAMETER in degrees '
                     '(default 2.2 = DECam); pointing DEC = peak DEC + 0.75*(FOV/2)')
+    ap.add_argument('--twilight', type=float, default=-12.0,
+                    help='sun altitude defining night (deg; default -12 = nautical)')
     ap.add_argument('--step', type=float, default=120.0, help='coarse search step (s)')
     ap.add_argument('--outdir', default='.', help='output directory')
     args = ap.parse_args()
@@ -387,13 +446,31 @@ def main():
         r['p_ha']  = ((r['lmst'] - r['p_ra'] + 180) % 360) - 180     # deg; >0 = WEST of meridian
         r['p_alt'], r['p_az'] = altaz(r['p_ha'], r['p_dec'], site[0])
 
+    # ---- night thirds + solar illumination -----------------------------------
+    night = night_thirds(jd0, site, args.twilight)
+    for r in rows:
+        tle = next(t for t in tles if t.norad == r['norad'])
+        r['phase'], r['ecl'] = sun_geometry(tle, r['jd'], site)
+        r['third'] = 0
+        if night and night[0] <= r['jd'] <= night[1]:
+            r['third'] = 1 + (r['jd'] > night[2][0]) + (r['jd'] > night[2][1])
+    if night:
+        j2ut = lambda j: (dt.datetime(2000,1,1,12,tzinfo=dt.timezone.utc)
+                          + dt.timedelta(days=j-2451545.0)).strftime('%H:%M')
+        print(f"# night (sun < {args.twilight:.0f}°): {j2ut(night[0])}–{j2ut(night[1])} UT · thirds at "
+              f"{j2ut(night[2][0])} / {j2ut(night[2][1])} UT")
+        print("# illumination scheduling: 1st third → favor EAST (anti-solar rises in the east after sunset),")
+        print("#   2nd third → near the MERIDIAN, 3rd third → favor WEST. The solar PHASE angle column")
+        print("#   (Sun–object–observer; smaller = better lit) encodes this — schedule each third by lowest phase.")
+        print("#   'ECL' marks objects inside Earth's shadow at their peak: do not schedule those.\n")
+
     # ---- console table + CSV
     print(f"# pointing: FOV {args.fov:.2f}° ⇒ field center = object DEC + {0.75*args.fov/2.0:.3f}° "
           "(object sits 75% of the way to the SOUTHERN FOV edge at culmination, then climbs back north)")
     print("# HA = LMST − RA; HA > 0 = WEST of meridian (RA−LMST is its negative). AZ from N through E.\n")
     hdr = (f"{'LMST':>11} {'UT':>8} {'NORAD':>6}  {'name':<20} {'objRA':>11} {'objDEC':>10} "
            f"{'pntRA':>11} {'pntDEC':>10} {'pntHA':>11} {'alt':>5} {'az':>6} "
-           f"{'RArate':>7} {'Δsid':>7} {'ZA':>5} {'lonE':>7} {'incl':>5}")
+           f"{'RArate':>7} {'Δsid':>7} {'ZA':>5} {'lonE':>7} {'incl':>5} {'3rd':>3} {'phase':>6} {'ecl':>4}")
     print(hdr); print('-'*len(hdr))
     os.makedirs(args.outdir, exist_ok=True)
     csv_path = os.path.join(args.outdir, f'geo_peaks_{tag}.csv')
@@ -406,14 +483,17 @@ def main():
                     'point_alt_deg','point_az_deg_N_thru_E',
                     'ra_rate_arcsec_per_s','ra_rate_offset_from_sidereal_arcsec_per_s',
                     'dec_rate_arcsec_per_s','obj_zenith_angle_deg','subsat_lon_deg_east',
-                    'tle_incl_deg','tle_age_days','fov_deg'])
+                    'tle_incl_deg','tle_age_days','fov_deg',
+                    'night_third','solar_phase_angle_deg','in_earth_shadow'])
         for r in rows:
             ut = (dt.datetime(2000,1,1,12,tzinfo=dt.timezone.utc)
                   + dt.timedelta(days=r['jd']-2451545.0))
+            ph = f"{r['phase']:.1f}" if r['phase'] is not None else '—'
             print(f"{hms(r['lmst']):>11} {ut.strftime('%H:%M:%S'):>8} {r['norad']:>6}  {r['name'][:20]:<20} "
                   f"{hms(r['ra']):>11} {dms(r['dec']):>10} {hms(r['p_ra']):>11} {dms(r['p_dec']):>10} "
                   f"{sign_hms(r['p_ha']):>11} {r['p_alt']:>5.1f} {r['p_az']:>6.1f} "
-                  f"{r['ra_rate']:>7.3f} {r['ra_off']:>+7.3f} {r['za']:>5.1f} {r['sublon']:>7.2f} {r['incl']:>5.2f}")
+                  f"{r['ra_rate']:>7.3f} {r['ra_off']:>+7.3f} {r['za']:>5.1f} {r['sublon']:>7.2f} {r['incl']:>5.2f} "
+                  f"{(r['third'] or '·'):>3} {ph:>6} {('ECL' if r['ecl'] else ''):>4}")
             w.writerow([hms(r['lmst']), f"{r['lmst']:.5f}", ut.isoformat(), r['norad'], r['name'],
                         f"{r['ra']:.6f}", f"{r['dec']:.6f}", hms(r['ra']), dms(r['dec']),
                         f"{r['p_ra']:.6f}", f"{r['p_dec']:.6f}", hms(r['p_ra']), dms(r['p_dec']),
@@ -421,8 +501,29 @@ def main():
                         f"{r['p_alt']:.3f}", f"{r['p_az']:.3f}",
                         f"{r['ra_rate']:.4f}", f"{r['ra_off']:+.4f}", f"{r['dec_rate']:.4f}",
                         f"{r['za']:.2f}", f"{r['sublon']:.3f}", f"{r['incl']:.3f}",
-                        f"{r['age_d']:.2f}", f"{args.fov:.2f}"])
+                        f"{r['age_d']:.2f}", f"{args.fov:.2f}",
+                        r['third'], ph, int(bool(r['ecl']))])
     print(f"\n# wrote {csv_path}  ({len(rows)} objects above {args.min_alt}° elevation at peak)")
+
+    # ---- NIGHT PLAN: thirds, best-illuminated first --------------------------
+    if night:
+        names3 = {1:'FIRST third — favor EAST of meridian', 2:'MIDDLE third — favor the MERIDIAN',
+                  3:'LAST third — favor WEST of meridian'}
+        print("\n# ================= NIGHT PLAN (by thirds, best solar phase first) =================")
+        for th in (1,2,3):
+            sel = sorted([r for r in rows if r['third']==th and not r['ecl'] and r['phase'] is not None],
+                         key=lambda r: r['phase'])
+            print(f"#\n# {names3[th]}")
+            if not sel:
+                print("#   (no peaks fall in this third)")
+            for r in sel:
+                ew = 'E' if r['p_ha'] < 0 else 'W'
+                print(f"#   phase {r['phase']:5.1f}°  {r['norad']:>6} {r['name'][:22]:<22} "
+                      f"LMST {hms(r['lmst'])}  HA {sign_hms(r['p_ha'])} ({ew})  alt {r['p_alt']:.0f}°")
+            ecl = [r for r in rows if r['third']==th and r['ecl']]
+            for r in ecl:
+                print(f"#   ✗ IN EARTH'S SHADOW at peak — do not schedule: {r['norad']} {r['name'][:22]}")
+        print("# ==================================================================================")
 
     if not rows: return
 
@@ -440,6 +541,15 @@ def main():
         ax.plot(r['lmst']/15.0, r['dec'], 'v', color=c, ms=7, mec='k', mew=0.4)
         ax.annotate(str(r['norad']), (r['lmst']/15.0, r['dec']), fontsize=6,
                     textcoords='offset points', xytext=(0,-9), ha='center')
+    # shade the night thirds (illumination scheduling: E / meridian / W)
+    if night:
+        cuts = [night[0], night[2][0], night[2][1], night[1]]
+        shades = [(0.10,'1st third → EAST'), (0.18,'2nd third → MERIDIAN'), (0.10,'3rd third → WEST')]
+        for (a,lab), j1, j2 in zip(shades, cuts[:-1], cuts[1:]):
+            l1, l2 = lmst_deg(j1, site[1])/15.0, lmst_deg(j2, site[1])/15.0
+            spans = [(l1,l2)] if l1 <= l2 else [(l1,24),(0,l2)]
+            for s1,s2 in spans: ax.axvspan(s1, s2, color='navy', alpha=a, lw=0)
+            ax.text((spans[0][0]+0.1), ax.get_ylim()[1]*0.93, lab, fontsize=7.5, color='navy', alpha=0.8)
     ax.set_xlabel('LMST (h)'); ax.set_ylabel('topocentric DEC (°, J2000)')
     ax.set_title(f"GEO-belt declination tracks from site ({site[0]:.3f}°, {site[1]:.3f}°E) — ▼ southern peaks — {tag}")
     ax.grid(alpha=0.3); ax.set_xlim(0,24)

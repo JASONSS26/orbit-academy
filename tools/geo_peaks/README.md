@@ -84,3 +84,21 @@ Defaults: site = CTIO (−30.16528°, −70.80644° E, 2200 m — override with
 * Verified against physics invariants: dDEC/dt ≈ 0 at every reported peak; Δ ≈ 0 for
   zero-inclination objects; Δ at inclined peaks matches the analytic 1/cos i − 1 rate;
   peak hour angles match sub-satellite longitudes.
+
+## Night thirds & solar illumination
+
+The planner finds the night (sun below `--twilight`, default −12°), splits it into
+**thirds**, and prints a **NIGHT PLAN**: peaks grouped by third and ranked by **solar
+phase angle** (Sun–object–observer; smaller = better lit). This reproduces the
+east → meridian → west scheduling rule automatically (the anti-solar point rises in
+the east after sunset and sets in the west before dawn). Objects inside **Earth's
+shadow** at their peak are flagged `ECL` — never schedule those. The declination-track
+plot shades the three thirds.
+
+## Southern vs northern peak
+
+Measured from live TLEs: the topocentric amplification is f ≈ 1.17 at the southern
+peak and f ≈ 1.12 at the northern peak from CTIO, so the northern peak buys only
+~3–6% more unstreaked time — at roughly **twice the airmass** (e.g. TDRS 3:
+ZA 31° south vs 55° north). The southern peak remains the right choice; both curves
+are drawn by `lock_window_plot.py`.
