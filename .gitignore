@@ -40,3 +40,4 @@ _multi_test*.json*
 public/vendor/textures/moon_hires.jpg
 public/vendor/textures/earth_hires.jpg
 *.zip
+__pycache__/
