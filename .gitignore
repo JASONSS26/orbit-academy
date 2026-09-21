@@ -21,7 +21,9 @@ satellite_illumination*.mp4
 workbooks/**/*.bak
 workbooks/**/*.tmp
 
-# distributable bundles (built on demand — not repo content)
+# distributable bundles: rebuilt on demand, but the CURRENT release pair is committed
+# (force-added with `git add -f`) so a clone carries ready-to-hand-off zips. Older
+# versions stay untracked; when releasing, force-add the new pair and `git rm --cached` the old.
 orbit-academy-*.zip
 START-HERE.html.bak
 
