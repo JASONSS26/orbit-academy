@@ -4,6 +4,18 @@ Each release passes a security audit before it is pushed. This backend has a **r
 surface** (accounts, password hashing, sessions, roles, progress writes), so the audit is
 more involved than a static toy.
 
+## v5.5 — audit result: **PASS**
+
+Client-side content release (Module 7 worksheet/sim text revision from an external review; one
+worksheet-engine cosmetic field). No new endpoints, inputs, file reads or auth changes; the
+`server.js` diff is the version header only. All new worksheet strings are static data-file
+content rendered through the existing engine pipeline; the new tutorial table is static HTML with
+no user data (the `esc()` discipline applies to user data, which this release does not touch).
+Full checklist re-run 2026-09-21 via `test/run.sh`: path traversal, unauthenticated access,
+privilege escalation, session forgery, prerequisite bypass, input validation, DoS body-size, XSS,
+secrets in repo (`academy_data.json` gitignored — verified). Static + runtime network monitoring
+unchanged: zero outbound calls (the revised text adds no I/O of any kind).
+
 ## v5.4 — audit result: **PASS**
 
 Client-side release (module 6 scenario + view/clock fixes, module 8 legend and exposure, wording,

@@ -3,6 +3,11 @@
 Things noticed but deferred, so they don't get lost. Newest at top of each section.
 
 ## High priority
+- [ ] **From the Module 7 external review (v5.5), two course-wide follow-ups deferred pending
+      owner decision:** (1) sweep modules 1–6 and 8 to add explicit sim settings ("open scene X,
+      set Y") to every exercise, the way Module 7 now does; (2) consider moving each module's
+      Learn-More links out of the bottom section into per-exercise set-aside boxes (textbook
+      style) — a worksheet-engine layout change affecting all modules.
 - [ ] **Careful walkthrough of the Module 6 worksheet (`worksheet6.data.js`).** It grew fast and
       organically during a long, physics-rich session (Lagrange points, NRHO, chaos/scatter,
       the libration zoo, non-Keplerian orbits, torque, one-vs-two-parameter families). Sit down

@@ -133,8 +133,10 @@ function renderTasks(){
       // PREDICT before acting — a hypothesis to test (predict → act → analyze → iterate)
       if(t.predict) html+='<div class="predict"><b>🔮 Predict first:</b> '+t.predict+'</div>';
       // the hands-on step(s) — a prominent "Try it" box. `do` may be a string or an array of steps.
+      // Optional t.doLabel overrides the header (e.g. '💭 Think it through — no sim needed' for
+      // exercises that have no simulator scene; saying "Try it in the simulator" there confused reviewers).
       if(t.do){ const steps=Array.isArray(t.do)?t.do:[t.do];
-        html+='<div class="tryit"><div class="tryit-h">▶ Try it in the simulator</div>'+
+        html+='<div class="tryit"><div class="tryit-h">'+(t.doLabel||'▶ Try it in the simulator')+'</div>'+
           (steps.length>1?'<ol>'+steps.map(s=>'<li>'+s+'</li>').join('')+'</ol>':'<p>'+steps[0]+'</p>')+'</div>'; }
       if(t.observe) html+='<p class="observe">👁 <b>What to look for:</b> '+t.observe+'</p>';
       // ungraded reflection prompts to keep them engaged with the sim, not racing to the quiz

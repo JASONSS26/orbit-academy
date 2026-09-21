@@ -1,4 +1,4 @@
-# 🛰 ORBIT ACADEMY — v5.4
+# 🛰 ORBIT ACADEMY — v5.5
 
 An interactive course teaching orbital dynamics to non-specialists — from "what is an orbit?" through
 cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator.
@@ -18,7 +18,7 @@ cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator
 | **Progress saved** | in your browser | per student, any machine |
 | **You get** | all 8 modules, interactive quizzes | + logins, modules unlocking in order, instructor roster, class analytics, worksheet editor |
 | **Use it for** | learning solo · reviewing · a laptop in a vault | teaching a group |
-| **Download** | `orbit-academy-v5.4-standalone.zip` | `orbit-academy-v5.4.zip` |
+| **Download** | `orbit-academy-v5.5-standalone.zip` | `orbit-academy-v5.5.zip` |
 
 No download handy? Click green **`<> Code` → Download ZIP** above; that is the full version.
 
@@ -56,7 +56,7 @@ If you want the exact clicks:
 ### 🐧 Linux
 
 ```
-1. unzip orbit-academy-v5.4.zip && cd academy
+1. unzip orbit-academy-v5.5.zip && cd academy
 2. Just the course:  xdg-open public/gallery.html
    Full course:      install node with your package manager, then
                      bash start-academy.sh
@@ -412,6 +412,20 @@ locally, as above.)
 - `public/quiz.js` — tutorial registry
 - `docs/` — `INSTRUCTOR_GUIDE.md`, `SECURITY.md` (audit log), `CHANGELOG.md`, `TESTING.md`, `MODULE_NOTES.md`
 
+### New in v5.5
+
+- **Module 7 revised end-to-end from an external (non-astronomer) review** — the whole module was
+  read cold by a reviewer and every point of confusion fixed. Highlights: a magnitude reference
+  table (Sun −26.7 → Hubble +30) with the m / M / "mag" notation warning; every symbol defined at
+  first use (c, t, N, SNR, ±σ, bus, FLIR, prox ops); the √N integration gain derived (signal ∝ N
+  coherent, noise ∝ √N incoherent); the Tag-&-fit text now sets expectations that DETERMINED takes
+  time-spread tags, not just three clicks; corrected IR-background physics (atmosphere + warm
+  optics, not "boilers"); honest resolving-power discussion (Keck/Rubin/HST all see GEO birds as
+  points — prox ops is what resolves shape); East-left and equatorial-observatory side notes;
+  tougher quiz distractors on the custody and maneuver questions.
+- **Worksheet engine** — exercises without a simulator scene now say "💭 Think it through — no sim
+  needed" instead of "▶ Try it in the simulator" (new optional `doLabel` field, all modules can use it).
+
 ### New in v5.4
 
 - **Module 6 — a live L1 halo and a live NRHO** (fan scenarios → 🎯 L1 halo). Four out-of-plane
@@ -500,7 +514,7 @@ bash tools/fetch-vendor.sh --check      # what is vendored; whether anything can
 
 ## Security
 
-Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v5.4: **PASS** — path traversal
+Each release passes a security audit (see `docs/SECURITY.md`). v1.0–v5.5: **PASS** — path traversal
 contained, auth enforced, no privilege escalation, prerequisite gating server-side, input
 validated, DoS-guarded, no XSS, no secrets committed. From **v5.0** the client is also verified to
 make **no outbound network calls** (`test/no-external-calls.test.js`, static + runtime).

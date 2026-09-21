@@ -593,6 +593,13 @@ angles; how optical gives precise **angles (RA/DEC)** but no range directly; how
 successive images (or two sites) constrains range (the finger-in-front-of-alternating-eyes demo); and
 **pointed custody vs. all-sky survey** tradeoffs.
 
+*(v5.5: this module was revised end-to-end from an external non-astronomer review — the worksheet
+now carries a magnitude reference table with the m / M / "mag" notation warning, defines every
+symbol at first use, derives the √N integration gain, and warns that Tag-&-fit needs time-spread
+tags before DETERMINED. Exercises without a sim scene are labeled "💭 Think it through". If a
+student asks why Hubble can't image a GEO satellite's panels: its ~0.05″ diffraction limit spans
+~9 m at GEO range — proximity operations is the honest answer, and the worksheet now says so.)*
+
 **Learning goals.**
 
 - Students can explain why a radar echo falls as range⁴ and reproduce the headline ratio: a GEO
@@ -611,7 +618,8 @@ successive images (or two sites) constrains range (the finger-in-front-of-altern
 - *Hook* — the same radar pulse that pings an 800-km satellite loud and clear comes back from GEO
   7.7 million times weaker. So how do we know where *anything* out there is?
 - *Beats* — (1) Three ways to sense a space object: bounce radar off it, catch the sunlight it
-  reflects, or catch the heat it emits. (2) Radar brings its own illumination but pays range⁴ — it
+  reflects, or catch the heat it emits. (2) Radar is active — it transmits its own pulses, so it
+  needs no sunlight — but pays range⁴ — it
   owns LEO, strains at GEO, and is hopeless for most of xGEO. (3) Optical is driving at night: you
   see the bicycle only when a passing truck's headlights — the Sun — catch it; in Earth's shadow
   it goes blind, and thermal-IR takes over. (4) No sensor tells you everything: radar gives range,

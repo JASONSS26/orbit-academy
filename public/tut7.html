@@ -101,14 +101,14 @@
         </div>
         <div>
           <canvas id="magPlot" height="300" style="width:100%;max-height:300px"></canvas>
-          <div class="note"><b>Light curve:</b> apparent <b>magnitude</b> vs phase angle (fainter = higher up). The <b style="color:#ff5a52">red dot</b> is the current geometry. Glint ≈ mag 4, faintest back-lit ≈ mag 14 — a <b>10-magnitude</b> swing, 10,000× in brightness (5 mag = 100×).</div>
+          <div class="note"><b>Light curve:</b> apparent <b>magnitude m</b> vs phase angle (fainter = higher up) — note the x-axis is the illumination <i>geometry</i>, not time of night. The <b style="color:#ff5a52">red dot</b> is the current geometry. Glint m ≈ 4, faintest back-lit m ≈ 14 — a <b>10-magnitude</b> swing, 10,000× in brightness (5 magnitudes = 100×). (Lowercase <b>m</b> = apparent magnitude; capital <b>M</b> means absolute magnitude, a different quantity — the loose label "mag" gets used for both.)</div>
         </div>
       </div>
       <div class="ctl">
         <label>☀ Sun angle <input id="sunAngle" type="range" min="0" max="215" value="0" style="width:320px"></label>
         <span class="kv">phase angle: <b id="phaseAng">0°</b></span>
         <span class="kv">lit fraction: <b id="phaseLit">100%</b></span>
-        <span class="kv">apparent mag: <b id="phaseMag">—</b></span>
+        <span class="kv">apparent magnitude m: <b id="phaseMag">—</b></span>
         <span class="kv" id="phaseName">full — brightest</span>
       </div>
       <div class="seg" style="margin-top:10px">
@@ -131,7 +131,7 @@
         <label>RA <input id="raSel" type="range" min="0" max="360" step="0.5" value="60"></label><span class="kv">RA <b id="raV">60.0°</b></span>
         <label>Dec <input id="decSel" type="range" min="-89" max="89" step="0.5" value="30"></label><span class="kv">Dec <b id="decV">+30.0°</b></span>
       </div>
-      <div class="note"><b>RA/Dec are fixed on the sky</b> — they label a direction among the stars, not a spot over the ground. In this inertial (star-fixed) frame the <b>Earth rotates</b> underneath: a telescope bolted to the ground has its sight-line <b>sweep through RA</b> (right ascension) as the night goes on — but its <b>Dec stays constant</b>, because spinning about the polar axis changes only the east–west angle. A single image still gives just a <b>direction</b> (RA, Dec) — no distance; that needs parallax or radar.</div>
+      <div class="note"><b>RA/Dec are fixed on the sky</b> — they label a direction among the stars, not a spot over the ground. In this inertial (star-fixed) frame the <b>Earth rotates</b> underneath: a telescope bolted in place (parked — not tracking, not being re-pointed) has its sight-line <b>sweep through RA</b> (right ascension) as the night goes on — but its <b>Dec stays constant</b>, because spinning about the polar axis changes only the east–west angle. (An operating telescope of course slews in both axes to find and follow targets.) Nothing in this scene turns on its own: dragging rotates <i>your viewpoint</i> around the celestial sphere. A single image still gives just a <b>direction</b> (RA, Dec) — no distance; that needs parallax or radar.</div>
     </div>
   </div>
 
@@ -139,7 +139,7 @@
   <div class="scene" id="s-iod">
     <div class="card">
       <h2>🎯 Initial orbit determination — tag the satellite, watch the orbit converge</h2>
-      <div class="lede">This is how it really works. The telescope <b>tracks the satellite</b>, so in each exposure the <b>stars trail into streaks</b> and the satellite stays a crisp <b>point</b>. <b>Click that point.</b> The plate-solver finds the <b>centers of ~10 star streaks</b> (their known catalog positions define the sky grid) and reads off the satellite's <b>time, RA and Dec</b> — each with a small <b>±σ ≈ 0.05″</b> measurement error. Each direction is a <b>line of sight</b> from Earth. <b>Two</b> sight-lines already pin the orbit's <b>plane</b> (their common plane through Earth's center); a <b>third and beyond over-determine</b> it, so the tiny measurement scatter turns into a finite <b>uncertainty band</b> — the translucent smear that <b>tightens onto one orbit</b> as you tag more exposures across the night.</div>
+      <div class="lede">This is how it really works. The telescope <b>tracks the satellite</b>, so in each exposure the <b>stars trail into streaks</b> and the satellite stays a crisp <b>point</b>. <b>Click that point.</b> The plate-solver finds the <b>centers of ~10 star streaks</b> (their known catalog positions define the sky grid) and reads off the satellite's <b>time, RA and Dec</b> — each with a small <b>±σ ≈ 0.05″</b> measurement error (σ, "sigma," is the standard deviation of the measurement error: each position is good to about ±0.05 arcseconds). Each direction is a <b>line of sight</b> from Earth. <b>Two</b> sight-lines pin the orbit's <b>plane</b> (their common plane through Earth's center) — the plane only, not the orbit; a <b>third and beyond over-determine</b> the fit, so the tiny measurement scatter turns into a finite <b>uncertainty band</b> — the translucent smear that <b>tightens onto one orbit</b> as you tag more exposures. How fast it tightens is set by the <b>time-spread</b> of your tags: tags bunched within minutes leave the band wide (a short arc fits many orbits), so expect <b>STATUS: DETERMINED</b> only after you also tag exposures from later in the night.</div>
       <div style="display:grid;grid-template-columns:1.15fr 0.85fr;gap:18px;align-items:start">
         <div>
           <canvas id="iodMain" height="380" style="width:100%;height:380px;cursor:crosshair"></canvas>
@@ -170,7 +170,7 @@
   <div class="scene" id="s-radar">
     <div class="card">
       <h2>📡 Radar — watch the pulse go out and the echoes come back</h2>
-      <div class="lede">A ground radar (bottom) fires a pulse and <b>times the echo</b> — that timing IS the measurement: range = c·t/2. Press <b>FIRE</b> and watch the scope's sweep dot: it carries a running clock showing the <b>time since the pulse left the dish</b>, and each spike pops up the instant its echo lands. <b>Farther = later</b> (LEO at ~5 ms, GEO at ~281 ms) and <b>farther = fainter</b> — the pulse spreads going out and the echo spreads coming back, so received power falls as <b>range⁴</b>: GEO returns ~7.7 <b>million×</b> weaker than LEO (a true 69 dB; try the linear view to feel that ratio). GEO starts buried in the noise. To dig it out, set <b>N &gt; 1</b> and press <b>START AVERAGING</b>: the radar fires a stream of pulses, the echo adds up in its time bin while the random noise partly cancels, and SNR climbs as <b>√N</b>.</div>
+      <div class="lede">A ground radar (bottom) fires a pulse and <b>times the echo</b> — that timing IS the measurement: range = c·t/2, where <b>c</b> is the speed of light and <b>t</b> the pulse's round-trip travel time. Press <b>FIRE</b> and watch the scope's sweep dot: it carries a running clock showing the <b>time since the pulse left the dish</b>, and each spike pops up the instant its echo lands. <b>Farther = later</b> (LEO at ~5 ms, GEO at ~281 ms) and <b>farther = fainter</b> — the pulse spreads going out and the echo spreads coming back, so received power falls as <b>range⁴</b>: GEO returns ~7.7 <b>million×</b> weaker than LEO (a true 69 dB; try the linear view to feel that ratio). GEO starts buried in the noise. To dig it out, set the number of integrated pulses <b>N</b> above 1 and press <b>START AVERAGING</b>: the radar fires a stream of pulses, the echo adds up in its time bin while the random noise partly cancels, and the <b>signal-to-noise ratio (SNR)</b> — how far the echo stands above the noise — climbs as <b>√N</b>.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
         <div><canvas id="radarSky" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">Top view: the pulse fades as it spreads (range² out), and the <b>returning echo fades too</b> (range² back) — watch GEO's ghost of an echo creep home long after LEO's has landed.</div></div>
         <div><canvas id="radarScope" height="360" style="width:100%;height:360px"></canvas><div class="note" style="font-size:16px">A-scope: horizontal is <b>time since the pulse was sent</b> (the sweep dot's clock shows it in real ms), vertical is <b>dB</b> — the honest spread is 69 dB, LEO to GEO. A spike only appears once its echo has <b>actually returned</b>, and fainter echoes make thinner spikes.</div></div>

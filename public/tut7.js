@@ -483,7 +483,7 @@ function drawRadec(){ const cv=$('radec'); if(!cv) return; if(!radecCtx) radecCt
     g.fillText('RA '+ra.toFixed(1)+'°, Dec '+(dec>=0?'+':'')+dec.toFixed(1)+'°', pM[0]+w*0.02, pM[1]);
   }
   // hint
-  g.fillStyle='#3a4a66'; g.font=fs+'px monospace'; g.textAlign='left'; g.fillText('left-drag pan · shift/right-drag rotate · wheel zoom · R reset',w*0.03,h*0.97);
+  g.fillStyle='#8ba3c7'; g.font=fs+'px monospace'; g.textAlign='left'; g.fillText('left-drag pan · shift/right-drag rotate · wheel zoom · R reset',w*0.03,h*0.97);
 }
 
 
@@ -547,7 +547,7 @@ function iodDrawMain(){ const cv=$('iodMain'); if(!cv) return; if(!iodMainCtx) i
   const g=iodMainCtx,w=cv.width,h=cv.height; g.clearRect(0,0,w,h);
   g.fillStyle='#01040a'; g.fillRect(0,0,w,h);
   const fs=Math.round(w*0.026);
-  g.fillStyle='#3a4a66'; g.font=fs+'px monospace'; g.textAlign='left';
+  g.fillStyle='#8ba3c7'; g.font=fs+'px monospace'; g.textAlign='left';
   g.fillText('tracking the target — stars STREAK, the satellite holds',fs*0.6,fs*1.4);
   const sl=w*IOD_STREAK, shift=iodFrame*w*IOD_STARSHIFT;
   for(const st of iodStars){ let cx=((st.x*w+shift)%w+w)%w; const cy=st.y*h;

@@ -2,6 +2,56 @@
 
 `MAJOR.MINOR` versioning; each release passes the security audit in `docs/SECURITY.md` before push.
 
+## v5.5 — 2026-09-21 (Module 7 revised from an external non-astronomer review)
+
+A reviewer outside astronomy read Module 7 cold and marked every point of confusion; this release
+works through that list — adopting the good catches, and correcting the suggestions that were
+themselves factually wrong (each checked before use).
+
+**Adopted.** Magnitude teaching rebuilt: apparent magnitudes get a reference table from the Sun
+(−26.7) through Venus, Sirius, Vega, Polaris, the sim's own glint/full/back-lit values, the
+naked-eye limit and Hubble (+30); negative magnitudes, Pogson's ⁵√100 ≈ 2.512 step, and an explicit
+m (apparent) vs M (absolute) vs "mag" (used loosely for both) notation warning — the sim now labels
+its readout "apparent magnitude m". Every symbol is defined at first use: bus, FLIR, proximity
+operations, c and t in range = c·t/2, N, SNR, ±σ ("sigma"). The radar exercise now derives √N:
+echoes add coherently (same time bin every pulse → signal ∝ N), noise adds incoherently (∝ √N).
+Tag-&-fit teaching (worksheet + sim lede) now says up front that two sight-lines fix the plane
+ONLY, and that STATUS: DETERMINED needs tags spread across the night — the reviewer had tagged
+three bunched exposures and been baffled that the status didn't flip. Quiz distractors on the
+custody and maneuver questions replaced with plausible-but-wrong physics (J2 precession is modeled,
+glint centroid shifts are sub-arcsecond, clock error is a measurement fault) — quiz-quality suite
+confirms no answer leaks by length. Side notes added: why sky images are East-LEFT (you view the
+celestial sphere from inside), and why modern observatories sit on high dry mid-latitude mountains
+(Rubin −30°/2,650 m, Keck +20°/4,145 m) rather than the geometrically tempting equator. Sim-setting
+instructions added to exercises that have a scene; the light-curve caption now warns its x-axis is
+phase angle, not time of night (the reviewer went looking for twilight on it). Faint on-canvas hint
+text brightened. "It burned" now says a burn is detected as a velocity change and does NOT tell you
+why — station-keeping, relocation, disposal or otherwise (that's the intent rung).
+
+**Engine.** New optional per-exercise `doLabel` replaces the "▶ Try it in the simulator" header —
+six Module 7 exercises with no sim scene now say "💭 Think it through — no sim needed" (the header
+had sent the reviewer hunting for scenes that don't exist).
+
+**Reviewer suggestions corrected rather than adopted** (documented so they don't come back):
+Pogson (1856) defined the ratio, not Vega = 0 (Vega, slightly variable, anchored the zero point
+traditionally; the modern zero point is a calibrated flux standard — the suggested "2.12×10⁻⁶ lux"
+definition was dropped). IR backgrounds for satellite work are atmospheric H₂O/CO₂/O₃ emission and
+the telescope's own warm optics — not "sunlit walls and boilers". Hubble was NOT added as the
+example of resolving GEO satellites: its ~0.05″ diffraction limit spans ~9 m at GEO range, so even
+from space a 30 m bus is a few blurry pixels — proximity operations is the honest answer. "A star
+directly overhead barely moves" is wrong (it's a star at the celestial POLE). A parked telescope's
+sight-line really does hold constant Dec — kept, with "(parked — not tracking, not re-pointed)"
+added, plus the RA-coordinate-rate vs on-sky-rate (× cos Dec) distinction made explicit. The
+RA/DEC scene note now also says dragging rotates YOUR VIEWPOINT (nothing turns on its own — the
+suggested "you control the rotation with your keyboard" described a control that doesn't exist).
+The request to make 2 exposures yield DETERMINED was declined: two angles-only sight-lines cannot
+determine an orbit; the fix is the expectation-setting text above.
+
+Security audit: **PASS** (client-side content release; `server.js` diff is the version header
+only). Full suite: functional, security 48, quiz-quality, worksheet-boot 101 (public/ ↔
+workbooks/active sync verified), tut7-radar, file:// robustness, air-gap/no-external-calls,
+vendor integrity — all green. Learn-more links verified live (and unused offline by design).
+
 ## v5.4 — 2026-07-31 (a live L1 halo and NRHO; module 6 view/clock fixes)
 
 **Module 6 — the halo release (easter egg; not referenced by any worksheet).** A new fan scenario
