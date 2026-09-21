@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Orbit Academy — Downloads</title>
+<!-- This page is served by GitHub Pages at the repo root. Every link is RELATIVE, so the
+     same files GitHub hosts in the repo (zips, pdf/, slides/) are the downloads themselves.
+     On each release: update the version number and the two zip filenames below. -->
+<style>
+  :root{--fg:#dfe9f7;--dim:#93aacb;--accent:#ffcf4d;--cyan:#5fd0ff;--bg:#060b16;}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -20%,#122a4c,#05080f 55%);
+    color:var(--fg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    font-size:18px;line-height:1.55;padding:40px 20px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{color:#fff;font-size:34px;margin:0 0 4px}
+  .sub{color:var(--dim);margin-bottom:30px}
+  .card{background:rgba(9,17,32,.85);border:1px solid #23406a;border-radius:12px;
+    padding:20px 24px;margin-bottom:18px}
+  .card h2{margin:0 0 6px;font-size:22px;color:var(--accent)}
+  .card p{margin:6px 0 12px;color:var(--fg)}
+  .card .meta{color:var(--dim);font-size:15px}
+  a.dl{display:inline-block;background:linear-gradient(#26436b,#173154);border:1px solid var(--cyan);
+    color:#fff;font-weight:bold;text-decoration:none;padding:10px 18px;border-radius:9px;margin:2px 8px 2px 0}
+  a.dl:hover{box-shadow:0 0 14px rgba(95,208,255,.35)}
+  a.dl.gold{background:linear-gradient(#5a4210,#3a2a08);border-color:var(--accent);color:#ffe38a}
+  .files a{color:var(--cyan);text-decoration:none;display:inline-block;margin:2px 14px 2px 0;white-space:nowrap}
+  .files a:hover{text-decoration:underline}
+  .foot{color:var(--dim);font-size:15px;text-align:center;margin-top:28px}
+  b{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🛰 Orbit Academy</h1>
+  <div class="sub">An interactive course in orbital dynamics for non-specialists — eight modules,
+  each a guided worksheet plus a live 3-D simulator. Runs completely offline. <b>Current release: v5.5.</b></div>
+
+  <div class="card">
+    <h2>Just the course &nbsp;<span class="meta">(recommended for learners)</span></h2>
+    <p>All eight modules, simulators, and interactive quizzes. <b>Nothing to install</b> —
+    unzip it and open <b>START-HERE.html</b>. Progress is saved in your browser. No internet
+    connection is ever needed.</p>
+    <a class="dl gold" href="orbit-academy-v5.5-standalone.zip" download>⬇ Download the course (zip, ~15 MB)</a>
+  </div>
+
+  <div class="card">
+    <h2>Course + classroom management &nbsp;<span class="meta">(for instructors)</span></h2>
+    <p>Everything above, plus a sign-on server: student accounts, saved progress on any machine,
+    modules unlocking in order, an instructor dashboard with class analytics, and a worksheet
+    editor. Needs one free install (Node.js); the included START-HERE page walks you through it.</p>
+    <a class="dl" href="orbit-academy-v5.5.zip" download>⬇ Download course + management (zip, ~16 MB)</a>
+  </div>
+
+  <div class="card">
+    <h2>Printable worksheets (PDF)</h2>
+    <p>Paper companions to the course — objectives, tutorial, every exercise and quiz question.
+    The <b>interactive worksheets in the course download are the real thing</b> (live simulators,
+    self-checking quizzes); use these only where a screen isn't an option or for marked-up review.</p>
+    <div class="files">
+      <a href="pdf/worksheet1.pdf">1 · How Orbits Work</a>
+      <a href="pdf/worksheet2.pdf">2 · Angular Rates &amp; Geosync</a>
+      <a href="pdf/worksheet3.pdf">3 · Naming Orbits &amp; TLEs</a>
+      <a href="pdf/worksheet4.pdf">4 · Maneuvers &amp; Perturbations</a>
+      <a href="pdf/worksheet5.pdf">5 · xGEO / Cislunar Space</a>
+      <a href="pdf/worksheet6.pdf">6 · Lagrange Points &amp; Complex Orbits</a>
+      <a href="pdf/worksheet7.pdf">7 · Observability</a>
+      <a href="pdf/worksheet8.pdf">8 · Lunar Transfers &amp; Artemis</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Instructor slide decks (PowerPoint)</h2>
+    <p>A short intro deck per module, for the ten minutes before students open the worksheet.</p>
+    <div class="files">
+      <a href="slides/module1.pptx" download>Module 1</a>
+      <a href="slides/module2.pptx" download>Module 2</a>
+      <a href="slides/module3.pptx" download>Module 3</a>
+      <a href="slides/module4.pptx" download>Module 4</a>
+      <a href="slides/module5.pptx" download>Module 5</a>
+      <a href="slides/module6.pptx" download>Module 6</a>
+      <a href="slides/module7.pptx" download>Module 7</a>
+      <a href="slides/module8.pptx" download>Module 8</a>
+    </div>
+  </div>
+
+  <div class="foot">Questions, source code, and the full change history:
+    <a style="color:var(--cyan)" href="https://github.com/JASONSS26/orbit-academy">github.com/JASONSS26/orbit-academy</a>
+    · Each release passes the security audit in docs/SECURITY.md before it lands here.</div>
+</div>
+</body>
+</html>

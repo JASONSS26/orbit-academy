@@ -9,6 +9,10 @@ cislunar space. Eight modules, each a guided worksheet plus a live 3-D simulator
 
 # Install
 
+> **Not a git user?** The click-to-download page (once GitHub Pages is enabled) is
+> <https://jasonss26.github.io/orbit-academy/> — both zips, printable worksheet PDFs, and the slide decks.
+
+
 ## 1 · Pick a version
 
 | | **Just the course** | **Full course + management** |
